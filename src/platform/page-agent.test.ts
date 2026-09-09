@@ -45,6 +45,31 @@ describe('platform/page-agent', () => {
       expect(page.url.pathname).toBe('/path');
     });
 
+    it('falls back to lastFocusedWindow if currentWindow tab is missing or has no url', async () => {
+      mockTabs.query
+        .mockResolvedValueOnce([]) // currentWindow
+        .mockResolvedValueOnce([{ id: 99, url: 'https://example.org/search' }]); // lastFocusedWindow
+
+      const page = await getActivePage();
+      expect(page.tabId).toBe(99);
+      expect(page.url.origin).toBe('https://example.org');
+    });
+
+    it('uses pendingUrl if url is missing', async () => {
+      mockTabs.query.mockResolvedValue([
+        { id: 43, pendingUrl: 'https://example.com/loading' },
+      ]);
+
+      const page = await getActivePage();
+      expect(page.tabId).toBe(43);
+      expect(page.url.pathname).toBe('/loading');
+    });
+
+    it('throws descriptive error when active tab URL is inaccessible', async () => {
+      mockTabs.query.mockResolvedValue([{ id: 44 }]);
+      await expect(getActivePage()).rejects.toThrow(/could not access url/i);
+    });
+
     it('throws when no active tab is found', async () => {
       mockTabs.query.mockResolvedValue([]);
       await expect(getActivePage()).rejects.toThrow(/no active tab/i);
