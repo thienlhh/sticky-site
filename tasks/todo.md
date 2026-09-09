@@ -62,10 +62,10 @@ Work top to bottom. Do not begin a task until its dependency and checkpoint requ
 
 ## Phase 6 — Matching
 
-- [ ] **Task 6: Deterministic fingerprint scoring**
-  - [ ] Every scoring boundary passes
-  - [ ] Ambiguous and low-confidence controls are skipped
-  - [ ] `npm run check` passes
+- [x] **Task 6: Deterministic fingerprint scoring**
+  - [x] Every scoring boundary passes
+  - [x] Ambiguous and low-confidence controls are skipped
+  - [x] `npm run check` passes
 
 ## Phase 7 — Native Restoration
 
