@@ -10,6 +10,19 @@ export type AnalyticsEvent =
   | 'view_updated'
   | 'view_deleted';
 
+export const ALLOWED_EVENTS = new Set<AnalyticsEvent>([
+  'extension_installed',
+  'site_permission_granted',
+  'save_view_started',
+  'view_created',
+  'view_apply_started',
+  'view_apply_full',
+  'view_apply_partial',
+  'view_apply_failed',
+  'view_updated',
+  'view_deleted',
+]);
+
 export interface AnalyticsAdapter {
   send(event: AnalyticsEvent, properties: Record<string, number | string>): Promise<void>;
 }
@@ -17,6 +30,7 @@ export interface AnalyticsAdapter {
 export const ALLOWED_PROPERTIES = new Set<string>([
   'installationId',
   'extensionVersion',
+  'timestamp',
   'capturedCount',
   'attemptedCount',
   'restoredCount',
@@ -32,6 +46,30 @@ let currentAdapter: AnalyticsAdapter | null = null;
 
 export function setAnalyticsAdapter(adapter: AnalyticsAdapter | null): void {
   currentAdapter = adapter;
+}
+
+export function createHttpAdapter(
+  endpoint: string,
+  fetchFn: typeof fetch = globalThis.fetch
+): AnalyticsAdapter {
+  return {
+    async send(event: AnalyticsEvent, properties: Record<string, number | string>): Promise<void> {
+      await fetchFn(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event,
+          ...properties,
+        }),
+      });
+    },
+  };
+}
+
+export function validateEvent(event: unknown): asserts event is AnalyticsEvent {
+  if (typeof event !== 'string' || !ALLOWED_EVENTS.has(event as AnalyticsEvent)) {
+    throw new Error(`Prohibited or unknown analytics event: "${String(event)}"`);
+  }
 }
 
 export function validatePayload(
@@ -104,6 +142,7 @@ export async function track(
   event: AnalyticsEvent,
   properties: Record<string, number | string> = {}
 ): Promise<void> {
+  validateEvent(event);
   const enabled = await isAnalyticsEnabled();
   if (!enabled) {
     return;
@@ -116,9 +155,38 @@ export async function track(
     ...validatedProps,
     installationId,
     extensionVersion: '1.0.0',
+    timestamp: new Date().toISOString(),
   };
 
   if (currentAdapter) {
     await currentAdapter.send(event, fullPayload);
   }
 }
+
+export async function emitAnalyticsEvent(
+  event: AnalyticsEvent,
+  properties: Record<string, number | string> = {}
+): Promise<void> {
+  validateEvent(event);
+  validatePayload(properties);
+
+  if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
+    return new Promise<void>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        { type: 'TRACK_ANALYTICS', event, properties },
+        (response) => {
+          if (chrome.runtime.lastError) {
+            resolve();
+          } else if (response?.status === 'error') {
+            reject(new Error(response.error));
+          } else {
+            resolve();
+          }
+        }
+      );
+    });
+  }
+
+  await track(event, properties);
+}
+

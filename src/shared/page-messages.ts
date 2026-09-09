@@ -22,5 +22,6 @@ export interface RestoreResponse {
 
 export type BackgroundCommand =
   | { type: 'START_APPLY'; tabId: number; view: import('@/domain/view').SavedView }
-  | { type: 'TRACK_ANALYTICS'; event: string; properties?: Record<string, unknown> };
+  | { type: 'GET_LAST_APPLY_RESULT'; tabId: number }
+  | { type: 'TRACK_ANALYTICS'; event: import('@/analytics').AnalyticsEvent; properties?: Record<string, number | string> };
 

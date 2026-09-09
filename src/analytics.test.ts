@@ -136,6 +136,61 @@ describe('Analytics & Privacy Engine (Task 10A)', () => {
       expect(event).toBe('view_created');
       expect(props.capturedCount).toBe(4);
       expect(props.installationId).toBeDefined();
+      expect(props.extensionVersion).toBe('1.0.0');
+      expect(typeof props.timestamp).toBe('string');
+      expect(Number.isNaN(Date.parse(props.timestamp as string))).toBe(false);
+    });
+
+    it('delivers exact payload to local HTTP collector via createHttpAdapter', async () => {
+      const fetchMock = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ status: 'ok' }),
+      });
+      const adapter = (await import('./analytics')).createHttpAdapter(
+        'http://127.0.0.1:9876/collector',
+        fetchMock as unknown as typeof fetch
+      );
+      setAnalyticsAdapter(adapter);
+
+      await track('view_apply_full', {
+        attemptedCount: 3,
+        restoredCount: 3,
+        skippedCount: 0,
+        distinctSiteBucket: '1',
+      });
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      const [url, init] = fetchMock.mock.calls[0];
+      expect(url).toBe('http://127.0.0.1:9876/collector');
+      expect(init?.method).toBe('POST');
+      expect(init?.headers).toEqual({ 'Content-Type': 'application/json' });
+
+      const parsedBody = JSON.parse(init?.body as string);
+      expect(parsedBody.event).toBe('view_apply_full');
+      expect(parsedBody.attemptedCount).toBe(3);
+      expect(parsedBody.restoredCount).toBe(3);
+      expect(parsedBody.skippedCount).toBe(0);
+      expect(parsedBody.distinctSiteBucket).toBe('1');
+      expect(parsedBody.installationId).toBeDefined();
+      expect(parsedBody.extensionVersion).toBe('1.0.0');
+      expect(parsedBody.timestamp).toBeDefined();
+    });
+
+    it('does NOT make any network request when analytics is disabled even with HTTP adapter configured', async () => {
+      const fetchMock = vi.fn().mockResolvedValue({ ok: true });
+      const adapter = (await import('./analytics')).createHttpAdapter(
+        'http://127.0.0.1:9876/collector',
+        fetchMock as unknown as typeof fetch
+      );
+      setAnalyticsAdapter(adapter);
+
+      await setAnalyticsEnabled(false);
+
+      await track('view_created', {
+        capturedCount: 2,
+      });
+
+      expect(fetchMock).not.toHaveBeenCalled();
     });
 
     it('does NOT deliver anything when analytics is disabled', async () => {
@@ -148,6 +203,61 @@ describe('Analytics & Privacy Engine (Task 10A)', () => {
         capturedCount: 2,
       });
 
+      expect(sendMock).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Event Name Validation & emitAnalyticsEvent', () => {
+    it('validates allowed PRD event names and rejects unknown events', async () => {
+      const { validateEvent } = await import('./analytics');
+      const validEvents = [
+        'extension_installed',
+        'site_permission_granted',
+        'save_view_started',
+        'view_created',
+        'view_apply_started',
+        'view_apply_full',
+        'view_apply_partial',
+        'view_apply_failed',
+        'view_updated',
+        'view_deleted',
+      ];
+
+      for (const ev of validEvents) {
+        expect(() => validateEvent(ev)).not.toThrow();
+      }
+
+      expect(() => validateEvent('random_event')).toThrow(/prohibited or unknown analytics event/i);
+      expect(() => validateEvent('')).toThrow(/prohibited or unknown analytics event/i);
+      expect(() => validateEvent(null)).toThrow(/prohibited or unknown analytics event/i);
+    });
+
+    it('delivers UI event via chrome.runtime.sendMessage', async () => {
+      const { emitAnalyticsEvent } = await import('./analytics');
+      const sendMock = vi.fn((_msg, cb) => cb?.({ status: 'ok' }));
+      chrome.runtime.sendMessage = sendMock;
+
+      await emitAnalyticsEvent('view_created', { capturedCount: 3 });
+
+      expect(sendMock).toHaveBeenCalledWith(
+        {
+          type: 'TRACK_ANALYTICS',
+          event: 'view_created',
+          properties: { capturedCount: 3 },
+        },
+        expect.any(Function)
+      );
+    });
+
+    it('rejects emitAnalyticsEvent on unknown event name before message delivery', async () => {
+      const { emitAnalyticsEvent } = await import('./analytics');
+      const sendMock = vi.fn();
+      chrome.runtime.sendMessage = sendMock;
+
+      // @ts-expect-error test invalid event name at runtime
+      await expect(emitAnalyticsEvent('invalid_event', {})).rejects.toThrow(
+        /prohibited or unknown analytics event/i
+      );
       expect(sendMock).not.toHaveBeenCalled();
     });
   });

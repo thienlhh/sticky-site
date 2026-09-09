@@ -1,9 +1,28 @@
 import { resumeApply, startApply } from '@/apply/coordinator';
 import { getActiveOperation, clearOperation, getLastApplyResult } from '@/apply/operation';
-import { track, type AnalyticsEvent } from '@/analytics';
+import {
+  track,
+  validateEvent,
+  validatePayload,
+  createHttpAdapter,
+  setAnalyticsAdapter,
+  type AnalyticsEvent,
+} from '@/analytics';
 import { normalizePathname } from '@/domain/view';
 
 export default defineBackground(() => {
+  // Initialize configured analytics adapter in the background worker; missing config = no-op
+  const analyticsEndpoint =
+    (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_ANALYTICS_ENDPOINT) ||
+    (typeof process !== 'undefined' && process.env?.VITE_ANALYTICS_ENDPOINT) ||
+    undefined;
+
+  if (analyticsEndpoint) {
+    setAnalyticsAdapter(createHttpAdapter(analyticsEndpoint));
+  } else {
+    setAnalyticsAdapter(null);
+  }
+
   chrome.runtime.onInstalled.addListener(() => {
     track('extension_installed').catch((err) => {
       console.error('Failed to track install:', err);
@@ -12,9 +31,15 @@ export default defineBackground(() => {
 
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     if (message?.type === 'TRACK_ANALYTICS') {
-      track(message.event as AnalyticsEvent, message.properties || {})
-        .then(() => sendResponse({ status: 'ok' }))
-        .catch((err) => sendResponse({ status: 'error', error: err.message }));
+      try {
+        validateEvent(message.event);
+        const props = validatePayload(message.properties || {});
+        track(message.event, props)
+          .then(() => sendResponse({ status: 'ok' }))
+          .catch((err) => sendResponse({ status: 'error', error: err.message }));
+      } catch (err) {
+        sendResponse({ status: 'error', error: err instanceof Error ? err.message : String(err) });
+      }
       return true;
     }
 
