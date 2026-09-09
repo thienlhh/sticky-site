@@ -39,21 +39,20 @@ const SENSITIVE_AUTOCOMPLETE_TOKENS = [
 ];
 
 function isSensitiveAutocomplete(el: Element): boolean {
+  if (!el.hasAttribute('autocomplete')) return false;
   const ac = el.getAttribute('autocomplete')?.toLowerCase().trim();
   if (!ac) return false;
-  const tokens = ac.split(/\s+/);
-  return tokens.some((token) =>
-    SENSITIVE_AUTOCOMPLETE_TOKENS.some((sens) => token.includes(sens))
-  );
+  return SENSITIVE_AUTOCOMPLETE_TOKENS.some((sens) => ac.includes(sens));
 }
 
-function isDisabled(el: Element): boolean {
+function isDisabled(el: Element, hasDisabledFieldsets: boolean): boolean {
   if (el.hasAttribute('disabled')) return true;
   if (el.getAttribute('aria-disabled') === 'true') return true;
+  if (!hasDisabledFieldsets) return false;
   return el.closest('fieldset[disabled]') !== null;
 }
 
-function getRegion(el: Element): string | undefined {
+function getRegion(el: Element, hasLandmarks: boolean): string | undefined {
   const fieldset = el.closest('fieldset');
   if (fieldset) {
     const legend = fieldset.querySelector('legend');
@@ -69,9 +68,11 @@ function getRegion(el: Element): string | undefined {
     if (form.id) return form.id;
   }
 
-  const section = el.closest('section[aria-label], nav[aria-label], aside[aria-label]');
-  if (section) {
-    return section.getAttribute('aria-label')!;
+  if (hasLandmarks) {
+    const section = el.closest('section[aria-label], nav[aria-label], aside[aria-label]');
+    if (section) {
+      return section.getAttribute('aria-label')!;
+    }
   }
 
   return undefined;
@@ -91,6 +92,18 @@ export function capturePage(doc: Document, url: URL): CaptureResult {
   const controls: (CapturedSetting & { kind: ControlKind })[] = [];
   let unsupportedCount = 0;
 
+  const hasDisabledFieldsets = doc.querySelector('fieldset[disabled]') !== null;
+  const hasLandmarks = doc.querySelector('section[aria-label], nav[aria-label], aside[aria-label]') !== null;
+
+  const labelsByFor = new Map<string, string>();
+  for (const lbl of Array.from(doc.querySelectorAll('label[for]'))) {
+    const htmlFor = lbl.getAttribute('for');
+    if (htmlFor && !labelsByFor.has(htmlFor)) {
+      const text = lbl.textContent?.replace(/\s+/g, ' ').trim();
+      if (text) labelsByFor.set(htmlFor, text);
+    }
+  }
+
   const candidateElements = Array.from(
     doc.querySelectorAll<HTMLElement>(
       'input, select, textarea, [role="switch"], [role="checkbox"]'
@@ -102,7 +115,7 @@ export function capturePage(doc: Document, url: URL): CaptureResult {
 
   const radioGroupsByName = new Map<string, HTMLInputElement[]>();
   for (const el of candidateElements) {
-    if (el.tagName.toLowerCase() === 'input' && (el.getAttribute('type') || '').toLowerCase() === 'radio') {
+    if (el.tagName === 'INPUT' && (el as HTMLInputElement).type === 'radio') {
       const name = el.getAttribute('name');
       if (name) {
         let list = radioGroupsByName.get(name);
@@ -119,7 +132,7 @@ export function capturePage(doc: Document, url: URL): CaptureResult {
 
   for (const el of candidateElements) {
     const tag = el.tagName.toLowerCase();
-    const type = (el.getAttribute('type') || '').toLowerCase();
+    const type = tag === 'input' ? (el as HTMLInputElement).type.toLowerCase() : '';
     const role = el.getAttribute('role')?.toLowerCase() || null;
 
     // Check exclusions
@@ -133,7 +146,7 @@ export function capturePage(doc: Document, url: URL): CaptureResult {
       continue;
     }
 
-    if (isDisabled(el)) {
+    if (isDisabled(el, hasDisabledFieldsets)) {
       unsupportedCount++;
       continue;
     }
@@ -150,12 +163,12 @@ export function capturePage(doc: Document, url: URL): CaptureResult {
         const groupRadios = radioGroupsByName.get(name) || [];
 
         // Check if all radios in group are disabled
-        if (groupRadios.every(isDisabled)) {
+        if (groupRadios.every((r) => isDisabled(r, hasDisabledFieldsets))) {
           unsupportedCount++;
           continue;
         }
 
-        const label = resolveLabel(el);
+        const label = resolveLabel(el, labelsByFor);
         if (!label) {
           unsupportedCount++;
           continue;
@@ -179,7 +192,7 @@ export function capturePage(doc: Document, url: URL): CaptureResult {
           label,
           name,
           options,
-          region: getRegion(el),
+          region: getRegion(el, hasLandmarks),
           ordinal,
         };
 
@@ -195,7 +208,7 @@ export function capturePage(doc: Document, url: URL): CaptureResult {
     }
 
     // Label resolution
-    const label = resolveLabel(el);
+    const label = resolveLabel(el, labelsByFor);
     if (!label) {
       unsupportedCount++;
       continue;
@@ -244,7 +257,7 @@ export function capturePage(doc: Document, url: URL): CaptureResult {
       id: el.id || undefined,
       semanticAttribute: el.getAttribute('data-testid') || undefined,
       options,
-      region: getRegion(el),
+      region: getRegion(el, hasLandmarks),
       ordinal,
     };
 

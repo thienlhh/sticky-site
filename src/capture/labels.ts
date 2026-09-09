@@ -22,7 +22,7 @@ function getTextWithoutControls(container: Element): string | null {
   return cleanText(text);
 }
 
-export function resolveLabel(element: Element): string | null {
+export function resolveLabel(element: Element, labelsByFor?: Map<string, string>): string | null {
   const doc = element.ownerDocument;
 
   // 1. Associated label
@@ -35,6 +35,9 @@ export function resolveLabel(element: Element): string | null {
 
   // 1b. label[for="id"] fallback
   if (element.id) {
+    if (labelsByFor?.has(element.id)) {
+      return labelsByFor.get(element.id)!;
+    }
     try {
       const escapedId = typeof CSS !== 'undefined' && CSS.escape ? CSS.escape(element.id) : element.id;
       const forLabel = doc?.querySelector(`label[for="${escapedId}"]`);

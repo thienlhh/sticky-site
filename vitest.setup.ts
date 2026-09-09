@@ -2,7 +2,9 @@ import '@testing-library/jest-dom/vitest';
 
 // Safe default mock for chrome APIs in tests
 if (typeof (globalThis as any).chrome === 'undefined') {
-  const store: Record<string, unknown> = {};
+  const store: Record<string, unknown> = {
+    stickysite_onboarding_completed: true,
+  };
   (globalThis as any).chrome = {
     storage: {
       local: {

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Filter Catalog Test Page</title>
+</head>
+<body>
+  <h1>Product Filter Catalog</h1>
+  <form id="filter-form" onsubmit="event.preventDefault(); window.__formSubmitted = true;">
+    <div>
+      <label for="search-box">Search Catalog</label>
+      <input id="search-box" type="text" name="q" value="mechanical keyboard">
+    </div>
+
+    <div>
+      <label for="in-stock">
+        <input id="in-stock" type="checkbox" name="in_stock" checked>
+        In Stock Only
+      </label>
+    </div>
+
+    <div>
+      <label for="category-select">Category</label>
+      <select id="category-select" name="cat">
+        <option value="all">All</option>
+        <option value="electronics" selected>Electronics</option>
+        <option value="books">Books</option>
+        <option value="apparel">Apparel</option>
+      </select>
+    </div>
+
+    <fieldset id="condition-fieldset">
+      <legend>Condition</legend>
+      <label>
+        <input type="radio" name="condition" value="new" checked>
+        New
+      </label>
+      <label>
+        <input type="radio" name="condition" value="refurbished">
+        Refurbished
+      </label>
+    </fieldset>
+
+    <div style="margin-top: 20px;">
+      <!-- Prohibited safety targets: must never be clicked by extension -->
+      <button type="submit" id="prohibited-buy-btn" onclick="window.__prohibitedClicked = true;">Buy Now</button>
+      <button type="button" id="prohibited-delete-btn" onclick="window.__prohibitedClicked = true;">Delete Account</button>
+    </div>
+  </form>
+</body>
+</html>

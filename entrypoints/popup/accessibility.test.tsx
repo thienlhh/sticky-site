@@ -121,7 +121,12 @@ describe('Accessibility & Status System', () => {
       const user = userEvent.setup();
       render(<App />);
 
+      const settingsBtn = screen.getByRole('button', { name: /Settings and Privacy/i });
       const saveBtn = screen.getByRole('button', { name: /Save Current View/i });
+
+      await user.tab();
+      expect(settingsBtn).toHaveFocus();
+
       await user.tab();
       expect(saveBtn).toHaveFocus();
     });

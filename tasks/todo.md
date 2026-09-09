@@ -107,13 +107,13 @@ Work top to bottom. Do not begin a task until its dependency and checkpoint requ
 
 ## Phase 11 — Release Evidence
 
-- [ ] **Task 11A: End-to-end extension verification**
-  - [ ] `npm run check` passes from a clean install
-  - [ ] `npm run test:e2e` passes against the production extension
-- [ ] **Task 11B: Release documentation and evidence**
-  - [ ] First-run onboarding passes
-  - [ ] Ten-page compatibility matrix is current
-  - [ ] Production manifest and privacy policy are verified
-  - [ ] Every PRD Definition of Done item has evidence
-- [ ] **Checkpoint: Release**
-  - [ ] MVP is ready for behavioral validation
+- [x] **Task 11A: End-to-end extension verification**
+  - [x] `npm run check` passes from a clean install
+  - [x] `npm run test:e2e` passes against the production extension
+- [x] **Task 11B: Release documentation and evidence**
+  - [x] First-run onboarding passes
+  - [x] Ten-page compatibility matrix is current
+  - [x] Production manifest and privacy policy are verified
+  - [x] Every PRD Definition of Done item has evidence
+- [x] **Checkpoint: Release**
+  - [x] MVP is ready for behavioral validation

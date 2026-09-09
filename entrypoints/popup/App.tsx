@@ -16,6 +16,7 @@ import { ViewList } from './ViewList';
 import { ViewActions, type ViewAction } from './ViewActions';
 import { StatusMessage } from './StatusMessage';
 import { ReportIssue } from './ReportIssue';
+import { Onboarding, isOnboardingCompleted } from './Onboarding';
 import { startApply } from '@/apply/coordinator';
 import {
   isAnalyticsEnabled,
@@ -25,7 +26,7 @@ import {
 } from '@/analytics';
 import { Settings as SettingsIcon } from 'lucide-react';
 
-export type Screen = 'idle' | 'review' | 'save' | 'settings' | 'report';
+export type Screen = 'idle' | 'review' | 'save' | 'settings' | 'report' | 'onboarding';
 
 export function App() {
   const [screen, setScreen] = useState<Screen>('idle');
@@ -53,6 +54,11 @@ export function App() {
 
   useEffect(() => {
     isAnalyticsEnabled().then(setAnalyticsOn).catch(() => {});
+    isOnboardingCompleted().then((completed) => {
+      if (!completed) {
+        setScreen('onboarding');
+      }
+    }).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -167,6 +173,14 @@ export function App() {
       setIsLoading(false);
     }
   };
+
+  if (screen === 'onboarding') {
+    return (
+      <main className="w-[360px] min-h-[440px] p-4 bg-white text-slate-900 flex flex-col justify-between">
+        <Onboarding onComplete={() => setScreen('idle')} />
+      </main>
+    );
+  }
 
   if (screen === 'review' && captureData) {
     return (

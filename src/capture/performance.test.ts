@@ -82,8 +82,10 @@ describe('capture performance', () => {
 
     const testUrl = new URL('https://example.com/products?category=apparel');
 
-    // Warm-up run
-    capturePage(document, testUrl);
+    // Warm-up run to allow JIT compilation and caches to settle
+    for (let w = 0; w < 3; w++) {
+      capturePage(document, testUrl);
+    }
 
     // Timed runs
     const iterations = 5;
