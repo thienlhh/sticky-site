@@ -13,7 +13,7 @@
 - [x] **R5:** Coordinate Apply lifetime in the service worker.
 - [x] **Checkpoint B:** Safe restoration and bounded operation lifetime pass.
 - [x] **R6:** Report verified URL and control results.
-- [ ] **R7:** Review Update before replacing settings.
+- [x] **R7:** Review Update before replacing settings.
 - [ ] **R8:** Surface storage-load failures.
 - [ ] **Checkpoint C:** Accurate results and lossless management pass.
 - [ ] **R9:** Wire configurable background analytics delivery.

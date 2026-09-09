@@ -169,6 +169,18 @@ describe('storage/views', () => {
       };
       await expect(replaceView(colliding)).rejects.toThrow(/already exists/i);
     });
+
+    it('preserves original view in storage when validation fails during replaceView', async () => {
+      await createView(sampleView1);
+      const invalidUpdate = {
+        ...sampleView1,
+        name: '', // invalid empty name
+      } as any;
+      await expect(replaceView(invalidUpdate)).rejects.toThrow();
+      const views = await listViews();
+      expect(views).toHaveLength(1);
+      expect(views[0]).toEqual(sampleView1);
+    });
   });
 
   describe('renameView', () => {

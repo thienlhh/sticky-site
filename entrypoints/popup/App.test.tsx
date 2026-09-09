@@ -6,8 +6,11 @@ import { App } from './App';
 import * as pageAgent from '@/platform/page-agent';
 
 describe('Popup App Shell', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.restoreAllMocks();
+    await chrome.storage.session.clear();
+    await chrome.storage.local.clear();
+    await chrome.storage.local.set({ stickysite_onboarding_completed: true });
   });
 
   it('renders StickySite heading and enabled Save Current View button', () => {
@@ -152,6 +155,170 @@ describe('Popup App Shell', () => {
     const statusMsg = await screen.findByText('Applying view...');
     expect(statusMsg).toBeInTheDocument();
   });
+
+  describe('R7: Review Update before replacing settings', () => {
+    const existingView = {
+      schemaVersion: 1 as const,
+      id: 'view-update-1',
+      name: 'Original Name',
+      origin: 'https://example.com',
+      pathname: '/search',
+      queryParams: { q: ['shoes'] },
+      controls: [
+        {
+          id: 'c1',
+          label: 'In Stock',
+          value: true,
+          fingerprint: { kind: 'checkbox' as const, tag: 'input', label: 'In Stock', ordinal: 0 },
+        },
+      ],
+      createdAt: '2026-09-09T08:00:00.000Z',
+      updatedAt: '2026-09-09T08:00:00.000Z',
+    };
+
+    it('blocks Update when current active page does not match saved view page', async () => {
+      const user = userEvent.setup();
+      const { createView } = await import('@/storage/views');
+      vi.spyOn(pageAgent, 'getActivePage').mockResolvedValue({
+        tabId: 101,
+        url: new URL('https://example.com/search'),
+      });
+      await createView(existingView);
+
+      render(<App />);
+
+      // Wait for view to be displayed in list
+      const updateBtn = await screen.findByRole('button', { name: `Update ${existingView.name}` });
+      await user.click(updateBtn);
+
+      // Dialog opens
+      const confirmUpdateBtn = await screen.findByRole('button', { name: /Confirm Update/i });
+
+      // Before confirming, simulate page navigated to another page
+      vi.spyOn(pageAgent, 'getActivePage').mockResolvedValue({
+        tabId: 101,
+        url: new URL('https://example.com/different-page'),
+      });
+
+      await user.click(confirmUpdateBtn);
+
+      const errorMsg = await screen.findByText(/Cannot update view: current page does not match view page/i);
+      expect(errorMsg).toBeInTheDocument();
+    });
+
+    it('reuses CaptureReview, preserves id/name/createdAt, and applies individual exclusions', async () => {
+      const user = userEvent.setup();
+      const storageModule = await import('@/storage/views');
+      const replaceSpy = vi.spyOn(storageModule, 'replaceView');
+
+      vi.spyOn(pageAgent, 'getActivePage').mockResolvedValue({
+        tabId: 101,
+        url: new URL('https://example.com/search'),
+      });
+      vi.spyOn(pageAgent, 'requestOriginAccess').mockResolvedValue(true);
+      vi.spyOn(pageAgent, 'ensurePageAgent').mockResolvedValue();
+      vi.spyOn(pageAgent, 'sendPageCommand').mockResolvedValue({
+        status: 'ok',
+        data: {
+          origin: 'https://example.com',
+          pathname: '/search',
+          queryParams: { q: ['boots'], sort: ['asc'] },
+          controls: [
+            {
+              id: 'c1',
+              label: 'In Stock',
+              value: false,
+              fingerprint: { kind: 'checkbox', tag: 'input', label: 'In Stock', ordinal: 0 },
+            },
+            {
+              id: 'c2',
+              label: 'On Sale',
+              value: true,
+              fingerprint: { kind: 'checkbox', tag: 'input', label: 'On Sale', ordinal: 0 },
+            },
+          ],
+          unsupportedCount: 0,
+        },
+      });
+
+      await storageModule.createView(existingView);
+
+      render(<App />);
+
+      const updateBtn = await screen.findByRole('button', { name: `Update ${existingView.name}` });
+      await user.click(updateBtn);
+
+      const confirmUpdateBtn = await screen.findByRole('button', { name: /Confirm Update/i });
+      await user.click(confirmUpdateBtn);
+
+      // Now CaptureReview screen should be visible
+      const reviewHeader = await screen.findByText(/Review Captured Settings/i);
+      expect(reviewHeader).toBeInTheDocument();
+
+      // Deselect 'On Sale' control
+      const onSaleCheckbox = screen.getByRole('checkbox', { name: /On Sale/i });
+      await user.click(onSaleCheckbox);
+
+      // Click Continue to finish Update
+      const continueBtn = screen.getByRole('button', { name: /Continue/i });
+      await user.click(continueBtn);
+
+      // Verify replaceView was called with preserved id, name, createdAt
+      expect(replaceSpy).toHaveBeenCalledTimes(1);
+      const updatedPayload = replaceSpy.mock.calls[0][0];
+      expect(updatedPayload.id).toBe(existingView.id);
+      expect(updatedPayload.name).toBe(existingView.name);
+      expect(updatedPayload.createdAt).toBe(existingView.createdAt);
+      // c2 was excluded
+      expect(updatedPayload.controls).toHaveLength(1);
+      expect(updatedPayload.controls[0].id).toBe('c1');
+
+      const successStatus = await screen.findByText('Updated "Original Name"');
+      expect(successStatus).toBeInTheDocument();
+    });
+
+    it('cancels Update in CaptureReview leaving storage untouched', async () => {
+      const user = userEvent.setup();
+      const storageModule = await import('@/storage/views');
+      const replaceSpy = vi.spyOn(storageModule, 'replaceView');
+
+      vi.spyOn(pageAgent, 'getActivePage').mockResolvedValue({
+        tabId: 101,
+        url: new URL('https://example.com/search'),
+      });
+      vi.spyOn(pageAgent, 'requestOriginAccess').mockResolvedValue(true);
+      vi.spyOn(pageAgent, 'ensurePageAgent').mockResolvedValue();
+      vi.spyOn(pageAgent, 'sendPageCommand').mockResolvedValue({
+        status: 'ok',
+        data: {
+          origin: 'https://example.com',
+          pathname: '/search',
+          queryParams: { q: ['boots'] },
+          controls: [],
+          unsupportedCount: 0,
+        },
+      });
+
+      await storageModule.createView(existingView);
+
+      render(<App />);
+
+      const updateBtn = await screen.findByRole('button', { name: `Update ${existingView.name}` });
+      await user.click(updateBtn);
+
+      const confirmUpdateBtn = await screen.findByRole('button', { name: /Confirm Update/i });
+      await user.click(confirmUpdateBtn);
+
+      const cancelBtn = await screen.findByRole('button', { name: /Cancel/i });
+      await user.click(cancelBtn);
+
+      // Storage untouched
+      expect(replaceSpy).not.toHaveBeenCalled();
+      // Returns to idle list
+      expect(screen.getByText('Original Name')).toBeInTheDocument();
+    });
+  });
 });
+
 
 

@@ -10,6 +10,7 @@ import { listViews, renameView, deleteView, replaceView } from '@/storage/views'
 import type { PingResponse, CaptureResponse } from '@/shared/page-messages';
 import type { CaptureResult } from '@/capture/controls';
 import type { CapturedSetting, SavedView } from '@/domain/view';
+import { normalizePathname } from '@/domain/view';
 import { CaptureReview } from './CaptureReview';
 import { SaveView } from './SaveView';
 import { ViewList } from './ViewList';
@@ -39,6 +40,7 @@ export function App() {
   const [activeAction, setActiveAction] = useState<ViewAction | null>(null);
 
   const [captureData, setCaptureData] = useState<CaptureResult | null>(null);
+  const [updatingView, setUpdatingView] = useState<SavedView | null>(null);
   const [reviewSelection, setReviewSelection] = useState<{
     controls: CapturedSetting[];
     queryParams: Record<string, string[]>;
@@ -160,32 +162,49 @@ export function App() {
 
   const handleUpdateConfirm = async (view: SavedView) => {
     setIsLoading(true);
-    setStatus('Capturing page settings for update...');
+    setStatus('Connecting to page for update...');
     try {
       const page = await getActivePage();
+      const normPage = normalizePathname(page.url.pathname);
+      const normView = normalizePathname(view.pathname);
+      if (page.url.origin !== view.origin || normPage !== normView) {
+        setStatus(`Cannot update view: current page does not match view page (${view.origin}${view.pathname}).`);
+        setActiveAction(null);
+        return;
+      }
+
       const granted = await requestOriginAccess(page.url);
       if (!granted) {
         setStatus('Permission denied.');
+        setActiveAction(null);
         return;
       }
+
       await ensurePageAgent(page.tabId);
+      setStatus('Capturing page settings for update...');
       const captureRes = await sendPageCommand<CaptureResponse>(page.tabId, { type: 'CAPTURE' });
       if (captureRes?.status === 'ok' && captureRes.data) {
-        const updatedView: SavedView = {
-          ...view,
-          queryParams: captureRes.data.queryParams,
-          controls: captureRes.data.controls,
-          updatedAt: new Date().toISOString(),
-        };
-        await replaceView(updatedView);
-        await refreshViews();
-        setStatus(`Updated "${view.name}"`);
+        if (
+          captureRes.data.origin !== view.origin ||
+          normalizePathname(captureRes.data.pathname) !== normView
+        ) {
+          setStatus('Cannot update view: captured page does not match view page.');
+          setActiveAction(null);
+          return;
+        }
+
+        setUpdatingView(view);
+        setCaptureData(captureRes.data);
         setActiveAction(null);
+        setScreen('review');
+        setStatus('');
       } else {
         setStatus('Failed to capture settings for update.');
+        setActiveAction(null);
       }
     } catch (err) {
       setStatus(err instanceof Error ? err.message : 'Update failed');
+      setActiveAction(null);
     } finally {
       setIsLoading(false);
     }
@@ -207,13 +226,46 @@ export function App() {
           onCancel={() => {
             setScreen('idle');
             setCaptureData(null);
+            setUpdatingView(null);
           }}
-          onContinue={(chosenControls, chosenQueryParams) => {
-            setReviewSelection({
-              controls: chosenControls,
-              queryParams: chosenQueryParams,
-            });
-            setScreen('save');
+          onContinue={async (chosenControls, chosenQueryParams) => {
+            const totalSelected = chosenControls.length + Object.keys(chosenQueryParams).length;
+            if (totalSelected === 0) {
+              setScreen('idle');
+              setCaptureData(null);
+              setUpdatingView(null);
+              return;
+            }
+
+            if (updatingView) {
+              const updatedView: SavedView = {
+                ...updatingView,
+                id: updatingView.id,
+                name: updatingView.name,
+                createdAt: updatingView.createdAt,
+                queryParams: chosenQueryParams,
+                controls: chosenControls,
+                updatedAt: new Date().toISOString(),
+              };
+
+              try {
+                await replaceView(updatedView);
+                await refreshViews();
+                setStatus(`Updated "${updatingView.name}"`);
+              } catch (err) {
+                setStatus(err instanceof Error ? err.message : 'Update failed');
+              } finally {
+                setUpdatingView(null);
+                setCaptureData(null);
+                setScreen('idle');
+              }
+            } else {
+              setReviewSelection({
+                controls: chosenControls,
+                queryParams: chosenQueryParams,
+              });
+              setScreen('save');
+            }
           }}
         />
       </main>
