@@ -19,10 +19,10 @@ Work top to bottom. Do not begin a task until its dependency and checkpoint requ
 
 ## Phase 1 — Domain and Storage
 
-- [ ] **Task 1: Validated view records and local CRUD**
-  - [ ] Schema and pathname tests pass
-  - [ ] CRUD, quota, and failed-write tests pass
-  - [ ] `npm run check` passes
+- [x] **Task 1: Validated view records and local CRUD**
+  - [x] Schema and pathname tests pass
+  - [x] CRUD, quota, and failed-write tests pass
+  - [x] `npm run check` passes
 
 ## Phase 2 — Permission and Runtime Injection
 
