@@ -88,3 +88,56 @@ export function replaceEligibleQuery(
   // Current fragment remains untouched (URL constructor preserved nextUrl.hash)
   return nextUrl;
 }
+
+export interface QueryVerificationResult {
+  restoredCount: number;
+  totalAttempted: number;
+  failedCount: number;
+}
+
+export function verifyQueryParams(
+  currentUrl: URL,
+  savedQueryParams: Record<string, string[]>
+): QueryVerificationResult {
+  const eligibleEntries = Object.entries(savedQueryParams).filter(
+    ([k]) => !isSensitiveQueryParam(k)
+  );
+  const totalAttempted = eligibleEntries.length;
+  let restoredCount = 0;
+  let failedCount = 0;
+
+  for (const [key, expectedVals] of eligibleEntries) {
+    const currentVals = currentUrl.searchParams.getAll(key);
+    if (
+      currentVals.length === expectedVals.length &&
+      currentVals.every((val, idx) => val === expectedVals[idx])
+    ) {
+      restoredCount++;
+    } else {
+      failedCount++;
+    }
+  }
+
+  // Check for extraneous eligible query parameters that were not removed
+  let hasExtra = false;
+  for (const key of currentUrl.searchParams.keys()) {
+    if (!isSensitiveQueryParam(key) && !(key in savedQueryParams)) {
+      hasExtra = true;
+      break;
+    }
+  }
+
+  if (hasExtra) {
+    if (restoredCount > 0) {
+      restoredCount = Math.max(0, restoredCount - 1);
+    }
+    failedCount++;
+  }
+
+  return {
+    restoredCount,
+    totalAttempted,
+    failedCount,
+  };
+}
+

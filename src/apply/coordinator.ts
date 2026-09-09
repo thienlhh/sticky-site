@@ -1,22 +1,24 @@
 import type { CapturedSetting, SavedView } from '@/domain/view';
 import { normalizePathname } from '@/domain/view';
-import { replaceEligibleQuery } from '@/domain/url';
+import { replaceEligibleQuery, verifyQueryParams, type QueryVerificationResult } from '@/domain/url';
 import { listViews } from '@/storage/views';
 import { ensurePageAgent, sendPageCommand } from '@/platform/page-agent';
 import type { RestoreResponse } from '@/shared/page-messages';
-import type { RestoreReport } from '@/restoration/restore';
+import type { RestoreReport, RestoreOutcome } from '@/restoration/restore';
 import {
   setOperation,
   clearOperation,
   getActiveOperation,
   getAnyActiveOperation,
+  setLastApplyResult,
   APPLY_TIMEOUT_MS,
 } from './operation';
 
 export type ViewApplyStatus =
   | 'Fully applied view'
   | 'Partially applied view'
-  | 'Could not apply';
+  | 'Could not apply'
+  | 'Applying view';
 
 export interface ViewApplyResult {
   status: ViewApplyStatus;
@@ -27,23 +29,55 @@ export interface ViewApplyResult {
   message: string;
 }
 
-export function aggregateApplyResult(
-  controls: CapturedSetting[],
-  report: RestoreReport,
-  queryNavigated: boolean
-): ViewApplyResult {
-  const totalAttempted = controls.length;
-  let restoredCount = 0;
-  let skippedCount = 0;
-  let failedCount = 0;
+export type ResumeApplyResult = ViewApplyResult & {
+  outcomes: RestoreOutcome[];
+};
 
-  for (const outcome of report.outcomes) {
-    if (outcome.outcome === 'restored') restoredCount++;
-    else if (outcome.outcome === 'skipped') skippedCount++;
-    else if (outcome.outcome === 'failed') failedCount++;
+export function aggregateApplyResult(
+  controlsOrView: CapturedSetting[] | SavedView,
+  report: RestoreReport,
+  queryNavigatedOrReport?: boolean | QueryVerificationResult
+): ViewApplyResult {
+  const isView = !Array.isArray(controlsOrView);
+  const controls = isView ? (controlsOrView as SavedView).controls : (controlsOrView as CapturedSetting[]);
+
+  let queryReport: QueryVerificationResult | undefined;
+  if (typeof queryNavigatedOrReport === 'object' && queryNavigatedOrReport !== null) {
+    queryReport = queryNavigatedOrReport;
   }
 
-  // If there are no form controls but query parameters were applied or navigated
+  const queryTotal = queryReport
+    ? queryReport.totalAttempted
+    : isView
+    ? Object.keys((controlsOrView as SavedView).queryParams).length
+    : 0;
+
+  const queryRestored = queryReport ? queryReport.restoredCount : 0;
+  const queryFailed = queryReport ? queryReport.failedCount : 0;
+
+  const totalControls = controls.length;
+  const totalAttempted = totalControls + queryTotal;
+
+  let restoredControls = 0;
+  let skippedControls = 0;
+  let failedControls = 0;
+
+  for (const outcome of report.outcomes) {
+    if (outcome.outcome === 'restored') restoredControls++;
+    else if (outcome.outcome === 'skipped') skippedControls++;
+    else if (outcome.outcome === 'failed') failedControls++;
+  }
+
+  // Missing control reports treated as failed
+  const missingControls = totalControls - (restoredControls + skippedControls + failedControls);
+  if (missingControls > 0) {
+    failedControls += missingControls;
+  }
+
+  const restoredCount = restoredControls + queryRestored;
+  const skippedCount = skippedControls;
+  const failedCount = failedControls + queryFailed;
+
   if (totalAttempted === 0) {
     return {
       status: 'Fully applied view',
@@ -51,7 +85,7 @@ export function aggregateApplyResult(
       totalAttempted: 0,
       skippedCount: 0,
       failedCount: 0,
-      message: 'View query applied.',
+      message: 'View has no settings to apply.',
     };
   }
 
@@ -60,10 +94,17 @@ export function aggregateApplyResult(
 
   if (restoredCount === totalAttempted) {
     status = 'Fully applied view';
-    message = `All ${totalAttempted} settings restored successfully.`;
+    message =
+      totalAttempted === 1
+        ? '1 setting restored successfully.'
+        : `All ${totalAttempted} settings restored successfully.`;
   } else if (restoredCount > 0) {
     status = 'Partially applied view';
-    message = `${restoredCount} of ${totalAttempted} settings restored (${skippedCount} skipped, ${failedCount} failed).`;
+    const parts: string[] = [];
+    if (skippedCount > 0) parts.push(`${skippedCount} skipped`);
+    if (failedCount > 0) parts.push(`${failedCount} failed`);
+    const details = parts.length > 0 ? ` (${parts.join(', ')})` : '';
+    message = `${restoredCount} of ${totalAttempted} settings restored${details}.`;
   } else {
     status = 'Could not apply';
     message = 'Could not apply settings on this page.';
@@ -83,14 +124,17 @@ export async function startApply(
   tabId: number,
   view: SavedView
 ): Promise<ViewApplyResult> {
+  const queryEntryCount = Object.keys(view.queryParams).length;
+  const totalAttempted = view.controls.length + queryEntryCount;
+
   // Reject overlapping requests to prevent overwriting state
   const existingOp = await getAnyActiveOperation();
   if (existingOp) {
     return {
       status: 'Could not apply',
       restoredCount: 0,
-      totalAttempted: view.controls.length,
-      skippedCount: view.controls.length,
+      totalAttempted,
+      skippedCount: totalAttempted,
       failedCount: 0,
       message: 'An operation is already in progress.',
     };
@@ -101,8 +145,8 @@ export async function startApply(
     return {
       status: 'Could not apply',
       restoredCount: 0,
-      totalAttempted: view.controls.length,
-      skippedCount: view.controls.length,
+      totalAttempted,
+      skippedCount: totalAttempted,
       failedCount: 0,
       message: 'Active tab not accessible.',
     };
@@ -118,8 +162,8 @@ export async function startApply(
     return {
       status: 'Could not apply',
       restoredCount: 0,
-      totalAttempted: view.controls.length,
-      skippedCount: view.controls.length,
+      totalAttempted,
+      skippedCount: totalAttempted,
       failedCount: 0,
       message: `Incompatible page: view belongs to ${view.origin}${view.pathname}`,
     };
@@ -161,9 +205,9 @@ export async function startApply(
       await chrome.tabs.update(tabId, { url: targetUrl.toString() });
 
       return {
-        status: 'Fully applied view',
-        restoredCount: view.controls.length,
-        totalAttempted: view.controls.length,
+        status: 'Applying view',
+        restoredCount: 0,
+        totalAttempted,
         skippedCount: 0,
         failedCount: 0,
         message: 'Navigating to view URL...',
@@ -173,8 +217,8 @@ export async function startApply(
       return {
         status: 'Could not apply',
         restoredCount: 0,
-        totalAttempted: view.controls.length,
-        skippedCount: view.controls.length,
+        totalAttempted,
+        skippedCount: totalAttempted,
         failedCount: 0,
         message: err instanceof Error ? err.message : 'Navigation failed',
       };
@@ -193,15 +237,15 @@ export async function startApply(
   });
 
   try {
-    const report = await resumeApply(tabId, view, deadline);
-    return aggregateApplyResult(view.controls, report, false);
+    const result = await resumeApply(tabId, view, deadline);
+    return result;
   } catch (err) {
     await clearOperation(tabId);
     return {
       status: 'Could not apply',
       restoredCount: 0,
-      totalAttempted: view.controls.length,
-      skippedCount: view.controls.length,
+      totalAttempted,
+      skippedCount: totalAttempted,
       failedCount: 0,
       message: err instanceof Error ? err.message : 'Apply failed',
     };
@@ -212,19 +256,35 @@ export async function resumeApply(
   tabId: number,
   viewParam?: SavedView,
   deadlineParam?: number
-): Promise<RestoreReport> {
-  try {
-    let view = viewParam;
-    let deadline = deadlineParam;
+): Promise<ResumeApplyResult> {
+  let view = viewParam;
+  let deadline = deadlineParam;
 
+  try {
     if (!view || !deadline) {
       const op = await getActiveOperation(tabId);
       if (!op) {
-        return { outcomes: [] };
+        return {
+          status: 'Could not apply',
+          restoredCount: 0,
+          totalAttempted: 0,
+          skippedCount: 0,
+          failedCount: 0,
+          message: 'No active operation.',
+          outcomes: [],
+        };
       }
       deadline = deadline || op.deadline || (op.startedAt + APPLY_TIMEOUT_MS);
       if (Date.now() > deadline) {
-        return { outcomes: [] };
+        return {
+          status: 'Could not apply',
+          restoredCount: 0,
+          totalAttempted: 0,
+          skippedCount: 0,
+          failedCount: 0,
+          message: 'Operation expired.',
+          outcomes: [],
+        };
       }
       if (!view) {
         const allViews = await listViews();
@@ -233,18 +293,44 @@ export async function resumeApply(
     }
 
     if (!view) {
-      return { outcomes: [] };
+      return {
+        status: 'Could not apply',
+        restoredCount: 0,
+        totalAttempted: 0,
+        skippedCount: 0,
+        failedCount: 0,
+        message: 'View not found.',
+        outcomes: [],
+      };
     }
+
+    const totalAttempted = view.controls.length + Object.keys(view.queryParams).length;
 
     // Verify deadline has not elapsed
     if (Date.now() > deadline) {
-      return { outcomes: [] };
+      return {
+        status: 'Could not apply',
+        restoredCount: 0,
+        totalAttempted,
+        skippedCount: 0,
+        failedCount: totalAttempted,
+        message: 'Operation expired.',
+        outcomes: [],
+      };
     }
 
     // Verify current page identity before restoration
     const tab = await chrome.tabs.get(tabId).catch(() => null);
     if (!tab || !tab.url) {
-      return { outcomes: [] };
+      return {
+        status: 'Could not apply',
+        restoredCount: 0,
+        totalAttempted,
+        skippedCount: totalAttempted,
+        failedCount: 0,
+        message: 'Active tab not accessible.',
+        outcomes: [],
+      };
     }
 
     const currentUrl = new URL(tab.url);
@@ -252,29 +338,69 @@ export async function resumeApply(
       currentUrl.origin !== view.origin ||
       normalizePathname(currentUrl.pathname) !== normalizePathname(view.pathname)
     ) {
-      return { outcomes: [] };
+      return {
+        status: 'Could not apply',
+        restoredCount: 0,
+        totalAttempted,
+        skippedCount: totalAttempted,
+        failedCount: 0,
+        message: `Incompatible page: view belongs to ${view.origin}${view.pathname}`,
+        outcomes: [],
+      };
     }
+
+    // Verify query parameters on current URL
+    const queryReport = verifyQueryParams(currentUrl, view.queryParams);
 
     const now = Date.now();
     const remainingMs = deadline - now;
     if (remainingMs <= 0) {
-      return { outcomes: [] };
+      return {
+        status: 'Could not apply',
+        restoredCount: queryReport.restoredCount,
+        totalAttempted,
+        skippedCount: 0,
+        failedCount: view.controls.length + queryReport.failedCount,
+        message: 'Operation timed out.',
+        outcomes: [],
+      };
     }
     const timeoutMs = Math.max(100, Math.min(5000, remainingMs));
 
-    await ensurePageAgent(tabId);
-    const res = await sendPageCommand<RestoreResponse>(tabId, {
-      type: 'RESTORE',
-      controls: view.controls,
-      timeoutMs,
+    let restoreReport: RestoreReport = { outcomes: [] };
+    if (view.controls.length > 0) {
+      await ensurePageAgent(tabId);
+      const res = await sendPageCommand<RestoreResponse>(tabId, {
+        type: 'RESTORE',
+        controls: view.controls,
+        timeoutMs,
+      });
+      if (res?.data) {
+        restoreReport = res.data;
+      }
+    }
+
+    const aggregated = aggregateApplyResult(view, restoreReport, queryReport);
+    const fullResult: ResumeApplyResult = {
+      ...aggregated,
+      outcomes: restoreReport.outcomes,
+    };
+
+    // Store in transient result storage for popup recovery after reopen
+    await setLastApplyResult({
+      tabId,
+      viewId: view.id,
+      result: aggregated,
+      completedAt: Date.now(),
     });
 
-    return res?.data || { outcomes: [] };
+    return fullResult;
   } finally {
     // Unconditional cleanup of session operation
     await clearOperation(tabId);
   }
 }
+
 
 export async function requestApply(
   tabId: number,

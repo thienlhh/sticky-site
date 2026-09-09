@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   captureQueryParams,
   replaceEligibleQuery,
+  verifyQueryParams,
   isSensitiveQueryParam,
 } from './url';
 
@@ -91,4 +92,45 @@ describe('domain/url', () => {
       ).toThrow(/cross-origin/i);
     });
   });
+
+  describe('verifyQueryParams', () => {
+    it('verifies exact query parameters matching including repeated values and sensitive tokens', () => {
+      const currentUrl = new URL(
+        'https://example.com/search?category=shoes&category=boots&sort=asc&token=secret'
+      );
+      const saved = {
+        category: ['shoes', 'boots'],
+        sort: ['asc'],
+      };
+
+      const result = verifyQueryParams(currentUrl, saved);
+      expect(result.totalAttempted).toBe(2);
+      expect(result.restoredCount).toBe(2);
+      expect(result.failedCount).toBe(0);
+    });
+
+    it('reports failure when an eligible parameter value is different or missing', () => {
+      const currentUrl = new URL('https://example.com/search?category=shoes');
+      const saved = {
+        category: ['shoes'],
+        sort: ['asc'],
+      };
+
+      const result = verifyQueryParams(currentUrl, saved);
+      expect(result.totalAttempted).toBe(2);
+      expect(result.restoredCount).toBe(1);
+      expect(result.failedCount).toBe(1);
+    });
+
+    it('reports failure when extra non-sensitive parameters were not removed', () => {
+      const currentUrl = new URL('https://example.com/search?sort=asc&extra_filter=unwanted');
+      const saved = {
+        sort: ['asc'],
+      };
+
+      const result = verifyQueryParams(currentUrl, saved);
+      expect(result.failedCount).toBeGreaterThan(0);
+    });
+  });
 });
+

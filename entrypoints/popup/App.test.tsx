@@ -101,4 +101,57 @@ describe('Popup App Shell', () => {
     const saveButton = screen.getByRole('button', { name: /Save Current View/i });
     expect(saveButton).toBeDisabled();
   });
+
+  it('recovers completed apply result from transient storage on popup reopen', async () => {
+    vi.spyOn(pageAgent, 'getActivePage').mockResolvedValue({
+      tabId: 101,
+      url: new URL('https://example.com/search'),
+    });
+
+    await chrome.storage.session.set({
+      stickysite_last_apply_result: {
+        tabId: 101,
+        viewId: 'view-1',
+        result: {
+          status: 'Fully applied view',
+          restoredCount: 3,
+          totalAttempted: 3,
+          skippedCount: 0,
+          failedCount: 0,
+          message: 'All 3 settings restored successfully.',
+        },
+        completedAt: Date.now(),
+      },
+    });
+
+    render(<App />);
+
+    const statusMsg = await screen.findByText('All 3 settings restored successfully.');
+    expect(statusMsg).toBeInTheDocument();
+  });
+
+  it('displays "Applying view..." on popup reopen when apply operation is actively in progress', async () => {
+    vi.spyOn(pageAgent, 'getActivePage').mockResolvedValue({
+      tabId: 101,
+      url: new URL('https://example.com/search'),
+    });
+
+    await chrome.storage.session.set({
+      stickysite_apply_op: {
+        tabId: 101,
+        viewId: 'view-1',
+        startedAt: Date.now(),
+        deadline: Date.now() + 10000,
+        expectedUrl: 'https://example.com/search?q=shoes',
+        status: 'navigating',
+      },
+    });
+
+    render(<App />);
+
+    const statusMsg = await screen.findByText('Applying view...');
+    expect(statusMsg).toBeInTheDocument();
+  });
 });
+
+

@@ -18,6 +18,7 @@ import { StatusMessage } from './StatusMessage';
 import { ReportIssue } from './ReportIssue';
 import { Onboarding, isOnboardingCompleted } from './Onboarding';
 import { requestApply } from '@/apply/coordinator';
+import { getLastApplyResult, getActiveOperation } from '@/apply/operation';
 import {
   isAnalyticsEnabled,
   setAnalyticsEnabled,
@@ -66,12 +67,27 @@ export function App() {
   useEffect(() => {
     refreshViews();
     getActivePage()
-      .then((p) => {
+      .then(async (p) => {
         setIsPageUnavailable(false);
         setActivePageInfo({
           origin: p.url.origin,
           pathname: p.url.pathname,
         });
+
+        // Check if an apply is actively running or recently completed for this tab
+        try {
+          const activeOp = await getActiveOperation(p.tabId);
+          if (activeOp) {
+            setStatus('Applying view...');
+          } else {
+            const lastRes = await getLastApplyResult(p.tabId);
+            if (lastRes) {
+              setStatus(lastRes.message || lastRes.status);
+            }
+          }
+        } catch {
+          // Ignore session recovery failure
+        }
       })
       .catch((err) => {
         setIsPageUnavailable(true);

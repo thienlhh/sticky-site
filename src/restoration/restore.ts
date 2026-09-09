@@ -6,8 +6,13 @@ import { isControlEligible } from '@/capture/eligibility';
 
 export type SettingOutcome = 'restored' | 'skipped' | 'failed';
 
+export interface RestoreOutcome {
+  id: string;
+  outcome: SettingOutcome;
+}
+
 export interface RestoreReport {
-  outcomes: Array<{ id: string; outcome: SettingOutcome }>;
+  outcomes: RestoreOutcome[];
 }
 
 export async function restoreControls(

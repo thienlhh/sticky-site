@@ -5,7 +5,8 @@ if (typeof (globalThis as any).chrome === 'undefined') {
   const store: Record<string, unknown> = {
     stickysite_onboarding_completed: true,
   };
-  (globalThis as any).chrome = {
+    const sessionStore: Record<string, unknown> = {};
+    (globalThis as any).chrome = {
     storage: {
       local: {
         get: async (key?: string | string[] | null) => {
@@ -32,10 +33,28 @@ if (typeof (globalThis as any).chrome === 'undefined') {
         },
       },
       session: {
-        get: async () => ({}),
-        set: async () => {},
-        remove: async () => {},
-        clear: async () => {},
+        get: async (key?: string | string[] | null) => {
+          if (!key) return { ...sessionStore };
+          if (typeof key === 'string') return { [key]: sessionStore[key] };
+          if (Array.isArray(key)) {
+            const res: Record<string, unknown> = {};
+            for (const k of key) res[k] = sessionStore[k];
+            return res;
+          }
+          return {};
+        },
+        set: async (items: Record<string, unknown>) => {
+          Object.assign(sessionStore, items);
+        },
+        remove: async (key: string | string[]) => {
+          if (typeof key === 'string') delete sessionStore[key];
+          if (Array.isArray(key)) {
+            for (const k of key) delete sessionStore[k];
+          }
+        },
+        clear: async () => {
+          for (const k of Object.keys(sessionStore)) delete sessionStore[k];
+        },
       },
     },
     tabs: {

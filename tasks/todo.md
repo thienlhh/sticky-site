@@ -12,7 +12,7 @@
 - [x] **R4:** Verify final values and enable bounded dynamic restoration.
 - [x] **R5:** Coordinate Apply lifetime in the service worker.
 - [x] **Checkpoint B:** Safe restoration and bounded operation lifetime pass.
-- [ ] **R6:** Report verified URL and control results.
+- [x] **R6:** Report verified URL and control results.
 - [ ] **R7:** Review Update before replacing settings.
 - [ ] **R8:** Surface storage-load failures.
 - [ ] **Checkpoint C:** Accurate results and lossless management pass.

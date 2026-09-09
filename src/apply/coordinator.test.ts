@@ -69,47 +69,71 @@ describe('apply/coordinator', () => {
   });
 
   describe('aggregateApplyResult', () => {
-    it('aggregates to "Fully applied view" when all controls are restored', () => {
+    it('aggregates to "Fully applied view" when all controls and query parameters are restored', () => {
       const report = {
         outcomes: [
           { id: 'c1', outcome: 'restored' as const },
           { id: 'c2', outcome: 'restored' as const },
         ],
       };
-      const result = aggregateApplyResult(sampleView.controls, report, false);
+      const queryReport = { totalAttempted: 2, restoredCount: 2, failedCount: 0 };
+      const result = aggregateApplyResult(sampleView, report, queryReport);
+      expect(result.status).toBe('Fully applied view');
+      expect(result.restoredCount).toBe(4);
+      expect(result.totalAttempted).toBe(4);
+      expect(result.message).toBe('All 4 settings restored successfully.');
+    });
+
+    it('aggregates query-only view to "Fully applied view" with accurate counts', () => {
+      const queryOnlyView: SavedView = {
+        ...sampleView,
+        id: 'view-query-only',
+        controls: [],
+        queryParams: { q: ['shoes'], sort: ['asc'] },
+      };
+      const report = { outcomes: [] };
+      const queryReport = { totalAttempted: 2, restoredCount: 2, failedCount: 0 };
+      const result = aggregateApplyResult(queryOnlyView, report, queryReport);
       expect(result.status).toBe('Fully applied view');
       expect(result.restoredCount).toBe(2);
       expect(result.totalAttempted).toBe(2);
+      expect(result.message).toBe('All 2 settings restored successfully.');
     });
 
-    it('aggregates to "Partially applied view" when some controls are skipped or failed', () => {
+    it('aggregates to "Partially applied view" when mixed outcomes occur', () => {
       const report = {
         outcomes: [
           { id: 'c1', outcome: 'restored' as const },
           { id: 'c2', outcome: 'skipped' as const },
         ],
       };
-      const result = aggregateApplyResult(sampleView.controls, report, false);
+      // 1 query restored, 1 query failed
+      const queryReport = { totalAttempted: 2, restoredCount: 1, failedCount: 1 };
+      const result = aggregateApplyResult(sampleView, report, queryReport);
       expect(result.status).toBe('Partially applied view');
-      expect(result.restoredCount).toBe(1);
+      expect(result.restoredCount).toBe(2);
       expect(result.skippedCount).toBe(1);
+      expect(result.failedCount).toBe(1);
+      expect(result.totalAttempted).toBe(4);
+      expect(result.message).toBe('2 of 4 settings restored (1 skipped, 1 failed).');
     });
 
-    it('aggregates to "Could not apply" when 0 controls are restored', () => {
+    it('aggregates to "Could not apply" when 0 settings are restored', () => {
       const report = {
         outcomes: [
           { id: 'c1', outcome: 'failed' as const },
           { id: 'c2', outcome: 'skipped' as const },
         ],
       };
-      const result = aggregateApplyResult(sampleView.controls, report, false);
+      const queryReport = { totalAttempted: 1, restoredCount: 0, failedCount: 1 };
+      const result = aggregateApplyResult(sampleView.controls, report, queryReport);
       expect(result.status).toBe('Could not apply');
       expect(result.restoredCount).toBe(0);
     });
   });
 
   describe('startApply and navigation resumption', () => {
-    it('performs no navigation if current query parameters already match', async () => {
+    it('performs no navigation if current query parameters already match and returns full result', async () => {
       vi.spyOn(pageAgent, 'sendPageCommand').mockResolvedValue({
         status: 'ok',
         data: {
@@ -123,9 +147,11 @@ describe('apply/coordinator', () => {
       const result = await startApply(50, sampleView);
       expect(chrome.tabs.update).not.toHaveBeenCalled();
       expect(result.status).toBe('Fully applied view');
+      expect(result.restoredCount).toBe(4); // 2 query params + 2 controls
+      expect(result.totalAttempted).toBe(4);
     });
 
-    it('navigates once and records session operation when query parameters differ', async () => {
+    it('starts a pending operation when query parameters differ, never a fabricated full result', async () => {
       mockTab.url = 'https://example.com/search?q=different';
 
       const result = await startApply(50, sampleView);
@@ -133,10 +159,18 @@ describe('apply/coordinator', () => {
         url: 'https://example.com/search?q=shoes&sort=asc',
       });
 
-      // Session record should be written
+      // Truthful pending status
+      expect(result.status).toBe('Applying view');
+      expect(result.restoredCount).toBe(0);
+      expect(result.totalAttempted).toBe(4);
+      expect(result.message).toBe('Navigating to view URL...');
+
+      // Session record should be written with navigated: true
       const op = await getActiveOperation(50);
       expect(op).not.toBeNull();
       expect(op?.viewId).toBe(sampleView.id);
+      expect(op?.navigated).toBe(true);
+      expect(op?.status).toBe('navigating');
     });
 
     it('blocks application if page origin or pathname is incompatible', async () => {
@@ -147,6 +181,7 @@ describe('apply/coordinator', () => {
       expect(result.message).toMatch(/incompatible/i);
       expect(chrome.tabs.update).not.toHaveBeenCalled();
     });
+
 
     it('resumes apply, restores controls, and clears session operation unconditionally', async () => {
       // Set active session op
@@ -310,6 +345,70 @@ describe('apply/coordinator', () => {
       op = await getActiveOperation(50);
       expect(op).toBeNull();
     });
+
+    it('records query rejection/redirect when query params are missing on resumed page', async () => {
+      // Tab url is missing ?sort=asc (e.g. server stripped it)
+      mockTab.url = 'https://example.com/search?q=shoes';
+      await chrome.storage.session.set({
+        stickysite_apply_op: {
+          tabId: 50,
+          viewId: sampleView.id,
+          startedAt: Date.now(),
+          deadline: Date.now() + 10000,
+          expectedUrl: 'https://example.com/search?q=shoes&sort=asc',
+        },
+      });
+
+      vi.spyOn(pageAgent, 'sendPageCommand').mockResolvedValue({
+        status: 'ok',
+        data: {
+          outcomes: [
+            { id: 'c1', outcome: 'restored' },
+            { id: 'c2', outcome: 'restored' },
+          ],
+        },
+      });
+
+      const result = await resumeApply(50);
+      expect(result.status).toBe('Partially applied view');
+      expect(result.restoredCount).toBe(3); // 1 query + 2 controls
+      expect(result.failedCount).toBe(1); // 1 query missing
+      expect(result.totalAttempted).toBe(4);
+    });
+
+    it('stores final result in transient result storage and enables recovery with bounded cleanup', async () => {
+      mockTab.url = 'https://example.com/search?q=shoes&sort=asc';
+      await chrome.storage.session.set({
+        stickysite_apply_op: {
+          tabId: 50,
+          viewId: sampleView.id,
+          startedAt: Date.now(),
+          deadline: Date.now() + 10000,
+          expectedUrl: mockTab.url,
+        },
+      });
+
+      vi.spyOn(pageAgent, 'sendPageCommand').mockResolvedValue({
+        status: 'ok',
+        data: {
+          outcomes: [
+            { id: 'c1', outcome: 'restored' },
+            { id: 'c2', outcome: 'restored' },
+          ],
+        },
+      });
+
+      const result = await resumeApply(50);
+      expect(result.status).toBe('Fully applied view');
+
+      // Recover from transient storage
+      const { getLastApplyResult } = await import('./operation');
+      const recovered = await getLastApplyResult(50, false);
+      expect(recovered).not.toBeNull();
+      expect(recovered?.status).toBe('Fully applied view');
+      expect(recovered?.restoredCount).toBe(4);
+    });
   });
 });
+
 

@@ -76,3 +76,38 @@ export async function clearOperation(tabId?: number): Promise<void> {
   }
 }
 
+export const SESSION_LAST_RESULT_KEY = 'stickysite_last_apply_result';
+export const RESULT_TTL_MS = 60000;
+
+export interface LastApplyResultRecord {
+  tabId: number;
+  viewId: string;
+  result: ViewApplyResult;
+  completedAt: number;
+}
+
+export async function setLastApplyResult(record: LastApplyResultRecord): Promise<void> {
+  try {
+    await chrome.storage.session.set({ [SESSION_LAST_RESULT_KEY]: record });
+  } catch {}
+}
+
+export async function getLastApplyResult(tabId: number, clear = true): Promise<ViewApplyResult | null> {
+  try {
+    const data = await chrome.storage.session.get(SESSION_LAST_RESULT_KEY);
+    const record = data[SESSION_LAST_RESULT_KEY] as LastApplyResultRecord | undefined;
+    if (record && record.tabId === tabId) {
+      if (Date.now() - record.completedAt > RESULT_TTL_MS) {
+        await chrome.storage.session.remove(SESSION_LAST_RESULT_KEY);
+        return null;
+      }
+      if (clear) {
+        await chrome.storage.session.remove(SESSION_LAST_RESULT_KEY);
+      }
+      return record.result;
+    }
+  } catch {}
+  return null;
+}
+
+

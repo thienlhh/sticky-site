@@ -1,5 +1,5 @@
 import { resumeApply, startApply } from '@/apply/coordinator';
-import { getActiveOperation, clearOperation } from '@/apply/operation';
+import { getActiveOperation, clearOperation, getLastApplyResult } from '@/apply/operation';
 import { track, type AnalyticsEvent } from '@/analytics';
 import { normalizePathname } from '@/domain/view';
 
@@ -20,6 +20,13 @@ export default defineBackground(() => {
 
     if (message?.type === 'START_APPLY') {
       startApply(message.tabId, message.view)
+        .then((res) => sendResponse({ status: 'ok', data: res }))
+        .catch((err) => sendResponse({ status: 'error', error: err.message }));
+      return true;
+    }
+
+    if (message?.type === 'GET_LAST_APPLY_RESULT') {
+      getLastApplyResult(message.tabId)
         .then((res) => sendResponse({ status: 'ok', data: res }))
         .catch((err) => sendResponse({ status: 'error', error: err.message }));
       return true;
