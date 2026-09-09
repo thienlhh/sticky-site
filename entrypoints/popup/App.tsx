@@ -14,6 +14,8 @@ import { CaptureReview } from './CaptureReview';
 import { SaveView } from './SaveView';
 import { ViewList } from './ViewList';
 import { ViewActions, type ViewAction } from './ViewActions';
+import { StatusMessage } from './StatusMessage';
+import { startApply } from '@/apply/coordinator';
 
 export type Screen = 'idle' | 'review' | 'save';
 
@@ -210,9 +212,23 @@ export function App() {
             currentOrigin={activePageInfo.origin}
             currentPathname={activePageInfo.pathname}
             views={allViews}
-            onApply={(_view) => {
-              // Apply wired in Phase 7/8
-              setStatus(`Ready to apply "${_view.name}"`);
+            onApply={async (view) => {
+              setIsLoading(true);
+              setStatus(`Applying "${view.name}"...`);
+              try {
+                const page = await getActivePage();
+                const granted = await requestOriginAccess(page.url);
+                if (!granted) {
+                  setStatus('Permission denied.');
+                  return;
+                }
+                const res = await startApply(page.tabId, view);
+                setStatus(res.message || res.status);
+              } catch (err) {
+                setStatus(err instanceof Error ? err.message : 'Apply failed');
+              } finally {
+                setIsLoading(false);
+              }
             }}
             onRename={(v) => setActiveAction({ type: 'rename', view: v })}
             onUpdate={(v) => setActiveAction({ type: 'update', view: v })}
@@ -224,16 +240,7 @@ export function App() {
           </div>
         )}
 
-        {status && (
-          <p
-            id="status-message"
-            role="status"
-            aria-live="polite"
-            className="text-xs font-medium text-blue-600 mt-2 text-center"
-          >
-            {status}
-          </p>
-        )}
+        <StatusMessage status={status} />
       </section>
 
       {activeAction && activePageInfo && (

@@ -76,22 +76,22 @@ Work top to bottom. Do not begin a task until its dependency and checkpoint requ
 
 ## Phase 8 — URL and Dynamic Restoration
 
-- [ ] **Task 8A: Navigation continuation and bounded retries**
-  - [ ] Popup closure and one query navigation preserve Apply
-  - [ ] Partial, failure, timeout, and cleanup tests pass
-- [ ] **Task 8B: Dynamic Apply browser verification**
-  - [ ] `npm run check` and the extended browser workflow pass
-- [ ] **Checkpoint: Core workflow**
-  - [ ] Save, reopen, Apply, Rename, Update, and Delete work
-  - [ ] Native reliability and safety gates pass
+- [x] **Task 8A: Navigation continuation and bounded retries**
+  - [x] Popup closure and one query navigation preserve Apply
+  - [x] Partial, failure, timeout, and cleanup tests pass
+- [x] **Task 8B: Dynamic Apply browser verification**
+  - [x] `npm run check` and the extended browser workflow pass
+- [x] **Checkpoint: Core workflow**
+  - [x] Save, reopen, Apply, Rename, Update, and Delete work
+  - [x] Native reliability and safety gates pass
 
 ## Phase 9 — Product Hardening
 
-- [ ] **Task 9: Status, accessibility, and performance**
-  - [ ] Error and aria-live tests pass
-  - [ ] Keyboard, contrast, and 44-pixel target checks pass
-  - [ ] Popup and 200-control scan meet PRD targets
-  - [ ] `npm run check` passes
+- [x] **Task 9: Status, accessibility, and performance**
+  - [x] Error and aria-live tests pass
+  - [x] Keyboard, contrast, and 44-pixel target checks pass
+  - [x] Popup and 200-control scan meet PRD targets
+  - [x] `npm run check` passes
 
 ## Phase 10 — Analytics and Privacy
 

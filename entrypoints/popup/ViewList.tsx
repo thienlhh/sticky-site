@@ -72,9 +72,8 @@ export function ViewList({
                   </p>
                 </div>
                 <Button
-                  size="sm"
                   onClick={() => onApply(view)}
-                  className="shrink-0 gap-1.5 h-8 px-3"
+                  className="shrink-0 gap-1.5 min-h-[44px] px-3.5 text-xs font-semibold"
                   aria-label={`Apply ${view.name}`}
                 >
                   <Play className="h-3.5 w-3.5 fill-current" />

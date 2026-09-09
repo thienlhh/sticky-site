@@ -4,11 +4,36 @@ function cleanText(text: string | null | undefined): string | null {
   return cleaned.length > 0 ? cleaned : null;
 }
 
+function getTextWithoutControls(container: Element): string | null {
+  let text = '';
+  for (const node of Array.from(container.childNodes)) {
+    if (node.nodeType === 3) {
+      // TEXT_NODE
+      text += ' ' + (node.textContent || '');
+    } else if (node.nodeType === 1) {
+      // ELEMENT_NODE
+      const el = node as Element;
+      const tag = el.tagName.toLowerCase();
+      if (tag !== 'input' && tag !== 'select' && tag !== 'textarea' && tag !== 'button') {
+        text += ' ' + (el.textContent || '');
+      }
+    }
+  }
+  return cleanText(text);
+}
+
 export function resolveLabel(element: Element): string | null {
   const doc = element.ownerDocument;
 
   // 1. Associated label
-  // 1a. label[for="id"]
+  // 1a. Native HTML element.labels
+  const formControl = element as HTMLInputElement;
+  if (formControl.labels && formControl.labels.length > 0) {
+    const text = cleanText(formControl.labels[0].textContent);
+    if (text) return text;
+  }
+
+  // 1b. label[for="id"] fallback
   if (element.id) {
     try {
       const escapedId = typeof CSS !== 'undefined' && CSS.escape ? CSS.escape(element.id) : element.id;
@@ -22,14 +47,10 @@ export function resolveLabel(element: Element): string | null {
     }
   }
 
-  // 1b. Enclosing <label> ancestor
+  // 1c. Enclosing <label> ancestor
   const enclosingLabel = element.closest('label');
   if (enclosingLabel) {
-    const clone = enclosingLabel.cloneNode(true) as HTMLElement;
-    // Remove nested input/select/textarea to avoid duplicating input values in label
-    const nestedControls = clone.querySelectorAll('input, select, textarea, button');
-    nestedControls.forEach((c) => c.remove());
-    const text = cleanText(clone.textContent);
+    const text = getTextWithoutControls(enclosingLabel);
     if (text) return text;
   }
 
@@ -82,10 +103,7 @@ export function resolveLabel(element: Element): string | null {
 
   const parent = element.parentElement;
   if (parent && parent.tagName.toLowerCase() !== 'body' && parent.tagName.toLowerCase() !== 'form') {
-    const clone = parent.cloneNode(true) as HTMLElement;
-    const nested = clone.querySelectorAll('input, select, textarea, button');
-    nested.forEach((n) => n.remove());
-    const text = cleanText(clone.textContent);
+    const text = getTextWithoutControls(parent);
     if (text && text.length > 0 && text.length <= 60) {
       return text;
     }

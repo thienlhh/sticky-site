@@ -100,6 +100,21 @@ export function capturePage(doc: Document, url: URL): CaptureResult {
   const seenRadioGroups = new Set<string>();
   const ordinalCounters: Record<string, number> = {};
 
+  const radioGroupsByName = new Map<string, HTMLInputElement[]>();
+  for (const el of candidateElements) {
+    if (el.tagName.toLowerCase() === 'input' && (el.getAttribute('type') || '').toLowerCase() === 'radio') {
+      const name = el.getAttribute('name');
+      if (name) {
+        let list = radioGroupsByName.get(name);
+        if (!list) {
+          list = [];
+          radioGroupsByName.set(name, list);
+        }
+        list.push(el as HTMLInputElement);
+      }
+    }
+  }
+
   let settingIndex = 0;
 
   for (const el of candidateElements) {
@@ -132,9 +147,7 @@ export function capturePage(doc: Document, url: URL): CaptureResult {
         }
         seenRadioGroups.add(name);
 
-        const groupRadios = Array.from(
-          doc.querySelectorAll<HTMLInputElement>(`input[type="radio"][name="${CSS.escape(name)}"]`)
-        );
+        const groupRadios = radioGroupsByName.get(name) || [];
 
         // Check if all radios in group are disabled
         if (groupRadios.every(isDisabled)) {
