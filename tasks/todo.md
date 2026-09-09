@@ -95,15 +95,15 @@ Work top to bottom. Do not begin a task until its dependency and checkpoint requ
 
 ## Phase 10 — Analytics and Privacy
 
-- [ ] **Task 10A: Allowlisted analytics adapter**
-  - [ ] Prohibited payload fields are rejected
-  - [ ] Configured and no-op delivery work
-  - [ ] `npm run check` passes
-- [ ] **Task 10B: Privacy controls and reporting**
-  - [ ] Opt-out and identity clearing work
-  - [ ] Compatibility reporting requires a preview and confirmation
-  - [ ] Privacy policy matches tested behavior
-  - [ ] `npm run check` passes
+- [x] **Task 10A: Allowlisted analytics adapter**
+  - [x] Prohibited payload fields are rejected
+  - [x] Configured and no-op delivery work
+  - [x] `npm run check` passes
+- [x] **Task 10B: Privacy controls and reporting**
+  - [x] Opt-out and identity clearing work
+  - [x] Compatibility reporting requires a preview and confirmation
+  - [x] Privacy policy matches tested behavior
+  - [x] `npm run check` passes
 
 ## Phase 11 — Release Evidence
 
