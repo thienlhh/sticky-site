@@ -14,18 +14,7 @@ export async function getActivePage(): Promise<{ tabId: number; url: URL }> {
     }
   }
 
-  // If current tab is extension page (e.g. popup opened as tab in testing), look for web tab
-  const tabUrl = tab?.url || tab?.pendingUrl;
-  if (tabUrl && !tabUrl.startsWith('http:') && !tabUrl.startsWith('https:')) {
-    const allTabs = await chrome.tabs.query({});
-    const webTab = allTabs.find((t) => {
-      const u = t.url || t.pendingUrl;
-      return u && (u.startsWith('http:') || u.startsWith('https:'));
-    });
-    if (webTab) {
-      tab = webTab;
-    }
-  }
+
 
   if (!tab || tab.id == null) {
     throw new Error('No active tab found');

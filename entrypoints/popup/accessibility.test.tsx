@@ -118,6 +118,11 @@ describe('Accessibility & Status System', () => {
 
   describe('Keyboard navigation & destructive confirmation', () => {
     it('supports tab navigation to all interactive controls', async () => {
+      vi.spyOn(pageAgent, 'getActivePage').mockResolvedValue({
+        tabId: 101,
+        url: new URL('https://example.com/search'),
+      });
+
       const user = userEvent.setup();
       render(<App />);
 

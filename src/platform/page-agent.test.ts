@@ -75,7 +75,7 @@ describe('platform/page-agent', () => {
       await expect(getActivePage()).rejects.toThrow(/no active tab/i);
     });
 
-    it('rejects unsupported protocols (chrome://, about:, file:)', async () => {
+    it('rejects unsupported protocols (chrome://, about:, file:) and never substitutes another tab', async () => {
       mockTabs.query.mockResolvedValue([
         { id: 10, url: 'chrome://settings' },
       ]);
@@ -89,6 +89,15 @@ describe('platform/page-agent', () => {
       mockTabs.query.mockResolvedValue([
         { id: 12, url: 'file:///Users/test/index.html' },
       ]);
+      await expect(getActivePage()).rejects.toThrow(/unsupported page/i);
+
+      // Even if another tab is a valid web page, active non-web tab must throw
+      mockTabs.query.mockImplementation(async (queryInfo: any) => {
+        if (queryInfo.active) {
+          return [{ id: 13, url: 'chrome-extension://xyz/popup.html' }];
+        }
+        return [{ id: 99, url: 'https://example.com' }];
+      });
       await expect(getActivePage()).rejects.toThrow(/unsupported page/i);
     });
   });

@@ -5,7 +5,7 @@
 **Release status: blocked.** Follow the review-fix tasks in [plan.md](plan.md#active-work--review-fixes-2026-09-09). The completed phase checklist below records previous claims; it is not current release evidence. Complete focused verification and the project check before checking off a behavior task.
 
 - [x] **R0:** Correct release status and evidence claims.
-- [ ] **R1:** Restrict actions to the active supported page.
+- [x] **R1:** Restrict actions to the active supported page.
 - [ ] **R2:** Share capture and restoration eligibility.
 - [ ] **Checkpoint A:** Unsupported pages and ineligible controls remain untouched.
 - [ ] **R3:** Complete ARIA radio support and truthful state changes.

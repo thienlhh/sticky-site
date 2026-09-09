@@ -84,4 +84,21 @@ describe('Popup App Shell', () => {
     const statusMsg = await screen.findByText('Permission denied.');
     expect(statusMsg).toBeInTheDocument();
   });
+
+  it('renders unavailable page state and disables Save button when active page is unsupported', async () => {
+    vi.spyOn(pageAgent, 'getActivePage').mockRejectedValue(
+      new Error('Unsupported page URL: chrome://. StickySite only supports web pages (HTTP and HTTPS).')
+    );
+
+    render(<App />);
+
+    const unavailableTitle = await screen.findByText('Page Not Supported');
+    expect(unavailableTitle).toBeInTheDocument();
+    expect(
+      screen.getByText(/StickySite only works on standard web pages/i)
+    ).toBeInTheDocument();
+
+    const saveButton = screen.getByRole('button', { name: /Save Current View/i });
+    expect(saveButton).toBeDisabled();
+  });
 });

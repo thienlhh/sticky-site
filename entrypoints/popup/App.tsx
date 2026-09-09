@@ -61,22 +61,23 @@ export function App() {
     }).catch(() => {});
   }, []);
 
+  const [isPageUnavailable, setIsPageUnavailable] = useState<boolean>(false);
+
   useEffect(() => {
     refreshViews();
     getActivePage()
       .then((p) => {
+        setIsPageUnavailable(false);
         setActivePageInfo({
           origin: p.url.origin,
           pathname: p.url.pathname,
         });
       })
-      .catch(() => {
-        if (typeof window !== 'undefined' && window.location?.origin) {
-          setActivePageInfo({
-            origin: window.location.origin,
-            pathname: window.location.pathname,
-          });
-        }
+      .catch((err) => {
+        setIsPageUnavailable(true);
+        setActivePageInfo(null);
+        const msg = err instanceof Error ? err.message : 'Active page is unavailable or unsupported.';
+        setStatus(msg);
       });
   }, []);
 
@@ -367,6 +368,13 @@ export function App() {
             onUpdate={(v) => setActiveAction({ type: 'update', view: v })}
             onDelete={(v) => setActiveAction({ type: 'delete', view: v })}
           />
+        ) : isPageUnavailable ? (
+          <div className="flex-1 flex flex-col items-center justify-center text-center py-8 px-2">
+            <p className="text-sm font-medium text-slate-700">Page Not Supported</p>
+            <p className="text-xs text-slate-500 mt-1">
+              StickySite only works on standard web pages (HTTP/HTTPS). Open a web page and try again.
+            </p>
+          </div>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-center py-8">
             <p className="text-sm text-slate-500">No saved views for this page yet.</p>
@@ -392,7 +400,7 @@ export function App() {
       <footer className="pt-3 border-t border-slate-200 mt-3">
         <Button
           id="save-current-view-btn"
-          disabled={isLoading}
+          disabled={isLoading || isPageUnavailable}
           onClick={handleStartCapture}
           className="w-full"
           aria-label="Save Current View"
