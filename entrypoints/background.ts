@@ -1,6 +1,7 @@
-import { resumeApply } from '@/apply/coordinator';
-import { getActiveOperation } from '@/apply/operation';
+import { resumeApply, startApply } from '@/apply/coordinator';
+import { getActiveOperation, clearOperation } from '@/apply/operation';
 import { track, type AnalyticsEvent } from '@/analytics';
+import { normalizePathname } from '@/domain/view';
 
 export default defineBackground(() => {
   chrome.runtime.onInstalled.addListener(() => {
@@ -16,25 +17,49 @@ export default defineBackground(() => {
         .catch((err) => sendResponse({ status: 'error', error: err.message }));
       return true;
     }
+
+    if (message?.type === 'START_APPLY') {
+      startApply(message.tabId, message.view)
+        .then((res) => sendResponse({ status: 'ok', data: res }))
+        .catch((err) => sendResponse({ status: 'error', error: err.message }));
+      return true;
+    }
   });
 
   chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
-    if (changeInfo.status === 'complete' && tab.url) {
+    if (changeInfo.status === 'complete' && tab?.url) {
       try {
         const op = await getActiveOperation(tabId);
         if (op) {
+          if (Date.now() > (op.deadline || 0)) {
+            await clearOperation(tabId);
+            return;
+          }
           const currentUrl = new URL(tab.url);
           const expectedUrl = new URL(op.expectedUrl);
           if (
             currentUrl.origin === expectedUrl.origin &&
-            currentUrl.pathname === expectedUrl.pathname
+            normalizePathname(currentUrl.pathname) === normalizePathname(expectedUrl.pathname)
           ) {
             await resumeApply(tabId);
+          } else {
+            // Mismatched navigation URL: clean up safely without restoring
+            await clearOperation(tabId);
           }
         }
       } catch (err) {
         console.error('Failed to resume apply in background:', err);
+        await clearOperation(tabId);
       }
     }
   });
+
+  chrome.tabs.onRemoved.addListener(async (tabId) => {
+    try {
+      await clearOperation(tabId);
+    } catch {
+      // Ignore
+    }
+  });
 });
+

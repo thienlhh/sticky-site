@@ -17,7 +17,7 @@ import { ViewActions, type ViewAction } from './ViewActions';
 import { StatusMessage } from './StatusMessage';
 import { ReportIssue } from './ReportIssue';
 import { Onboarding, isOnboardingCompleted } from './Onboarding';
-import { startApply } from '@/apply/coordinator';
+import { requestApply } from '@/apply/coordinator';
 import {
   isAnalyticsEnabled,
   setAnalyticsEnabled,
@@ -356,7 +356,7 @@ export function App() {
                   setStatus('Permission denied.');
                   return;
                 }
-                const res = await startApply(page.tabId, view);
+                const res = await requestApply(page.tabId, view);
                 setStatus(res.message || res.status);
               } catch (err) {
                 setStatus(err instanceof Error ? err.message : 'Apply failed');

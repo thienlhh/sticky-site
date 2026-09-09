@@ -95,23 +95,27 @@ export function capturePage(doc: Document, url: URL): CaptureResult {
     }
   }
 
-  // Collect ARIA radio groups
+  // Collect ARIA radio groups only if role="radio" exists
+  const hasAriaRadios = candidateElements.some((el) => el.getAttribute('role')?.toLowerCase() === 'radio');
   const ariaRadioGroups = new Map<Element, HTMLElement[]>();
-  for (const el of candidateElements) {
-    if (el.getAttribute('role')?.toLowerCase() === 'radio') {
-      const group = el.closest('[role="radiogroup"], fieldset') || el.parentElement;
-      if (group) {
-        let list = ariaRadioGroups.get(group);
-        if (!list) {
-          list = [];
-          ariaRadioGroups.set(group, list);
+  if (hasAriaRadios) {
+    for (const el of candidateElements) {
+      if (el.getAttribute('role')?.toLowerCase() === 'radio') {
+        const group = el.closest('[role="radiogroup"], fieldset') || el.parentElement;
+        if (group) {
+          let list = ariaRadioGroups.get(group);
+          if (!list) {
+            list = [];
+            ariaRadioGroups.set(group, list);
+          }
+          list.push(el);
         }
-        list.push(el);
       }
     }
   }
 
   const seenAriaRadioGroups = new Set<Element>();
+  const renderedCache = new WeakMap<Element, boolean>();
   let settingIndex = 0;
 
   for (const el of candidateElements) {
@@ -120,7 +124,7 @@ export function capturePage(doc: Document, url: URL): CaptureResult {
     const role = el.getAttribute('role')?.toLowerCase() || null;
 
     // Check exclusions and eligibility
-    if (!isControlEligible(el, hasDisabledFieldsets)) {
+    if (!isControlEligible(el, hasDisabledFieldsets, renderedCache)) {
       unsupportedCount++;
       continue;
     }

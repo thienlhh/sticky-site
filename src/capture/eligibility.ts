@@ -39,29 +39,69 @@ export function isDisabled(el: Element, hasDisabledFieldsets = true): boolean {
   return el.closest('fieldset[disabled]') !== null;
 }
 
-export function isRendered(el: Element): boolean {
-  if (el instanceof HTMLElement) {
-    if (el.hidden || el.style.display === 'none' || el.style.visibility === 'hidden') return false;
+export function isRendered(el: Element, renderedCache?: WeakMap<Element, boolean>): boolean {
+  if (renderedCache && renderedCache.has(el)) {
+    return renderedCache.get(el)!;
   }
-  if (el.getAttribute('aria-hidden') === 'true') return false;
+  if (el instanceof HTMLElement) {
+    if (el.hidden) {
+      renderedCache?.set(el, false);
+      return false;
+    }
+    if (el.hasAttribute('style')) {
+      const s = el.style;
+      if (s.display === 'none' || s.visibility === 'hidden') {
+        renderedCache?.set(el, false);
+        return false;
+      }
+    }
+  }
+  if (el.getAttribute('aria-hidden') === 'true') {
+    renderedCache?.set(el, false);
+    return false;
+  }
 
-  // Walk parents only if parent is not body/html
-  let curr: Element | null = el.parentElement;
-  while (curr && curr instanceof HTMLElement && curr !== document.body && curr !== document.documentElement) {
-    if (
-      curr.hidden ||
-      curr.getAttribute('aria-hidden') === 'true' ||
-      curr.style.display === 'none' ||
-      curr.style.visibility === 'hidden'
-    ) {
+  let curr = el.parentElement;
+  while (curr && curr !== document.body && curr !== document.documentElement) {
+    if (renderedCache && renderedCache.has(curr)) {
+      const parentRendered = renderedCache.get(curr)!;
+      if (!parentRendered) {
+        renderedCache.set(el, false);
+        return false;
+      }
+      break;
+    }
+    if (curr instanceof HTMLElement) {
+      if (curr.hidden) {
+        renderedCache?.set(curr, false);
+        renderedCache?.set(el, false);
+        return false;
+      }
+      if (curr.hasAttribute('style')) {
+        const s = curr.style;
+        if (s.display === 'none' || s.visibility === 'hidden') {
+          renderedCache?.set(curr, false);
+          renderedCache?.set(el, false);
+          return false;
+        }
+      }
+    }
+    if (curr.getAttribute('aria-hidden') === 'true') {
+      renderedCache?.set(curr, false);
+      renderedCache?.set(el, false);
       return false;
     }
     curr = curr.parentElement;
   }
+  renderedCache?.set(el, true);
   return true;
 }
 
-export function isControlEligible(el: Element, hasDisabledFieldsets = true): boolean {
+export function isControlEligible(
+  el: Element,
+  hasDisabledFieldsets = true,
+  renderedCache?: WeakMap<Element, boolean>
+): boolean {
   const tag = el.tagName.toLowerCase();
   const type = tag === 'input' ? (el as HTMLInputElement).type.toLowerCase() : '';
 

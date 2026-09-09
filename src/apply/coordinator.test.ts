@@ -156,6 +156,7 @@ describe('apply/coordinator', () => {
           tabId: 50,
           viewId: sampleView.id,
           startedAt: Date.now(),
+          deadline: Date.now() + 10000,
           expectedUrl: mockTab.url,
         },
       });
@@ -178,5 +179,137 @@ describe('apply/coordinator', () => {
       const op = await getActiveOperation(50);
       expect(op).toBeNull();
     });
+
+    it('times out with no completion event after 10 seconds and cleans up', async () => {
+      const pastTime = Date.now() - 11000;
+      await chrome.storage.session.set({
+        stickysite_apply_op: {
+          tabId: 50,
+          viewId: sampleView.id,
+          startedAt: pastTime,
+          deadline: pastTime + 10000,
+          expectedUrl: mockTab.url,
+        },
+      });
+
+      // getActiveOperation should detect expiry and clear
+      const op = await getActiveOperation(50);
+      expect(op).toBeNull();
+      expect(sessionStore['stickysite_apply_op']).toBeUndefined();
+    });
+
+    it('aborts delayed completion after expiry without calling page agent', async () => {
+      const pastTime = Date.now() - 12000;
+      await chrome.storage.session.set({
+        stickysite_apply_op: {
+          tabId: 50,
+          viewId: sampleView.id,
+          startedAt: pastTime,
+          deadline: pastTime + 10000,
+          expectedUrl: mockTab.url,
+        },
+      });
+
+      const sendCommandSpy = vi.spyOn(pageAgent, 'sendPageCommand');
+
+      const report = await resumeApply(50);
+      expect(report.outcomes).toHaveLength(0);
+      expect(sendCommandSpy).not.toHaveBeenCalled();
+
+      // Session storage cleared
+      const op = await getActiveOperation(50);
+      expect(op).toBeNull();
+    });
+
+    it('cleans up session operation on navigation rejection', async () => {
+      mockTab.url = 'https://example.com/search?q=different';
+      vi.mocked(chrome.tabs.update).mockRejectedValueOnce(new Error('Tab crashed'));
+
+      const result = await startApply(50, sampleView);
+      expect(result.status).toBe('Could not apply');
+      expect(result.message).toBe('Tab crashed');
+
+      const op = await getActiveOperation(50);
+      expect(op).toBeNull();
+    });
+
+    it('cleans up session operation on direct restore rejection', async () => {
+      vi.spyOn(pageAgent, 'sendPageCommand').mockRejectedValueOnce(new Error('Page agent disconnected'));
+
+      const result = await startApply(50, sampleView);
+      expect(result.status).toBe('Could not apply');
+      expect(result.message).toBe('Page agent disconnected');
+
+      const op = await getActiveOperation(50);
+      expect(op).toBeNull();
+    });
+
+    it('rejects overlapping requests with busy state without overwriting existing operation', async () => {
+      const originalOp = {
+        tabId: 50,
+        viewId: sampleView.id,
+        startedAt: Date.now(),
+        deadline: Date.now() + 10000,
+        expectedUrl: mockTab.url,
+        navigated: true,
+        status: 'navigating' as const,
+      };
+      await chrome.storage.session.set({ stickysite_apply_op: originalOp });
+
+      const secondView: SavedView = { ...sampleView, id: 'view-apply-2', name: 'Other View' };
+      const result = await startApply(50, secondView);
+
+      expect(result.status).toBe('Could not apply');
+      expect(result.message).toMatch(/operation is already in progress/i);
+
+      // Verify original operation is preserved and not overwritten or cleared
+      const op = await getActiveOperation(50);
+      expect(op?.viewId).toBe(sampleView.id);
+    });
+
+    it('aborts restoration and cleans up if page url does not match expected view on resumption', async () => {
+      mockTab.url = 'https://example.com/wrong-path';
+      await chrome.storage.session.set({
+        stickysite_apply_op: {
+          tabId: 50,
+          viewId: sampleView.id,
+          startedAt: Date.now(),
+          deadline: Date.now() + 10000,
+          expectedUrl: 'https://example.com/search?q=shoes',
+        },
+      });
+
+      const sendCommandSpy = vi.spyOn(pageAgent, 'sendPageCommand');
+      const report = await resumeApply(50);
+
+      expect(report.outcomes).toHaveLength(0);
+      expect(sendCommandSpy).not.toHaveBeenCalled();
+
+      const op = await getActiveOperation(50);
+      expect(op).toBeNull();
+    });
+
+    it('cleans up only the matching tab on tab closure', async () => {
+      await chrome.storage.session.set({
+        stickysite_apply_op: {
+          tabId: 50,
+          viewId: sampleView.id,
+          startedAt: Date.now(),
+          deadline: Date.now() + 10000,
+          expectedUrl: mockTab.url,
+        },
+      });
+
+      // Clear non-matching tab 99
+      await clearOperation(99);
+      let op = await getActiveOperation(50);
+      expect(op).not.toBeNull();
+
+      // Clear matching tab 50
+      await clearOperation(50);
+      op = await getActiveOperation(50);
+      expect(op).toBeNull();
+    });
   });
 });
+

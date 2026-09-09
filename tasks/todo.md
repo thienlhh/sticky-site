@@ -10,8 +10,8 @@
 - [x] **Checkpoint A:** Unsupported pages and ineligible controls remain untouched.
 - [x] **R3:** Complete ARIA radio support and truthful state changes.
 - [x] **R4:** Verify final values and enable bounded dynamic restoration.
-- [ ] **R5:** Coordinate Apply lifetime in the service worker.
-- [ ] **Checkpoint B:** Safe restoration and bounded operation lifetime pass.
+- [x] **R5:** Coordinate Apply lifetime in the service worker.
+- [x] **Checkpoint B:** Safe restoration and bounded operation lifetime pass.
 - [ ] **R6:** Report verified URL and control results.
 - [ ] **R7:** Review Update before replacing settings.
 - [ ] **R8:** Surface storage-load failures.

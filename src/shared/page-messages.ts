@@ -19,3 +19,8 @@ export interface RestoreResponse {
   status: 'ok';
   data: import('@/restoration/restore').RestoreReport;
 }
+
+export type BackgroundCommand =
+  | { type: 'START_APPLY'; tabId: number; view: import('@/domain/view').SavedView }
+  | { type: 'TRACK_ANALYTICS'; event: string; properties?: Record<string, unknown> };
+
