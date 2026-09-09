@@ -37,13 +37,13 @@ Work top to bottom. Do not begin a task until its dependency and checkpoint requ
   - [x] Supported-control fixtures pass
   - [x] Credential exclusions and benign `zipcode` pass
   - [x] `npm run check` passes
-- [ ] **Task 3B: Capture review screen**
-  - [ ] Include, exclude, unsupported, and empty-selection tests pass
-  - [ ] Keyboard-only review succeeds
-  - [ ] `npm run check` passes
-- [ ] **Checkpoint: Capture**
-  - [ ] Permission → injection → capture → review works
-  - [ ] No view is persisted yet
+- [x] **Task 3B: Capture review screen**
+  - [x] Include, exclude, unsupported, and empty-selection tests pass
+  - [x] Keyboard-only review succeeds
+  - [x] `npm run check` passes
+- [x] **Checkpoint: Capture**
+  - [x] Permission → injection → capture → review works
+  - [x] No view is persisted yet
 
 ## Phase 4 — Save and List
 

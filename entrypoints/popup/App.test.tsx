@@ -20,7 +20,7 @@ describe('Popup App Shell', () => {
     expect(saveButton).not.toBeDisabled();
   });
 
-  it('displays "Page access ready." when button clicked and ping succeeds', async () => {
+  it('navigates to capture review screen when capture succeeds', async () => {
     const user = userEvent.setup();
     vi.spyOn(pageAgent, 'getActivePage').mockResolvedValue({
       tabId: 101,
@@ -28,14 +28,45 @@ describe('Popup App Shell', () => {
     });
     vi.spyOn(pageAgent, 'requestOriginAccess').mockResolvedValue(true);
     vi.spyOn(pageAgent, 'ensurePageAgent').mockResolvedValue();
-    vi.spyOn(pageAgent, 'sendPageCommand').mockResolvedValue({ status: 'ok', pong: true });
+    vi.spyOn(pageAgent, 'sendPageCommand').mockImplementation(async (_tabId, cmd) => {
+      if (cmd.type === 'PING') {
+        return { status: 'ok', pong: true };
+      }
+      if (cmd.type === 'CAPTURE') {
+        return {
+          status: 'ok',
+          data: {
+            origin: 'https://example.com',
+            pathname: '/test',
+            queryParams: { q: ['shoes'] },
+            controls: [
+              {
+                id: 'c1',
+                kind: 'text',
+                label: 'Search Query',
+                value: 'shoes',
+                fingerprint: {
+                  kind: 'text',
+                  tag: 'input',
+                  label: 'Search Query',
+                  ordinal: 0,
+                },
+              },
+            ],
+            unsupportedCount: 0,
+          },
+        };
+      }
+      return null;
+    });
 
     render(<App />);
     const saveButton = screen.getByRole('button', { name: /Save Current View/i });
     await user.click(saveButton);
 
-    const statusMsg = await screen.findByText('Page access ready.');
-    expect(statusMsg).toBeInTheDocument();
+    const reviewHeader = await screen.findByText(/Review Captured Settings/i);
+    expect(reviewHeader).toBeInTheDocument();
+    expect(screen.getByText('Search Query')).toBeInTheDocument();
   });
 
   it('displays "Permission denied." when user denies origin access', async () => {

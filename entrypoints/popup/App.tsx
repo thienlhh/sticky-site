@@ -6,15 +6,22 @@ import {
   ensurePageAgent,
   sendPageCommand,
 } from '@/platform/page-agent';
-import type { PingResponse } from '@/shared/page-messages';
+import type { PingResponse, CaptureResponse } from '@/shared/page-messages';
+import type { CaptureResult } from '@/capture/controls';
+import type { CapturedSetting } from '@/domain/view';
+import { CaptureReview } from './CaptureReview';
+
+export type Screen = 'idle' | 'review';
 
 export function App() {
+  const [screen, setScreen] = useState<Screen>('idle');
   const [status, setStatus] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [captureData, setCaptureData] = useState<CaptureResult | null>(null);
 
-  const handleAction = async () => {
+  const handleStartCapture = async () => {
     setIsLoading(true);
-    setStatus('Checking access...');
+    setStatus('Connecting to page...');
     try {
       const page = await getActivePage();
       const granted = await requestOriginAccess(page.url);
@@ -23,9 +30,20 @@ export function App() {
         return;
       }
       await ensurePageAgent(page.tabId);
-      const res = await sendPageCommand<PingResponse>(page.tabId, { type: 'PING' });
-      if (res?.pong) {
-        setStatus('Page access ready.');
+      const ping = await sendPageCommand<PingResponse>(page.tabId, { type: 'PING' });
+      if (!ping?.pong) {
+        setStatus('Could not connect to page agent.');
+        return;
+      }
+
+      setStatus('Capturing page settings...');
+      const captureRes = await sendPageCommand<CaptureResponse>(page.tabId, { type: 'CAPTURE' });
+      if (captureRes?.status === 'ok' && captureRes.data) {
+        setCaptureData(captureRes.data);
+        setScreen('review');
+        setStatus('');
+      } else {
+        setStatus('Failed to capture page settings.');
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Unknown error';
@@ -34,6 +52,25 @@ export function App() {
       setIsLoading(false);
     }
   };
+
+  if (screen === 'review' && captureData) {
+    return (
+      <main className="w-[360px] min-h-[440px] p-4 bg-white text-slate-900 flex flex-col justify-between">
+        <CaptureReview
+          captureResult={captureData}
+          onCancel={() => {
+            setScreen('idle');
+            setCaptureData(null);
+          }}
+          onContinue={(_chosenControls: CapturedSetting[], _chosenQueryParams: Record<string, string[]>) => {
+            // Task 4 will transition to naming and saving
+            setStatus('Settings reviewed.');
+            setScreen('idle');
+          }}
+        />
+      </main>
+    );
+  }
 
   return (
     <main className="w-[360px] min-h-[400px] p-4 bg-white text-slate-900 flex flex-col justify-between">
@@ -60,7 +97,7 @@ export function App() {
         <Button
           id="save-current-view-btn"
           disabled={isLoading}
-          onClick={handleAction}
+          onClick={handleStartCapture}
           className="w-full"
           aria-label="Save Current View"
         >
