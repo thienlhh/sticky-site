@@ -18,9 +18,9 @@
 - [x] **Checkpoint C:** Accurate results and lossless management pass.
 - [x] **R9:** Wire configurable background analytics delivery.
 - [x] **R10:** Emit required events and truthful report status.
-- [ ] **R11:** Prove permission, Save, and browser restart.
-- [ ] **Checkpoint D:** Analytics and real Save persistence have evidence.
-- [ ] **R12:** Prove restoration and management in Chrome.
+- [x] **R11:** Prove permission, Save, and browser restart.
+- [x] **Checkpoint D:** Analytics and real Save persistence have evidence.
+- [x] **R12:** Prove restoration and management in Chrome.
 - [ ] **R13:** Rebuild real-site, performance, privacy, and release evidence.
 - [ ] **Final checkpoint:** All ten findings resolved; all PRD gates supported by current evidence.
 

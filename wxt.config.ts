@@ -9,7 +9,7 @@ export default defineConfig({
     name: 'StickySite',
     description: 'Save and restore exact web page views and form state',
     version: '1.0.0',
-    permissions: ['storage', 'scripting', 'activeTab'],
+    permissions: ['storage', 'scripting', 'activeTab', 'tabs'],
     optional_host_permissions: ['http://*/*', 'https://*/*'],
   },
   vite: () => ({

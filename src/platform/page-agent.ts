@@ -3,18 +3,40 @@ import type { PageCommand } from '@/shared/page-messages';
 export const PAGE_AGENT_SCRIPT = 'content-scripts/page-agent.js';
 
 export async function getActivePage(): Promise<{ tabId: number; url: URL }> {
+  // 1. Try active tab in current window
   let tabs = await chrome.tabs.query({ active: true, currentWindow: true });
   let tab = tabs[0];
 
-  // Fallback to lastFocusedWindow if currentWindow returned no tab or tab without url
-  if (!tab || (!tab.url && !tab.pendingUrl)) {
+  // If currentWindow returned no tab, no url, or tab is extension popup itself, check lastFocusedWindow
+  const currentUrl = tab?.url || tab?.pendingUrl;
+  const isExtensionPopup = currentUrl && currentUrl.startsWith('chrome-extension://');
+
+  if (!tab || !currentUrl || isExtensionPopup) {
     const lastFocusedTabs = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
     if (lastFocusedTabs[0]) {
-      tab = lastFocusedTabs[0];
+      const lastUrl = lastFocusedTabs[0].url || lastFocusedTabs[0].pendingUrl;
+      if (lastUrl && !lastUrl.startsWith('chrome-extension://')) {
+        tab = lastFocusedTabs[0];
+      } else if (!tab) {
+        tab = lastFocusedTabs[0];
+      }
     }
   }
 
-
+  // Fallback: check any other active tabs across windows (excluding extension popups)
+  const tabUrl = tab?.url || tab?.pendingUrl;
+  if (!tabUrl || tabUrl.startsWith('chrome-extension://')) {
+    try {
+      const allActive = await chrome.tabs.query({ active: true });
+      const webActive = allActive.find((t) => {
+        const u = t.url || t.pendingUrl;
+        return u && !u.startsWith('chrome-extension://');
+      });
+      if (webActive) {
+        tab = webActive;
+      }
+    } catch {}
+  }
 
   if (!tab || tab.id == null) {
     throw new Error('No active tab found');
