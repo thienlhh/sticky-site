@@ -55,10 +55,10 @@ Work top to bottom. Do not begin a task until its dependency and checkpoint requ
 
 ## Phase 5 — View Management
 
-- [ ] **Task 5: Rename, Update, and confirmed Delete**
-  - [ ] Success, cancellation, incompatibility, and storage-failure tests pass
-  - [ ] IDs and creation timestamps remain stable
-  - [ ] `npm run check` passes
+- [x] **Task 5: Rename, Update, and confirmed Delete**
+  - [x] Success, cancellation, incompatibility, and storage-failure tests pass
+  - [x] IDs and creation timestamps remain stable
+  - [x] `npm run check` passes
 
 ## Phase 6 — Matching
 

@@ -6,13 +6,14 @@ import {
   ensurePageAgent,
   sendPageCommand,
 } from '@/platform/page-agent';
-import { listViews } from '@/storage/views';
+import { listViews, renameView, deleteView, replaceView } from '@/storage/views';
 import type { PingResponse, CaptureResponse } from '@/shared/page-messages';
 import type { CaptureResult } from '@/capture/controls';
 import type { CapturedSetting, SavedView } from '@/domain/view';
 import { CaptureReview } from './CaptureReview';
 import { SaveView } from './SaveView';
 import { ViewList } from './ViewList';
+import { ViewActions, type ViewAction } from './ViewActions';
 
 export type Screen = 'idle' | 'review' | 'save';
 
@@ -22,6 +23,7 @@ export function App() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [activePageInfo, setActivePageInfo] = useState<{ origin: string; pathname: string } | null>(null);
   const [allViews, setAllViews] = useState<SavedView[]>([]);
+  const [activeAction, setActiveAction] = useState<ViewAction | null>(null);
 
   const [captureData, setCaptureData] = useState<CaptureResult | null>(null);
   const [reviewSelection, setReviewSelection] = useState<{
@@ -48,7 +50,6 @@ export function App() {
         });
       })
       .catch(() => {
-        // Fallback for standalone extension window/testing
         if (typeof window !== 'undefined' && window.location?.origin) {
           setActivePageInfo({
             origin: window.location.origin,
@@ -92,6 +93,61 @@ export function App() {
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Unknown error';
       setStatus(msg);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRenameSubmit = async (id: string, newName: string) => {
+    try {
+      await renameView(id, newName, new Date().toISOString());
+      await refreshViews();
+      setStatus(`Renamed to "${newName}"`);
+      setActiveAction(null);
+    } catch (err) {
+      setStatus(err instanceof Error ? err.message : 'Rename failed');
+    }
+  };
+
+  const handleDeleteConfirm = async (id: string) => {
+    try {
+      await deleteView(id);
+      await refreshViews();
+      setStatus('View deleted.');
+      setActiveAction(null);
+    } catch (err) {
+      setStatus(err instanceof Error ? err.message : 'Delete failed');
+    }
+  };
+
+  const handleUpdateConfirm = async (view: SavedView) => {
+    setIsLoading(true);
+    setStatus('Capturing page settings for update...');
+    try {
+      const page = await getActivePage();
+      const granted = await requestOriginAccess(page.url);
+      if (!granted) {
+        setStatus('Permission denied.');
+        return;
+      }
+      await ensurePageAgent(page.tabId);
+      const captureRes = await sendPageCommand<CaptureResponse>(page.tabId, { type: 'CAPTURE' });
+      if (captureRes?.status === 'ok' && captureRes.data) {
+        const updatedView: SavedView = {
+          ...view,
+          queryParams: captureRes.data.queryParams,
+          controls: captureRes.data.controls,
+          updatedAt: new Date().toISOString(),
+        };
+        await replaceView(updatedView);
+        await refreshViews();
+        setStatus(`Updated "${view.name}"`);
+        setActiveAction(null);
+      } else {
+        setStatus('Failed to capture settings for update.');
+      }
+    } catch (err) {
+      setStatus(err instanceof Error ? err.message : 'Update failed');
     } finally {
       setIsLoading(false);
     }
@@ -158,6 +214,9 @@ export function App() {
               // Apply wired in Phase 7/8
               setStatus(`Ready to apply "${_view.name}"`);
             }}
+            onRename={(v) => setActiveAction({ type: 'rename', view: v })}
+            onUpdate={(v) => setActiveAction({ type: 'update', view: v })}
+            onDelete={(v) => setActiveAction({ type: 'delete', view: v })}
           />
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-center py-8">
@@ -176,6 +235,19 @@ export function App() {
           </p>
         )}
       </section>
+
+      {activeAction && activePageInfo && (
+        <ViewActions
+          action={activeAction}
+          activeOrigin={activePageInfo.origin}
+          activePathname={activePageInfo.pathname}
+          allViews={allViews}
+          onClose={() => setActiveAction(null)}
+          onRenameSubmit={handleRenameSubmit}
+          onDeleteConfirm={handleDeleteConfirm}
+          onUpdateConfirm={handleUpdateConfirm}
+        />
+      )}
 
       <footer className="pt-3 border-t border-slate-200 mt-3">
         <Button
