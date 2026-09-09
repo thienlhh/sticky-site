@@ -26,10 +26,10 @@ Work top to bottom. Do not begin a task until its dependency and checkpoint requ
 
 ## Phase 2 — Permission and Runtime Injection
 
-- [ ] **Task 2: Per-origin access and on-demand page agent**
-  - [ ] Grant, denial, ping, and injection tests pass
-  - [ ] Chrome requests only the active origin
-  - [ ] `npm run check` passes
+- [x] **Task 2: Per-origin access and on-demand page agent**
+  - [x] Grant, denial, ping, and injection tests pass
+  - [x] Chrome requests only the active origin
+  - [x] `npm run check` passes
 
 ## Phase 3 — Capture and Review
 

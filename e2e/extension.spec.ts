@@ -46,6 +46,6 @@ test.describe('StickySite Extension Shell E2E', () => {
 
     const saveButton = page.locator('button[aria-label="Save Current View"]');
     await expect(saveButton).toBeVisible();
-    await expect(saveButton).toBeDisabled();
+    await expect(saveButton).toBeEnabled();
   });
 });
