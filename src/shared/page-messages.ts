@@ -9,3 +9,8 @@ export interface PingResponse {
   status: 'ok';
   pong: true;
 }
+
+export interface CaptureResponse {
+  status: 'ok';
+  data: import('@/capture/controls').CaptureResult;
+}

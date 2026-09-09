@@ -33,10 +33,10 @@ Work top to bottom. Do not begin a task until its dependency and checkpoint requ
 
 ## Phase 3 — Capture and Review
 
-- [ ] **Task 3A: Eligible control and URL capture**
-  - [ ] Supported-control fixtures pass
-  - [ ] Credential exclusions and benign `zipcode` pass
-  - [ ] `npm run check` passes
+- [x] **Task 3A: Eligible control and URL capture**
+  - [x] Supported-control fixtures pass
+  - [x] Credential exclusions and benign `zipcode` pass
+  - [x] `npm run check` passes
 - [ ] **Task 3B: Capture review screen**
   - [ ] Include, exclude, unsupported, and empty-selection tests pass
   - [ ] Keyboard-only review succeeds
