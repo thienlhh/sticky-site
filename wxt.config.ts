@@ -2,6 +2,8 @@ import { defineConfig } from 'wxt';
 import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
+  srcDir: 'src',
+  entrypointsDir: '../entrypoints',
   modules: ['@wxt-dev/module-react'],
   manifest: {
     name: 'StickySite',
