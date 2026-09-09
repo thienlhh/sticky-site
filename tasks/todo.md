@@ -4,18 +4,18 @@ Work top to bottom. Do not begin a task until its dependency and checkpoint requ
 
 ## Phase 0 — Scaffold
 
-- [ ] **Task 0A: Extension toolchain**
-  - [ ] Exact dependencies and `package-lock.json` committed
-  - [ ] Manifest V3 build contains no required blanket host access
-  - [ ] `npm run check` passes
-- [ ] **Task 0B: React popup shell**
-  - [ ] React, Tailwind, and shadcn/ui Base UI render
-- [ ] **Task 0C: Popup shell verification**
-  - [ ] Unpacked production popup opens in Chrome
-  - [ ] Focused test, `npm run check`, and `npm run test:e2e` pass
-- [ ] **Checkpoint: Foundation**
-  - [ ] Clean checkout installs and builds
-  - [ ] Manual popup result recorded
+- [x] **Task 0A: Extension toolchain**
+  - [x] Exact dependencies and `package-lock.json` committed
+  - [x] Manifest V3 build contains no required blanket host access
+  - [x] `npm run check` passes
+- [x] **Task 0B: React popup shell**
+  - [x] React, Tailwind, and shadcn/ui Base UI render
+- [x] **Task 0C: Popup shell verification**
+  - [x] Unpacked production popup opens in Chrome
+  - [x] Focused test, `npm run check`, and `npm run test:e2e` pass
+- [x] **Checkpoint: Foundation**
+  - [x] Clean checkout installs and builds
+  - [x] Manual popup result recorded: Playwright Chrome launched unpacked extension (.output/chrome-mv3), verified popup.html loads with styled 360px popup, StickySite title, and disabled Save Current View button.
 
 ## Phase 1 — Domain and Storage
 
