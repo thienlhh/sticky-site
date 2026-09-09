@@ -95,10 +95,12 @@ export function resolveLabel(element: Element, labelsByFor?: Map<string, string>
   }
 
   // 5. Concise text in same field container / fieldset legend / radiogroup label
-  const radiogroup = element.closest('[role="radiogroup"]');
-  if (radiogroup && radiogroup !== element) {
-    const rgLabel = resolveLabel(radiogroup, labelsByFor);
-    if (rgLabel) return rgLabel;
+  if (element.getAttribute('role') === 'radio' || (element as HTMLInputElement).type === 'radio') {
+    const radiogroup = element.closest('[role="radiogroup"]');
+    if (radiogroup && radiogroup !== element) {
+      const rgLabel = resolveLabel(radiogroup, labelsByFor);
+      if (rgLabel) return rgLabel;
+    }
   }
 
   const fieldset = element.closest('fieldset');

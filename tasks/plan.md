@@ -1,5 +1,217 @@
 # StickySite MVP Implementation Plan
 
+## Active work — Review fixes (2026-09-09)
+
+**Status:** Release blocked pending the fixes and evidence below. The original implementation phases remain below for reference; their historical completion claims do not establish current acceptance. Track remediation in [todo.md](todo.md).
+
+**Scope:** Resolve the ten findings from the implementation review against [the PRD](../docs/PRD.md). Preserve the MVP scope, storage compatibility, matching thresholds, and dependency stack. This section takes execution precedence over the original phase sequence.
+
+**Baseline:** `npm run check` passed (124 tests, typecheck, production build). Four temporary probes reproduced unsafe restoration, hidden capture/missing ARIA radios, forced ARIA success, and stale success after a later control resets an earlier value. The probes were removed. Browser tests were inspected, not rerun; real-site results were not independently verified.
+
+### Execution and verification
+
+- Work in the order below; dependencies identify the minimum prerequisites.
+- For each behavior fix, retain a focused regression test that fails before the fix. Run the named focused suite and `npm run check` before marking the task complete.
+- Browser checkpoints must exercise the production extension on HTTP fixtures and assert actual page values and action counters, not merely a visible status message.
+- Do not lower reliability thresholds, invent measurements, add blanket host permissions, or enable remote delivery without the PRD disclosures. No deployment is part of this plan.
+- Documentation-only tasks require link, arithmetic, and evidence checks rather than new tests.
+
+### R0 — Correct release status and evidence claims (P1, finding 10)
+
+**Dependencies:** None. **Scope:** Small.
+
+**Files:** `docs/RELEASE_CHECKLIST.md`, `docs/COMPATIBILITY.md`.
+
+**Acceptance:**
+- Mark release readiness and contradicted gates as blocked or unverified, linking to these remediation tasks.
+- Separate observed evidence from claims needing reruns. The existing matrix rows total 58 attempts and 56 restores, while its summary claims 55; flag the discrepancy without treating recalculation as validation of the rows.
+- Remove claims that popup reopen proves browser restart or status visibility proves successful Apply.
+
+**Verification:** Cross-check each retained claim against the actual test/assertion or dated run artifact. Final release evidence is rebuilt in R13.
+
+### R1 — Restrict actions to the active supported page (P1, finding 6)
+
+**Dependencies:** R0. **Scope:** Medium.
+
+**Files:** `src/platform/page-agent.ts`, its test, `entrypoints/popup/App.tsx`, its test.
+
+**Acceptance:**
+- An internal, extension, file, blocked, or inaccessible active page produces an actionable unavailable-page state; never substitute another web tab or the popup's URL.
+- Save, Apply, and Update resolve the current tab at action time. Permission denial cannot lead to injection or mutation.
+- Tests model the actual active HTTP tab instead of relying on production fallbacks for popup-as-tab testing.
+
+**Verification:** `npx vitest run src/platform/page-agent.test.ts entrypoints/popup/App.test.tsx`; browser unavailable-page checks in R12.
+
+### R2 — Share capture and restoration eligibility (P1, findings 1 and 7)
+
+**Dependencies:** R1. **Scope:** Medium.
+
+**Files:** `src/capture/controls.ts`, `src/restoration/restore.ts`, their tests; one shared eligibility helper if needed.
+
+**Acceptance:**
+- Capture excludes non-rendered controls and all PRD-prohibited input/autocomplete categories; preserve top-level-only behavior and meaningful labels.
+- Restore filters candidates before scoring and rechecks immediately before mutation. A saved text field changed to password, disabled, hidden, or otherwise prohibited is skipped without events or value changes.
+- Use one eligibility policy for capture and restore; do not relax confidence thresholds to compensate for filtering.
+
+**Verification:** `npx vitest run src/capture/controls.test.ts src/restoration/restore.test.ts`; real layout visibility and zero action counters verified in R12.
+
+**Checkpoint A:** R1–R2 regression tests and project check pass; unavailable pages cannot redirect actions and ineligible fields remain untouched.
+
+### R3 — Complete ARIA radio support and truthful state changes (P1/P2, findings 4 and 7)
+
+**Dependencies:** R2. **Scope:** Medium.
+
+**Files:** `src/capture/controls.ts`, `src/restoration/apply-control.ts`, `src/matching/match.ts` if needed, capture/restoration tests.
+
+**Acceptance:**
+- Capture and restore labeled ARIA radios using an explicit group/option identity; unrelated groups must not be merged. Missing safe identity is skipped.
+- Click only eligible, recognized reversible state controls when state differs. Never force `aria-checked` or native checked state to manufacture success after a rejected click.
+- Supported native checkboxes/radios notify framework state correctly; a rejected or ignored change reports failure. Already-correct controls do not receive unnecessary clicks.
+
+**Verification:** `npx vitest run src/capture/controls.test.ts src/matching/match.test.ts src/restoration/restore.test.ts`; framework-controlled checkbox/radio and ARIA fixtures in R12.
+
+### R4 — Verify final values and enable bounded dynamic restoration (P1, findings 3 and 4)
+
+**Dependencies:** R3. **Scope:** Medium.
+
+**Files:** `src/restoration/restore.ts`, `src/restoration/apply-control.ts`, `entrypoints/page-agent.content.ts`, restoration tests.
+
+**Acceptance:**
+- Production RESTORE enables a maximum five-second retry window after document readiness, capped by the operation's remaining deadline.
+- Reverify all saved settings after changes/rerenders settle and before reporting completion. A later control resetting an earlier control or an asynchronous framework rejection cannot remain falsely restored.
+- Mutation observation exists only during Apply, disconnects on every exit, and cannot retry indefinitely or continuously mutate a rejected control.
+
+**Verification:** `npx vitest run src/restoration/restore.test.ts`; cover delayed insertion, asynchronous rejection, dependent controls, timeout, and observer cleanup with deterministic timing. Exercise the runtime message path in R12.
+
+### R5 — Coordinate Apply lifetime in the service worker (P1, finding 3)
+
+**Dependencies:** R4. **Scope:** Medium.
+
+**Files:** `src/apply/coordinator.ts`, `src/apply/operation.ts`, `entrypoints/background.ts`, `src/shared/page-messages.ts`, coordinator tests.
+
+**Acceptance:**
+- Background owns both direct and navigation Apply. Record start/deadline, verify current page identity before restoration, and allow at most one eligible-query navigation.
+- Enforce ten seconds for the entire operation, including navigation/readiness. Errors, mismatched navigation, tab closure, and expired operations complete safely and clean up; stale records never resume a later visit.
+- Popup closure does not cancel execution. Define and test overlapping requests so one operation cannot overwrite another's state or clear its record; prefer explicit busy rejection if sufficient for MVP.
+
+**Verification:** `npx vitest run src/apply/coordinator.test.ts`; test timeout with no completion event, delayed completion after expiry, cleanup on rejection, and worker resumption from session state.
+
+**Checkpoint B:** R3–R5 tests and project check pass; restoration reflects observable state and every operation has bounded lifetime.
+
+### R6 — Report verified URL and control results (P1, finding 2)
+
+**Dependencies:** R5. **Scope:** Medium.
+
+**Files:** `src/apply/coordinator.ts`, `src/apply/operation.ts`, coordinator tests, `entrypoints/popup/App.tsx`, its test.
+
+**Acceptance:**
+- Navigation starts a pending operation, never a fabricated full result. The popup starts Apply through background messaging and can recover the final result after reopening.
+- Verify saved eligible query values, including repeated values and removal of extra eligible parameters, while preserving current sensitive parameters and fragment. Count each reviewed query-parameter entry consistently with CaptureReview; controls plus included query entries form the attempted denominator.
+- Full/partial/failed status uses all final outcomes, including skipped and failed settings. Query-only views and successfully restored queries with failed controls receive accurate counts and wording; transient result storage has bounded cleanup.
+
+**Verification:** `npx vitest run src/apply/coordinator.test.ts entrypoints/popup/App.test.tsx`; cover no navigation, navigation, query rejection/redirect, query-only, mixed outcomes, and popup reopen.
+
+### R7 — Review Update before replacing settings (P1, finding 5)
+
+**Dependencies:** R1, R2. **Scope:** Medium.
+
+**Files:** `entrypoints/popup/App.tsx`, `CaptureReview.tsx`, `ViewActions.tsx`, `view-actions.test.tsx`, `src/storage/views.test.ts`.
+
+**Acceptance:**
+- Compare the fresh captured origin/normalized pathname with the selected view before proceeding; a changed page cannot overwrite the view.
+- Reuse CaptureReview and allow individual exclusions before replacing settings. Cancel and zero included settings leave storage untouched.
+- Successful Update preserves ID, name, and creation time; validation/write failure preserves the original view and shows an actionable error.
+
+**Verification:** `npx vitest run entrypoints/popup/view-actions.test.tsx entrypoints/popup/CaptureReview.test.tsx src/storage/views.test.ts`; complete Update through the browser in R12.
+
+### R8 — Surface storage-load failures (P2, finding 8)
+
+**Dependencies:** R7. **Scope:** Medium.
+
+**Files:** `entrypoints/popup/App.tsx`, `StatusMessage.tsx`, `App.test.tsx`, `accessibility.test.tsx`.
+
+**Acceptance:**
+- Unknown schemas and read failures produce visible, announced errors with a next action rather than an empty-view success state.
+- Unknown records remain untouched; failed refresh does not discard the last successfully loaded list or announce a successful refresh.
+- Retry/reopen can recover once storage becomes readable, without requiring data deletion.
+
+**Verification:** `npx vitest run entrypoints/popup/App.test.tsx entrypoints/popup/accessibility.test.tsx`; keyboard and live-region checks in R12.
+
+**Checkpoint C:** R6–R8 tests and project check pass; Apply reports final outcomes and Update/errors preserve user data.
+
+### R9 — Wire configurable background analytics delivery (P2, finding 9)
+
+**Dependencies:** R6. **Scope:** Medium.
+
+**Files:** `src/analytics.ts`, its test, `entrypoints/background.ts`, `src/shared/page-messages.ts`, build environment typings/config only if needed.
+
+**Acceptance:**
+- Initialize the configured adapter in the service worker; missing configuration or opt-out selects no-op delivery. UI events use messages instead of popup-local adapters.
+- Validate event names and property values at the runtime boundary, add the required timestamp/version/identity, and reject prohibited data before any delivery.
+- Test configured delivery with a local collector. Production enablement remains contingent on store, privacy, and onboarding disclosures; no real analytics endpoint or backend is invented for this fix.
+
+**Verification:** `npx vitest run src/analytics.test.ts`; inspect the exact test request and verify no network request under missing config or opt-out.
+
+### R10 — Emit required events and truthful report status (P2, finding 9)
+
+**Dependencies:** R7, R9. **Scope:** Medium.
+
+**Files:** `entrypoints/popup/App.tsx`, `ReportIssue.tsx`, `entrypoints/background.ts`, `privacy.test.tsx`, `src/analytics.test.ts`.
+
+**Acceptance:**
+- Emit all PRD events at their actual lifecycle points, including permission, capture start, Update/Delete success, and final background Apply outcomes. Do not emit navigation as Apply success.
+- Counts come from reviewed settings/final results; calculate distinct-site buckets locally and exclude origins, labels, values, and view names.
+- Compatibility reporting previews the exact metadata sent, requires confirmation, and distinguishes delivered, disabled/unconfigured, and failed delivery. Identity reset and opt-out affect subsequent events.
+
+**Verification:** `npx vitest run src/analytics.test.ts entrypoints/popup/privacy.test.tsx`; assert event ordering, no duplicates, and no success event after a failed action.
+
+### R11 — Prove permission, Save, and browser restart (P1, finding 10)
+
+**Dependencies:** R8. **Scope:** Medium.
+
+**Files:** `e2e/extension.spec.ts`, `playwright.config.ts`, `tests/fixtures/filter-page.html`.
+
+**Acceptance:**
+- Run the production extension against a served HTTP fixture. Exercise actual per-origin grant/denial and Save/review; direct storage seeding does not substitute for this path.
+- Save through the UI, close the persistent browser context, relaunch Chrome using the same profile, and verify the saved view and exact-page grouping.
+- Assert no blanket required host permissions. Remove fallbacks that run tests against a file URL or silently accept missing extension startup.
+
+**Verification:** `npm run test:e2e`; record browser version and startup/restart evidence. If native permission UI needs a separate manual run, record that boundary and leave its gate open until completed.
+
+**Checkpoint D:** R9–R11 checks pass; configured/no-op analytics and real Save persistence have reproducible evidence.
+
+### R12 — Prove restoration and management in Chrome (P1, finding 10)
+
+**Dependencies:** R10, R11. **Scope:** Medium.
+
+**Files:** `e2e/extension.spec.ts`, `tests/fixtures/dynamic-page.html`, `safety.html`, `filter-page.html`.
+
+**Acceptance:**
+- Assert real final control/query values and full/partial/failed counts for direct Apply, one navigation, delayed rendering, popup closure/reopen, and deadline expiry; verify no stale session operation remains.
+- Exercise Rename, reviewed Update, Delete cancel/confirm, incompatible pages, hidden/disabled controls, framework-owned state, and zero Submit/Buy/Send/Delete/Confirm/Pay/Checkout activations.
+- Verify keyboard-only flows, announced errors/results, primary target sizes, and visible focus. Reproduce at least 95% native-fixture reliability using every attempted saved setting as the denominator.
+
+**Verification:** `npm run check` and `npm run test:e2e`; retain browser artifacts for failures and a concise dated verification record for passing gates.
+
+### R13 — Rebuild release evidence (P1, finding 10)
+
+**Dependencies:** R0–R12. **Scope:** Medium.
+
+**Files:** `docs/COMPATIBILITY.md`, `docs/RELEASE_CHECKLIST.md`, `docs/PRIVACY.md`, `tasks/todo.md`.
+
+**Acceptance:**
+- Recheck at least ten real filtering pages and record exact browser version, page/flow, attempts, restores, skips/failures, date, and reproducible steps. Recalculate totals from evidence and meet the 85% gate; inaccessible/untested pages stay unverified.
+- Record production popup interactivity and 200-control capture timings with machine, browser version, fixture size, and sample count against the unchanged 200 ms/100 ms targets. Ensure privacy/disclosure text matches actual delivery.
+- Map every PRD Definition of Done item to current evidence. Mark release ready only when all gates pass; preserve any outstanding external-access or measurement blockers explicitly.
+
+**Verification:** Run `npm ci`, `npm run check`, and `npm run test:e2e` from a clean checkout; audit evidence links and matrix arithmetic. Passing unit tests alone cannot close browser or real-site gates.
+
+### Final checkpoint
+
+All ten review findings map to completed tasks with reproducible evidence. No unsupported readiness claim remains. Review the final diff for safety, regressions, and scope before marking remediation complete.
+
+## Original implementation plan
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Build and validate the Chrome Manifest V3 MVP defined in `docs/PRD.md`.

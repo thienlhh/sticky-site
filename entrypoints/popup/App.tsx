@@ -38,6 +38,7 @@ export function App() {
   const [activePageInfo, setActivePageInfo] = useState<{ origin: string; pathname: string } | null>(null);
   const [allViews, setAllViews] = useState<SavedView[]>([]);
   const [activeAction, setActiveAction] = useState<ViewAction | null>(null);
+  const [storageError, setStorageError] = useState<string | null>(null);
 
   const [captureData, setCaptureData] = useState<CaptureResult | null>(null);
   const [updatingView, setUpdatingView] = useState<SavedView | null>(null);
@@ -50,8 +51,11 @@ export function App() {
     try {
       const views = await listViews();
       setAllViews(views);
+      setStorageError(null);
     } catch (err) {
-      console.error('Failed to load views', err);
+      const msg = err instanceof Error ? err.message : 'Failed to load saved views.';
+      setStorageError(msg);
+      setStatus(`Storage error: ${msg}`);
     }
   };
 
@@ -409,33 +413,71 @@ export function App() {
       </header>
 
       <section className="flex-1 flex flex-col min-h-0">
-        {activePageInfo ? (
-          <ViewList
-            currentOrigin={activePageInfo.origin}
-            currentPathname={activePageInfo.pathname}
-            views={allViews}
-            onApply={async (view) => {
-              setIsLoading(true);
-              setStatus(`Applying "${view.name}"...`);
-              try {
-                const page = await getActivePage();
-                const granted = await requestOriginAccess(page.url);
-                if (!granted) {
-                  setStatus('Permission denied.');
-                  return;
+        {storageError && allViews.length === 0 ? (
+          <div
+            role="alert"
+            aria-live="assertive"
+            className="flex-1 flex flex-col items-center justify-center text-center py-8 px-3"
+          >
+            <p className="text-sm font-semibold text-red-600">Storage Load Error</p>
+            <p className="text-xs text-slate-600 mt-1 max-w-[280px]">{storageError}</p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => refreshViews()}
+              className="mt-3 min-h-[36px]"
+              aria-label="Retry loading saved views"
+            >
+              Retry Loading
+            </Button>
+          </div>
+        ) : activePageInfo ? (
+          <>
+            {storageError && (
+              <div
+                role="alert"
+                aria-live="assertive"
+                className="mb-2 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-700 flex items-center justify-between"
+              >
+                <span className="truncate flex-1 mr-2">{storageError}</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => refreshViews()}
+                  className="h-6 px-2 text-xs"
+                  aria-label="Retry loading saved views"
+                >
+                  Retry
+                </Button>
+              </div>
+            )}
+            <ViewList
+              currentOrigin={activePageInfo.origin}
+              currentPathname={activePageInfo.pathname}
+              views={allViews}
+              onApply={async (view) => {
+                setIsLoading(true);
+                setStatus(`Applying "${view.name}"...`);
+                try {
+                  const page = await getActivePage();
+                  const granted = await requestOriginAccess(page.url);
+                  if (!granted) {
+                    setStatus('Permission denied.');
+                    return;
+                  }
+                  const res = await requestApply(page.tabId, view);
+                  setStatus(res.message || res.status);
+                } catch (err) {
+                  setStatus(err instanceof Error ? err.message : 'Apply failed');
+                } finally {
+                  setIsLoading(false);
                 }
-                const res = await requestApply(page.tabId, view);
-                setStatus(res.message || res.status);
-              } catch (err) {
-                setStatus(err instanceof Error ? err.message : 'Apply failed');
-              } finally {
-                setIsLoading(false);
-              }
-            }}
-            onRename={(v) => setActiveAction({ type: 'rename', view: v })}
-            onUpdate={(v) => setActiveAction({ type: 'update', view: v })}
-            onDelete={(v) => setActiveAction({ type: 'delete', view: v })}
-          />
+              }}
+              onRename={(v) => setActiveAction({ type: 'rename', view: v })}
+              onUpdate={(v) => setActiveAction({ type: 'update', view: v })}
+              onDelete={(v) => setActiveAction({ type: 'delete', view: v })}
+            />
+          </>
         ) : isPageUnavailable ? (
           <div className="flex-1 flex flex-col items-center justify-center text-center py-8 px-2">
             <p className="text-sm font-medium text-slate-700">Page Not Supported</p>

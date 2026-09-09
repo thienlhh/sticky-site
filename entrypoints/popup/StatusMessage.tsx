@@ -36,6 +36,7 @@ export function parseStatus(status: string | StatusState | null): StatusState | 
     lower.includes('denied') ||
     lower.includes('quota') ||
     lower.includes('unsupported') ||
+    lower.includes('schema') ||
     lower.includes('could not')
   ) {
     let actionHint: string | undefined;
@@ -43,6 +44,8 @@ export function parseStatus(status: string | StatusState | null): StatusState | 
       actionHint = 'Grant site permissions when prompted to use StickySite on this page.';
     } else if (lower.includes('quota')) {
       actionHint = 'Delete unused views to free up storage space.';
+    } else if (lower.includes('schema') || lower.includes('storage')) {
+      actionHint = 'Retry loading saved views or update the extension.';
     } else if (lower.includes('could not') || lower.includes('failed')) {
       actionHint = 'Ensure the page is fully loaded and supported controls are visible.';
     }

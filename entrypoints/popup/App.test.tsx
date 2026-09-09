@@ -318,7 +318,77 @@ describe('Popup App Shell', () => {
       expect(screen.getByText('Original Name')).toBeInTheDocument();
     });
   });
+
+  describe('R8: Surface storage-load failures', () => {
+    it('displays visible announced error with next action rather than empty-view success state', async () => {
+      const storageModule = await import('@/storage/views');
+      vi.spyOn(storageModule, 'listViews').mockRejectedValue(
+        new Error('Unsupported storage schema version: 99. Expected version 1.')
+      );
+      vi.spyOn(pageAgent, 'getActivePage').mockResolvedValue({
+        tabId: 101,
+        url: new URL('https://example.com/search'),
+      });
+
+      render(<App />);
+
+      const errorHeading = await screen.findByText('Storage Load Error');
+      expect(errorHeading).toBeInTheDocument();
+      expect(
+        screen.getAllByText(/Unsupported storage schema version: 99/i).length
+      ).toBeGreaterThanOrEqual(1);
+
+      // Ensure empty-view success state is NOT shown
+      expect(screen.queryByText(/No saved views for this page yet/i)).not.toBeInTheDocument();
+
+      // Ensure announced status message includes action hint
+      const statusMsg = await screen.findByText(/Retry loading saved views or update the extension/i);
+      expect(statusMsg).toBeInTheDocument();
+
+      // Retry action button is available
+      const retryBtn = screen.getByRole('button', { name: /Retry loading saved views/i });
+      expect(retryBtn).toBeInTheDocument();
+    });
+
+    it('recovers view list when clicking Retry after storage becomes readable', async () => {
+      const user = userEvent.setup();
+      const storageModule = await import('@/storage/views');
+      const listSpy = vi.spyOn(storageModule, 'listViews');
+      listSpy.mockRejectedValueOnce(new Error('Transient storage failure'));
+
+      vi.spyOn(pageAgent, 'getActivePage').mockResolvedValue({
+        tabId: 101,
+        url: new URL('https://example.com/search'),
+      });
+
+      render(<App />);
+
+      const retryBtn = await screen.findByRole('button', { name: /Retry loading saved views/i });
+      expect(retryBtn).toBeInTheDocument();
+
+      // Now storage recovers
+      const recoveredView = {
+        schemaVersion: 1 as const,
+        id: 'view-rec-1',
+        name: 'Recovered View',
+        origin: 'https://example.com',
+        pathname: '/search',
+        queryParams: {},
+        controls: [],
+        createdAt: '2026-09-09T08:00:00.000Z',
+        updatedAt: '2026-09-09T08:00:00.000Z',
+      };
+      listSpy.mockResolvedValueOnce([recoveredView]);
+
+      await user.click(retryBtn);
+
+      const recoveredItem = await screen.findByText('Recovered View');
+      expect(recoveredItem).toBeInTheDocument();
+      expect(screen.queryByText('Storage Load Error')).not.toBeInTheDocument();
+    });
+  });
 });
+
 
 
 

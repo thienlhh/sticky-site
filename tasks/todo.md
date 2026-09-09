@@ -14,8 +14,8 @@
 - [x] **Checkpoint B:** Safe restoration and bounded operation lifetime pass.
 - [x] **R6:** Report verified URL and control results.
 - [x] **R7:** Review Update before replacing settings.
-- [ ] **R8:** Surface storage-load failures.
-- [ ] **Checkpoint C:** Accurate results and lossless management pass.
+- [x] **R8:** Surface storage-load failures.
+- [x] **Checkpoint C:** Accurate results and lossless management pass.
 - [ ] **R9:** Wire configurable background analytics delivery.
 - [ ] **R10:** Emit required events and truthful report status.
 - [ ] **R11:** Prove permission, Save, and browser restart.
