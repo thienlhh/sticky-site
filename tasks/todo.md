@@ -69,10 +69,10 @@ Work top to bottom. Do not begin a task until its dependency and checkpoint requ
 
 ## Phase 7 — Native Restoration
 
-- [ ] **Task 7: Safe value restoration and verification**
-  - [ ] Native fixture reliability is at least 95%
-  - [ ] Prohibited-action counters remain zero
-  - [ ] `npm run check` passes
+- [x] **Task 7: Safe value restoration and verification**
+  - [x] Native fixture reliability is at least 95%
+  - [x] Prohibited-action counters remain zero
+  - [x] `npm run check` passes
 
 ## Phase 8 — URL and Dynamic Restoration
 

@@ -1,4 +1,5 @@
 import { capturePage } from '@/capture/controls';
+import { restoreControls } from '@/restoration/restore';
 
 export default defineContentScript({
   matches: [],
@@ -19,6 +20,19 @@ export default defineContentScript({
             error: err instanceof Error ? err.message : 'Capture failed',
           });
         }
+        return true;
+      }
+      if (message?.type === 'RESTORE') {
+        restoreControls(document, message.controls || [])
+          .then((report) => {
+            sendResponse({ status: 'ok', data: report });
+          })
+          .catch((err) => {
+            sendResponse({
+              status: 'error',
+              error: err instanceof Error ? err.message : 'Restore failed',
+            });
+          });
         return true;
       }
     });

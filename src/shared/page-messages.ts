@@ -14,3 +14,8 @@ export interface CaptureResponse {
   status: 'ok';
   data: import('@/capture/controls').CaptureResult;
 }
+
+export interface RestoreResponse {
+  status: 'ok';
+  data: import('@/restoration/restore').RestoreReport;
+}

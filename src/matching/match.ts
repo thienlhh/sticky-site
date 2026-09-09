@@ -30,8 +30,14 @@ export function scoreCandidate(saved: Fingerprint, candidate: Fingerprint): numb
   // 1. Accessible label (up to 35)
   const normSavedLabel = normalizeLabel(saved.label);
   const normCandLabel = normalizeLabel(candidate.label);
+  const normSavedRegion = saved.region ? normalizeLabel(saved.region) : '';
+  const normCandRegion = candidate.region ? normalizeLabel(candidate.region) : '';
 
-  if (normSavedLabel && normCandLabel && normSavedLabel === normCandLabel) {
+  if (
+    (normSavedLabel && normCandLabel && normSavedLabel === normCandLabel) ||
+    (normSavedLabel && normCandRegion && normSavedLabel === normCandRegion) ||
+    (normSavedRegion && normCandLabel && normSavedRegion === normCandLabel)
+  ) {
     score += 35;
   } else if (
     normSavedLabel &&
@@ -110,7 +116,23 @@ export function matchControl(
   saved: Fingerprint,
   candidates: Element[]
 ): { element: Element; score: number } | null {
-  const scored = candidates
+  let eligibleCandidates = candidates;
+  if (saved.kind === 'radio' && saved.name) {
+    const seenNames = new Set<string>();
+    eligibleCandidates = candidates.filter((el) => {
+      if (el.tagName.toLowerCase() === 'input' && (el as HTMLInputElement).type === 'radio') {
+        const n = (el as HTMLInputElement).name;
+        if (n === saved.name) {
+          if (seenNames.has(n)) return false;
+          seenNames.add(n);
+          return true;
+        }
+      }
+      return true;
+    });
+  }
+
+  const scored = eligibleCandidates
     .map((element) => {
       const label = resolveLabel(element) || '';
       const candidateFp = fingerprintControl(element, label);

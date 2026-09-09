@@ -50,6 +50,21 @@ export function fingerprintControl(element: Element, label: string): Fingerprint
     } else {
       kind = 'select-one';
     }
+  } else if (kind === 'radio' && element.ownerDocument) {
+    const name = element.getAttribute('name');
+    if (name) {
+      try {
+        const escaped = typeof CSS !== 'undefined' && CSS.escape ? CSS.escape(name) : name;
+        const radios = Array.from(
+          element.ownerDocument.querySelectorAll<HTMLInputElement>(
+            `input[type="radio"][name="${escaped}"]`
+          )
+        );
+        options = radios.map((r) => r.value);
+      } catch {
+        // ignore selector errors
+      }
+    }
   }
 
   // Calculate ordinal among similar elements in doc
