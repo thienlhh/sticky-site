@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { restoreControls } from './restore';
+import { applyControlValue } from './apply-control';
 import type { CapturedSetting } from '@/domain/view';
 
 describe('restoration/restore', () => {
@@ -273,6 +274,143 @@ describe('restoration/restore', () => {
     expect(stockInput.checked).toBe(false);
   });
 
+  it('skips controls hidden by a stylesheet rule', async () => {
+    document.head.innerHTML = '<style>.visually-removed { display: none; }</style>';
+    const qInput = document.getElementById('q') as HTMLInputElement;
+    qInput.className = 'visually-removed';
+
+    const report = await restoreControls(document, [sampleControls[0]]);
+
+    expect(report.outcomes[0].outcome).toBe('skipped');
+    expect(qInput.value).toBe('old text');
+  });
+
+  it('does not restore a disabled radio option in the matched group', async () => {
+    const express = document.querySelector('input[type="radio"][value="express"]') as HTMLInputElement;
+    express.disabled = true;
+
+    const report = await restoreControls(document, [sampleControls[5]]);
+
+    expect(report.outcomes[0].outcome).not.toBe('restored');
+    expect(express.checked).toBe(false);
+  });
+
+  it('scopes native radio targets to the matched form', () => {
+    const express = document.querySelector('input[type="radio"][value="express"]') as HTMLInputElement;
+    express.disabled = true;
+    document.body.insertAdjacentHTML(
+      'afterbegin',
+      '<form><input id="other-express" type="radio" name="delivery" value="express" /></form>'
+    );
+    const otherExpress = document.getElementById('other-express') as HTMLInputElement;
+    const standard = document.querySelector('input[type="radio"][value="standard"]') as HTMLInputElement;
+
+    const applied = applyControlValue(standard, sampleControls[5]);
+
+    expect(applied).toBe(false);
+    expect(express.checked).toBe(false);
+    expect(otherExpress.checked).toBe(false);
+  });
+
+  it('reports failure after a framework resets an initially restored value in a microtask', async () => {
+    const qInput = document.getElementById('q') as HTMLInputElement;
+    qInput.addEventListener('input', () => {
+      queueMicrotask(() => {
+        qInput.value = 'framework value';
+      });
+    });
+
+    const report = await restoreControls(document, [sampleControls[0]], { timeoutMs: 500 });
+
+    expect(report.outcomes[0].outcome).toBe('failed');
+    expect(qInput.value).toBe('framework value');
+  });
+
+  it('reports failure after a framework resets an initially restored value shortly after events', async () => {
+    const qInput = document.getElementById('q') as HTMLInputElement;
+    qInput.addEventListener('input', () => {
+      setTimeout(() => {
+        qInput.value = 'framework value';
+      }, 25);
+    });
+
+    const report = await restoreControls(document, [sampleControls[0]], { timeoutMs: 500 });
+
+    expect(report.outcomes[0].outcome).toBe('failed');
+    expect(qInput.value).toBe('framework value');
+  });
+
+  it('clicks native checkboxes so framework change handlers can observe restoration', async () => {
+    const checkbox = document.getElementById('in-stock') as HTMLInputElement;
+    let clicks = 0;
+    checkbox.addEventListener('click', () => {
+      clicks++;
+    });
+
+    const report = await restoreControls(document, [sampleControls[2]]);
+
+    expect(report.outcomes[0].outcome).toBe('restored');
+    expect(clicks).toBe(1);
+    expect(checkbox.checked).toBe(true);
+  });
+
+  it('does not force a native checkbox when the page prevents its click', async () => {
+    const checkbox = document.getElementById('in-stock') as HTMLInputElement;
+    checkbox.addEventListener('click', (event) => event.preventDefault());
+
+    const report = await restoreControls(document, [sampleControls[2]]);
+
+    expect(report.outcomes[0].outcome).toBe('failed');
+    expect(checkbox.checked).toBe(false);
+  });
+
+  it('retries controls when disabled and aria-disabled attributes are removed', async () => {
+    const qInput = document.getElementById('q') as HTMLInputElement;
+    const numInput = document.getElementById('num') as HTMLInputElement;
+    qInput.disabled = true;
+    numInput.setAttribute('aria-disabled', 'true');
+
+    setTimeout(() => {
+      qInput.disabled = false;
+      numInput.removeAttribute('aria-disabled');
+    }, 30);
+
+    const report = await restoreControls(document, sampleControls.slice(0, 2), { timeoutMs: 500 });
+
+    expect(report.outcomes.map((outcome) => outcome.outcome)).toEqual(['restored', 'restored']);
+    expect(qInput.value).toBe('leather jacket');
+    expect(numInput.value).toBe('5');
+  });
+
+  it('does not retry after its bounded timeout even when the operation deadline remains open', async () => {
+    const qInput = document.getElementById('q') as HTMLInputElement;
+    qInput.disabled = true;
+
+    setTimeout(() => {
+      qInput.disabled = false;
+    }, 30);
+
+    const report = await restoreControls(document, [sampleControls[0]], {
+      timeoutMs: 10,
+      deadlineAt: Date.now() + 500,
+    });
+    await new Promise((resolve) => setTimeout(resolve, 40));
+
+    expect(report.outcomes[0].outcome).toBe('skipped');
+    expect(qInput.value).toBe('old text');
+  });
+
+  it('does not mutate controls after the supplied deadline expires', async () => {
+    const qInput = document.getElementById('q') as HTMLInputElement;
+
+    const report = await restoreControls(document, [sampleControls[0]], {
+      deadlineAt: Date.now() - 1,
+    });
+
+    expect(report.outcomes[0].outcome).toBe('skipped');
+    expect(qInput.value).toBe('old text');
+  });
+
   it('restores ARIA radios via click when state differs and never forces aria-checked', async () => {
     document.body.innerHTML = `
       <div role="radiogroup" aria-label="Theme Mode">
@@ -306,6 +444,40 @@ describe('restoration/restore', () => {
 
     const report = await restoreControls(document, [ariaControl]);
     expect(clickFired).toBe(true);
+    expect(report.outcomes[0].outcome).toBe('restored');
+    expect(darkRadio.getAttribute('aria-checked')).toBe('true');
+  });
+
+  it('accepts an ARIA radio state committed asynchronously by the page', async () => {
+    document.body.innerHTML = `
+      <div role="radiogroup" aria-label="Theme Mode">
+        <div id="r-light" role="radio" aria-checked="true" data-value="light">Light</div>
+        <div id="r-dark" role="radio" aria-checked="false" data-value="dark">Dark</div>
+      </div>
+    `;
+
+    const darkRadio = document.getElementById('r-dark')!;
+    darkRadio.addEventListener('click', () => {
+      setTimeout(() => {
+        darkRadio.setAttribute('aria-checked', 'true');
+        document.getElementById('r-light')!.setAttribute('aria-checked', 'false');
+      }, 25);
+    });
+
+    const report = await restoreControls(document, [{
+      id: 'aria-theme',
+      label: 'Theme Mode',
+      value: 'dark',
+      fingerprint: {
+        kind: 'radio',
+        tag: 'div',
+        role: 'radio',
+        label: 'Theme Mode',
+        options: ['light', 'dark'],
+        ordinal: 0,
+      },
+    }], { timeoutMs: 500 });
+
     expect(report.outcomes[0].outcome).toBe('restored');
     expect(darkRadio.getAttribute('aria-checked')).toBe('true');
   });

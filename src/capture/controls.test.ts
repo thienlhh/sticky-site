@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { capturePage } from './controls';
 import { resolveLabel } from './labels';
+import { restoreControls } from '@/restoration/restore';
 
 describe('capture/controls', () => {
   beforeEach(() => {
@@ -151,6 +152,22 @@ describe('capture/controls', () => {
       expect(result.controls[0].fingerprint.options).toEqual(['standard', 'express', 'overnight']);
     });
 
+    it('keeps same-name radio groups in separate forms separate', () => {
+      document.body.innerHTML = `
+        <form><fieldset><legend>Shipping</legend><label><input type="radio" name="mode" value="ground" checked /> Ground</label><label><input type="radio" name="mode" value="air" /> Air</label></fieldset></form>
+        <form><fieldset><legend>Billing</legend><label><input type="radio" name="mode" value="monthly" checked /> Monthly</label><label><input type="radio" name="mode" value="yearly" /> Yearly</label></fieldset></form>
+      `;
+
+      const result = capturePage(document, new URL('https://example.com/checkout'));
+
+      expect(result.controls).toHaveLength(2);
+      expect(result.controls.map((control) => control.value)).toEqual(['ground', 'monthly']);
+      expect(result.controls.map((control) => control.fingerprint.options)).toEqual([
+        ['ground', 'air'],
+        ['monthly', 'yearly'],
+      ]);
+    });
+
     it('groups ARIA radio buttons into a single setting with options and selected value', () => {
       document.body.innerHTML = `
         <div role="radiogroup" aria-label="Color Palette">
@@ -170,6 +187,32 @@ describe('capture/controls', () => {
   });
 
   describe('exclusions and security checks', () => {
+    it('excludes contact fields declared as text and leaves previously saved fields untouched when repurposed', async () => {
+      document.body.innerHTML = `<label for="filter">Filter</label><input id="filter" value="saved">`;
+      const saved = capturePage(document, new URL('https://example.com/')).controls;
+      const input = document.querySelector('input')!;
+      input.value = 'untouched';
+      document.querySelector('label')!.textContent = 'Email address';
+      input.name = 'email-address';
+      input.autocomplete = 'on';
+      let events = 0;
+      input.addEventListener('input', () => events++);
+      input.addEventListener('change', () => events++);
+      expect(capturePage(document, new URL('https://example.com/')).controls).toEqual([]);
+      const report = await restoreControls(document, saved);
+      expect(report.outcomes[0].outcome).toBe('skipped');
+      expect(input.value).toBe('untouched');
+      expect(events).toBe(0);
+
+      document.body.innerHTML = `
+        <input aria-label="Contact" autocomplete="email">
+        <input aria-label="Contact" inputmode="tel">
+        <input aria-label="Contact" name="userEmail">
+        <input aria-label="Zipcode" name="zipcode" value="10001">
+        <label><input type="checkbox">Email notifications</label>`;
+      expect(capturePage(document, new URL('https://example.com/')).controls.map(c => c.label)).toEqual(['Zipcode', 'Email notifications']);
+    });
+
     it('excludes password, email, tel, file, hidden, button inputs and updates unsupportedCount', () => {
       document.body.innerHTML = `
         <label for="pwd">Password</label>

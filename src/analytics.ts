@@ -58,7 +58,7 @@ export function createHttpAdapter(
 ): AnalyticsAdapter {
   return {
     async send(event: AnalyticsEvent, properties: Record<string, number | string>): Promise<void> {
-      await fetchFn(endpoint, {
+      const response = await fetchFn(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -66,6 +66,9 @@ export function createHttpAdapter(
           ...properties,
         }),
       });
+      if (!response.ok) {
+        throw new Error(`Analytics request failed: ${response.status}`);
+      }
     },
   };
 }
@@ -92,6 +95,28 @@ export function validatePayload(
         throw new Error(`Prohibited URL content in analytics property: "${key}"`);
       }
     }
+
+    let valid = false;
+    switch (key) {
+      case 'capturedCount': case 'attemptedCount': case 'restoredCount': case 'skippedCount':
+        valid = typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
+        break;
+      case 'distinctSiteBucket':
+        valid = typeof value === 'string' && ['0', '1', '2-5', '6-10', '10+'].includes(value);
+        break;
+      case 'failureCategory':
+        valid = typeof value === 'string' && ['no_match', 'permission_denied', 'timeout', 'partial_restore', 'restore_failed', 'navigation_failed', 'user_reported_issue'].includes(value);
+        break;
+      case 'installationId':
+        valid = typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+        break;
+      case 'extensionVersion':
+        valid = typeof value === 'string' && /^\d+\.\d+\.\d+(?:\.\d+)?$/.test(value);
+        break;
+      case 'timestamp':
+        valid = typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(value) && Number.isFinite(Date.parse(value));
+    }
+    if (!valid) throw new Error(`Invalid analytics value for property: "${key}"`);
 
     validated[key] = value;
   }
@@ -163,7 +188,7 @@ export async function track(
   };
 
   if (currentAdapter) {
-    await currentAdapter.send(event, fullPayload);
+    await currentAdapter.send(event, validatePayload(fullPayload));
   }
 }
 
@@ -203,4 +228,3 @@ export async function emitAnalyticsEvent(
   await track(event, properties);
   return { delivery: 'delivered' };
 }
-

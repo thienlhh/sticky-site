@@ -1,5 +1,6 @@
+import { defineBackground } from 'wxt/utils/define-background';
 import { resumeApply, startApply } from '@/apply/coordinator';
-import { getActiveOperation, clearOperation, getLastApplyResult } from '@/apply/operation';
+import { getActiveOperation, clearOperation, failOperation, getLastApplyResult } from '@/apply/operation';
 import {
   track,
   validateEvent,
@@ -75,11 +76,13 @@ export default defineBackground(() => {
 
   chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
     if (changeInfo.status === 'complete' && tab?.url) {
+      let startedAt: number | undefined;
       try {
         const op = await getActiveOperation(tabId);
         if (op) {
-          if (Date.now() > (op.deadline || 0)) {
-            await clearOperation(tabId);
+          startedAt = op.startedAt;
+          if (Date.now() >= (op.deadline || 0)) {
+            await failOperation(tabId, 'Operation timed out.', startedAt);
             return;
           }
           const currentUrl = new URL(tab.url);
@@ -91,12 +94,12 @@ export default defineBackground(() => {
             await resumeApply(tabId);
           } else {
             // Mismatched navigation URL: clean up safely without restoring
-            await clearOperation(tabId);
+            await failOperation(tabId, 'Navigation did not reach the saved page.', startedAt);
           }
         }
       } catch (err) {
         console.error('Failed to resume apply in background:', err);
-        await clearOperation(tabId);
+        await failOperation(tabId, 'Could not apply settings after navigation.', startedAt);
       }
     }
   });
@@ -109,4 +112,3 @@ export default defineBackground(() => {
     }
   });
 });
-

@@ -1,3 +1,5 @@
+import { resolveLabel } from './labels';
+
 export const EXCLUDED_INPUT_TYPES = new Set<string>([
   'password',
   'email',
@@ -43,26 +45,9 @@ export function isRendered(el: Element, renderedCache?: WeakMap<Element, boolean
   if (renderedCache && renderedCache.has(el)) {
     return renderedCache.get(el)!;
   }
-  if (el instanceof HTMLElement) {
-    if (el.hidden) {
-      renderedCache?.set(el, false);
-      return false;
-    }
-    if (el.hasAttribute('style')) {
-      const s = el.style;
-      if (s.display === 'none' || s.visibility === 'hidden') {
-        renderedCache?.set(el, false);
-        return false;
-      }
-    }
-  }
-  if (el.getAttribute('aria-hidden') === 'true') {
-    renderedCache?.set(el, false);
-    return false;
-  }
-
-  let curr = el.parentElement;
-  while (curr && curr !== document.body && curr !== document.documentElement) {
+  const view = el.ownerDocument?.defaultView;
+  let curr: Element | null = el;
+  while (curr) {
     if (renderedCache && renderedCache.has(curr)) {
       const parentRendered = renderedCache.get(curr)!;
       if (!parentRendered) {
@@ -77,13 +62,11 @@ export function isRendered(el: Element, renderedCache?: WeakMap<Element, boolean
         renderedCache?.set(el, false);
         return false;
       }
-      if (curr.hasAttribute('style')) {
-        const s = curr.style;
-        if (s.display === 'none' || s.visibility === 'hidden') {
-          renderedCache?.set(curr, false);
-          renderedCache?.set(el, false);
-          return false;
-        }
+      const style = view?.getComputedStyle(curr);
+      if (style && (style.display === 'none' || style.visibility === 'hidden' || style.visibility === 'collapse')) {
+        renderedCache?.set(curr, false);
+        renderedCache?.set(el, false);
+        return false;
       }
     }
     if (curr.getAttribute('aria-hidden') === 'true') {
@@ -109,6 +92,13 @@ export function isControlEligible(
     return false;
   }
 
+  if (tag === 'input' && !['checkbox', 'radio'].includes(type)) {
+    const signals = [el.id, el.getAttribute('name'), el.getAttribute('inputmode'), el.getAttribute('autocomplete'), resolveLabel(el)]
+      .filter(Boolean).join(' ').replace(/([a-z])([A-Z])/g, '$1 $2');
+    // ponytail: explicit contact/credential signals only; extend for observed site markup, not inferred values.
+    if (/(^|[^a-z])(e[\s_-]?mail|tel|phone|telephone|password|passcode|otp)([^a-z]|$)/i.test(signals)) return false;
+  }
+
   if (isSensitiveAutocomplete(el)) {
     return false;
   }
@@ -117,7 +107,7 @@ export function isControlEligible(
     return false;
   }
 
-  if (!isRendered(el)) {
+  if (!isRendered(el, renderedCache)) {
     return false;
   }
 

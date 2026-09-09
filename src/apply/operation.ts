@@ -16,6 +16,7 @@ export interface ApplyOperation {
   status?: ApplyOperationStatus;
   result?: ViewApplyResult;
   error?: string;
+  totalAttempted?: number;
 }
 
 export const SESSION_APPLY_KEY = 'stickysite_apply_op';
@@ -27,8 +28,14 @@ export async function getActiveOperation(tabId: number): Promise<ApplyOperation 
     const op = result[SESSION_APPLY_KEY] as ApplyOperation | undefined;
     if (op && op.tabId === tabId) {
       const deadline = op.deadline || (op.startedAt + APPLY_TIMEOUT_MS);
-      if (Date.now() > deadline) {
-        await clearOperation(tabId);
+      if (Date.now() >= deadline) {
+        await setLastApplyResult({
+          tabId: op.tabId,
+          viewId: op.viewId,
+          result: timeoutResult(op),
+          completedAt: Date.now(),
+        });
+        await clearOperation(tabId, op.startedAt);
         return null;
       }
       return op;
@@ -45,8 +52,14 @@ export async function getAnyActiveOperation(): Promise<ApplyOperation | null> {
     const op = result[SESSION_APPLY_KEY] as ApplyOperation | undefined;
     if (op) {
       const deadline = op.deadline || (op.startedAt + APPLY_TIMEOUT_MS);
-      if (Date.now() > deadline) {
-        await chrome.storage.session.remove(SESSION_APPLY_KEY);
+      if (Date.now() >= deadline) {
+        await setLastApplyResult({
+          tabId: op.tabId,
+          viewId: op.viewId,
+          result: timeoutResult(op),
+          completedAt: Date.now(),
+        });
+        await clearOperation(op.tabId, op.startedAt);
         return null;
       }
       return op;
@@ -57,16 +70,45 @@ export async function getAnyActiveOperation(): Promise<ApplyOperation | null> {
   return null;
 }
 
+function timeoutResult(op: ApplyOperation): ViewApplyResult {
+  const totalAttempted = op.totalAttempted ?? 0;
+  return {
+    status: 'Could not apply',
+    restoredCount: 0,
+    totalAttempted,
+    skippedCount: 0,
+    failedCount: totalAttempted,
+    message: 'Operation timed out.',
+  };
+}
+
+export async function failOperation(tabId: number, message: string, startedAt?: number): Promise<void> {
+  try {
+    const data = await chrome.storage.session.get(SESSION_APPLY_KEY);
+    const op = data[SESSION_APPLY_KEY] as ApplyOperation | undefined;
+    if (!op || op.tabId !== tabId || (startedAt !== undefined && op.startedAt !== startedAt)) return;
+    await setLastApplyResult({
+      tabId,
+      viewId: op.viewId,
+      result: { ...timeoutResult(op), message },
+      completedAt: Date.now(),
+    });
+    await clearOperation(tabId, op.startedAt);
+  } catch {
+    // Ignore result-storage failures during cleanup.
+  }
+}
+
 export async function setOperation(op: ApplyOperation): Promise<void> {
   await chrome.storage.session.set({ [SESSION_APPLY_KEY]: op });
 }
 
-export async function clearOperation(tabId?: number): Promise<void> {
+export async function clearOperation(tabId?: number, startedAt?: number): Promise<void> {
   try {
     if (tabId !== undefined) {
       const result = await chrome.storage.session.get(SESSION_APPLY_KEY);
       const op = result[SESSION_APPLY_KEY] as ApplyOperation | undefined;
-      if (op && op.tabId !== tabId) {
+      if (!op || op.tabId !== tabId || (startedAt !== undefined && op.startedAt !== startedAt)) {
         return;
       }
     }
@@ -109,5 +151,3 @@ export async function getLastApplyResult(tabId: number, clear = true): Promise<V
   } catch {}
   return null;
 }
-
-

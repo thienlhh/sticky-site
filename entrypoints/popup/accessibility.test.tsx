@@ -53,6 +53,9 @@ describe('Accessibility & Status System', () => {
       const parsedDenied = parseStatus('Permission denied.');
       expect(parsedDenied?.type).toBe('error');
       expect(parsedDenied?.actionHint).toMatch(/permission/i);
+
+      expect(parseStatus('2 of 3 settings restored (1 skipped).')?.type).toBe('warning');
+      expect(parseStatus('Page changed while applying this view.')?.type).toBe('error');
     });
 
     it('renders nothing when status is null or empty', () => {

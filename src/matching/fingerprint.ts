@@ -55,17 +55,11 @@ export function fingerprintControl(element: Element, label: string): Fingerprint
     if (tag === 'input') {
       const name = element.getAttribute('name');
       if (name) {
-        try {
-          const escaped = typeof CSS !== 'undefined' && CSS.escape ? CSS.escape(name) : name;
-          const radios = Array.from(
-            element.ownerDocument.querySelectorAll<HTMLInputElement>(
-              `input[type="radio"][name="${escaped}"]`
-            )
-          );
-          options = radios.map((r) => r.value);
-        } catch {
-          // ignore selector errors
-        }
+        const input = element as HTMLInputElement;
+        const root = input.getRootNode();
+        const radios = Array.from(element.ownerDocument.querySelectorAll<HTMLInputElement>('input[type="radio"]'))
+          .filter((radio) => radio.name === name && radio.form === input.form && radio.getRootNode() === root);
+        options = radios.map((radio) => radio.value);
       }
     } else {
       // ARIA radio

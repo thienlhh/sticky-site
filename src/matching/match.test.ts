@@ -59,6 +59,19 @@ describe('matching/match', () => {
       document.body.innerHTML = '';
     });
 
+    it('keeps same-name radio groups in separate forms as candidates', () => {
+      document.body.innerHTML = `
+        <form><fieldset><legend>Shipping</legend><label><input type="radio" name="mode" value="ground" /> Ground</label></fieldset></form>
+        <form><fieldset><legend>Billing</legend><label><input id="monthly" type="radio" name="mode" value="monthly" /> Monthly</label></fieldset></form>
+      `;
+      const saved: Fingerprint = {
+        kind: 'radio', tag: 'input', type: 'radio', label: 'Billing', name: 'mode',
+        options: ['monthly'], ordinal: 0,
+      };
+
+      expect(matchControl(saved, Array.from(document.querySelectorAll('input')))?.element.id).toBe('monthly');
+    });
+
     it('matches candidate when score >= 70 and lead >= 10', () => {
       document.body.innerHTML = `
         <input id="search-box" name="q" type="search" placeholder="Search Query" />

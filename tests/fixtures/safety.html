@@ -42,5 +42,18 @@
     <button id="danger-delete" type="button" onclick="window.dangerTriggered = true">Delete Account</button>
     <a id="danger-link" href="/checkout">Proceed to Checkout</a>
   </form>
+  <button type="button" data-danger="Buy">Buy</button>
+  <button type="button" data-danger="Send">Send</button>
+  <button type="button" data-danger="Confirm">Confirm</button>
+  <button type="button" data-danger="Pay">Pay</button>
+  <script>
+    window.actionCounts = {Submit:0, Buy:0, Send:0, Delete:0, Confirm:0, Pay:0, Checkout:0};
+    document.querySelector('form').addEventListener('submit', e => { e.preventDefault(); window.actionCounts.Submit++; });
+    document.querySelector('#danger-delete').dataset.danger = 'Delete';
+    document.querySelector('#danger-link').dataset.danger = 'Checkout';
+    document.querySelectorAll('[data-danger]').forEach(el => el.addEventListener('click', e => {
+      e.preventDefault(); window.actionCounts[el.dataset.danger]++;
+    }));
+  </script>
 </body>
 </html>

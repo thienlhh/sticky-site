@@ -1,9 +1,11 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { App } from './App';
+import { App, statusForApplyResult } from './App';
 import * as pageAgent from '@/platform/page-agent';
+import * as operation from '@/apply/operation';
+import * as coordinator from '@/apply/coordinator';
 
 describe('Popup App Shell', () => {
   beforeEach(async () => {
@@ -88,6 +90,15 @@ describe('Popup App Shell', () => {
     expect(statusMsg).toBeInTheDocument();
   });
 
+  it('maps apply results to their explicit status severity', () => {
+    const base = { restoredCount: 1, totalAttempted: 3, skippedCount: 1, failedCount: 1 };
+
+    expect(statusForApplyResult({ ...base, status: 'Fully applied view', message: 'Done.' }).type).toBe('success');
+    expect(statusForApplyResult({ ...base, status: 'Partially applied view', message: '1 of 3 settings restored.' }).type).toBe('warning');
+    expect(statusForApplyResult({ ...base, status: 'Could not apply', message: 'Page changed while applying this view.' }).type).toBe('error');
+    expect(statusForApplyResult({ ...base, status: 'Applying view', message: 'Navigating to view URL...' }).type).toBe('loading');
+  });
+
   it('renders unavailable page state and disables Save button when active page is unsupported', async () => {
     vi.spyOn(pageAgent, 'getActivePage').mockRejectedValue(
       new Error('Unsupported page URL: chrome://. StickySite only supports web pages (HTTP and HTTPS).')
@@ -154,6 +165,137 @@ describe('Popup App Shell', () => {
 
     const statusMsg = await screen.findByText('Applying view...');
     expect(statusMsg).toBeInTheDocument();
+  });
+
+  it('uses a completed result that arrives while popup recovery is checking an operation', async () => {
+    vi.spyOn(pageAgent, 'getActivePage').mockResolvedValue({
+      tabId: 101,
+      url: new URL('https://example.com/search'),
+    });
+    vi.spyOn(operation, 'getActiveOperation')
+      .mockResolvedValueOnce({
+        tabId: 101,
+        viewId: 'view-1',
+        startedAt: Date.now(),
+        deadline: Date.now() + 10000,
+        expectedUrl: 'https://example.com/search',
+      })
+      .mockResolvedValueOnce(null);
+    vi.spyOn(operation, 'getLastApplyResult').mockResolvedValue({
+      status: 'Could not apply',
+      restoredCount: 0,
+      totalAttempted: 3,
+      skippedCount: 0,
+      failedCount: 3,
+      message: 'Page changed while applying this view.',
+    });
+
+    render(<App />);
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Page changed while applying this view.');
+  });
+
+  it('keeps a final storage result when START_APPLY later resolves as pending', async () => {
+    const user = userEvent.setup();
+    const { createView } = await import('@/storage/views');
+    const view = {
+      schemaVersion: 1 as const,
+      id: 'view-1',
+      name: 'Search',
+      origin: 'https://example.com',
+      pathname: '/search',
+      queryParams: {},
+      controls: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    await createView(view);
+    vi.spyOn(pageAgent, 'getActivePage').mockResolvedValue({
+      tabId: 101,
+      url: new URL('https://example.com/search'),
+    });
+    vi.spyOn(pageAgent, 'requestOriginAccess').mockResolvedValue(true);
+
+    let resolveRequest!: (result: Awaited<ReturnType<typeof coordinator.requestApply>>) => void;
+    let signalRequestStarted!: () => void;
+    const requestStarted = new Promise<void>((resolve) => { signalRequestStarted = resolve; });
+    vi.spyOn(coordinator, 'requestApply').mockImplementation(
+      () => new Promise((resolve) => {
+        resolveRequest = resolve;
+        signalRequestStarted();
+      })
+    );
+    const listeners = new Set<(changes: Record<string, chrome.storage.StorageChange>, area: string) => void>();
+    (chrome.storage as any).onChanged = {
+      addListener: (listener: (changes: Record<string, chrome.storage.StorageChange>, area: string) => void) => listeners.add(listener),
+      removeListener: (listener: (changes: Record<string, chrome.storage.StorageChange>, area: string) => void) => listeners.delete(listener),
+    };
+
+    render(<App />);
+    await user.click(await screen.findByRole('button', { name: 'Apply Search' }));
+    await requestStarted;
+
+    for (const listener of listeners) {
+      listener({
+        stickysite_last_apply_result: {
+          newValue: {
+            tabId: 101,
+            viewId: view.id,
+            result: {
+              status: 'Could not apply',
+              restoredCount: 0,
+              totalAttempted: 0,
+              skippedCount: 0,
+              failedCount: 0,
+              message: 'Page changed while applying this view.',
+            },
+            completedAt: Date.now(),
+          },
+        },
+      }, 'session');
+    }
+    expect(await screen.findByRole('alert')).toHaveTextContent('Page changed while applying this view.');
+
+    resolveRequest({
+      status: 'Applying view',
+      restoredCount: 0,
+      totalAttempted: 0,
+      skippedCount: 0,
+      failedCount: 0,
+      message: 'Navigating to view URL...',
+    });
+
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Page changed while applying this view.'));
+  });
+
+  it('updates an open popup when the active tab receives a completed apply result', async () => {
+    vi.spyOn(pageAgent, 'getActivePage').mockResolvedValue({
+      tabId: 101,
+      url: new URL('https://example.com/search'),
+    });
+    const listeners = new Set<(changes: Record<string, chrome.storage.StorageChange>, area: string) => void>();
+    (chrome.storage as any).onChanged = {
+      addListener: (listener: (changes: Record<string, chrome.storage.StorageChange>, area: string) => void) => listeners.add(listener),
+      removeListener: (listener: (changes: Record<string, chrome.storage.StorageChange>, area: string) => void) => listeners.delete(listener),
+    };
+
+    render(<App />);
+    await screen.findByText(/No saved views for this page yet/i);
+
+    for (const listener of listeners) {
+      listener({
+        stickysite_last_apply_result: {
+          newValue: {
+            tabId: 101,
+            viewId: 'view-1',
+            result: { status: 'Fully applied view', message: 'All 3 settings restored successfully.' },
+            completedAt: Date.now(),
+          },
+        },
+      }, 'session');
+    }
+
+    expect(await screen.findByRole('status')).toHaveTextContent('All 3 settings restored successfully.');
   });
 
   describe('R7: Review Update before replacing settings', () => {
@@ -388,7 +530,4 @@ describe('Popup App Shell', () => {
     });
   });
 });
-
-
-
 

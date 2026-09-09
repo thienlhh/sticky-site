@@ -2,7 +2,7 @@
 
 ## Active remediation — 2026-09-09 review
 
-**Release status: ready.** Remediation review-fix tasks R0–R13 in [plan.md](plan.md#active-work--review-fixes-2026-09-09) are complete. All PRD gates, unit tests (18 test files, 159 tests), and Chrome E2E tests (8 tests) pass cleanly.
+**Release status: blocked.** Automated verification is complete; native permission, broader accessibility, and real-site release gates remain open. Historical checked tasks below are not current acceptance evidence; see the current verification record in [RELEASE_CHECKLIST.md](../docs/RELEASE_CHECKLIST.md).
 
 - [x] **R0:** Correct release status and evidence claims.
 - [x] **R1:** Restrict actions to the active supported page.
@@ -18,11 +18,26 @@
 - [x] **Checkpoint C:** Accurate results and lossless management pass.
 - [x] **R9:** Wire configurable background analytics delivery.
 - [x] **R10:** Emit required events and truthful report status.
-- [x] **R11:** Prove permission, Save, and browser restart.
+- [ ] **R11:** Native permission dialog remains open; real Save and browser restart pass.
 - [x] **Checkpoint D:** Analytics and real Save persistence have evidence.
-- [x] **R12:** Prove restoration and management in Chrome.
-- [x] **R13:** Rebuild real-site, performance, privacy, and release evidence.
-- [x] **Final checkpoint:** All ten findings resolved; all PRD gates supported by current evidence.
+- [ ] **R12:** Automated restoration, management, and keyboard Save/Apply pass; remaining accessibility and broader native fixtures are listed in the release checklist.
+- [ ] **R13:** Clean-install, performance, privacy, source hashes, and three real-page restoration records added; ten-page gate remains open.
+- [ ] **Final checkpoint:** Automated fixes verified; native permission, real-site, performance, accessibility, and release gates still need evidence.
+
+## Second-review verification
+
+- [x] Final consolidated unit, typecheck, and production build run: 190 tests across 18 files; verified from a clean dependency install.
+- [x] Native-popup behavioral suite: actual Save, restart, Apply, reviewed Update, same-site management, navigation, timeout, prohibited-action assertions, and keyboard Save/Apply.
+- [x] Remove unsupported real-site and release-readiness claims.
+- [ ] Manual and release checks listed in [RELEASE_CHECKLIST.md](../docs/RELEASE_CHECKLIST.md).
+
+## Additional fixes found during verification
+
+- [x] Import WXT entrypoint helpers explicitly so clean typechecking works before generated files exist.
+- [x] Replace low-contrast muted text; Chrome regression measures 7.58:1 for the empty-state hint.
+- [x] Exclude recognizable contact/credential fields declared as text in both capture and restore, with a no-mutation regression and a real Target rerun.
+- [x] Validate analytics values as well as keys; reject private text inside allowed metadata properties.
+- [x] Retain reproducible public-page runner and dated evidence; remove unsupported compatibility totals.
 
 ## Historical implementation checklist
 

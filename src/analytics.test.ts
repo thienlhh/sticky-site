@@ -21,6 +21,21 @@ describe('Analytics & Privacy Engine (Task 10A)', () => {
   });
 
   describe('Strict Payload Allowlist & Prohibited Property Rejection', () => {
+    it('rejects private text and invalid values hidden inside allowlisted keys', () => {
+      const invalid: Record<string, string | number>[] = [
+        { capturedCount: 'private search text' },
+        { attemptedCount: -1 },
+        { restoredCount: 1.5 },
+        { skippedCount: Infinity },
+        { distinctSiteBucket: 'example.com' },
+        { failureCategory: 'user@example.com' },
+        { installationId: 'private identifier' },
+        { extensionVersion: 'page contents' },
+        { timestamp: 'search query' },
+      ];
+      for (const payload of invalid) expect(() => validatePayload(payload)).toThrow();
+    });
+
     it('accepts strictly allowlisted numerical counts and coarse buckets', () => {
       const valid = {
         capturedCount: 5,
@@ -174,6 +189,16 @@ describe('Analytics & Privacy Engine (Task 10A)', () => {
       expect(parsedBody.installationId).toBeDefined();
       expect(parsedBody.extensionVersion).toBe('1.0.0');
       expect(parsedBody.timestamp).toBeDefined();
+    });
+
+    it('rejects an HTTP error response instead of reporting delivery', async () => {
+      const fetchMock = vi.fn().mockResolvedValue({ ok: false, status: 500, statusText: 'Server Error' });
+      const adapter = (await import('./analytics')).createHttpAdapter(
+        'http://127.0.0.1:9876/collector',
+        fetchMock as unknown as typeof fetch
+      );
+
+      await expect(adapter.send('view_created', {})).rejects.toThrow(/analytics request failed: 500/i);
     });
 
     it('does NOT make any network request when analytics is disabled even with HTTP adapter configured', async () => {

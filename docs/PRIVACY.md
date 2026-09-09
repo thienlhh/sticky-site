@@ -6,22 +6,22 @@ Last updated: September 2026
 
 **Your saved views stay in your browser.**
 
-StickySite is designed from the ground up to protect your privacy and personal data. It operates strictly locally inside your browser, requiring no user account, no remote backend, and no blanket website access.
+Saving and applying views runs locally and requires no account or product backend. Optional technical analytics can use a separately configured endpoint. The verified default build has no endpoint configured and sends no analytics requests.
 
 ---
 
 ## 1. Local Storage
 
 - **Saved Views:** Filter configurations, selected options, search terms, and form states that you explicitly save are stored locally on your device via `chrome.storage.local`.
-- **Retention:** Saved views persist until you explicitly rename, update, or delete them, or clear extension storage.
+- **Retention:** Saved views persist until you delete them or clear extension storage. Rename changes a view's name; Update replaces its reviewed settings. In-progress Apply and recent results use temporary session storage.
 - **No Cloud Synchronization:** StickySite does not synchronize, upload, or backup your saved views or form values to any remote server.
 
 ---
 
 ## 2. Website Permissions
 
-- **No Blanket Access:** StickySite does not declare or request blanket access to all websites (`<all_urls>` or `*://*/*`).
-- **On-Demand Access:** Host permission is requested only for the specific domain of the active tab, and only after you interact with StickySite (such as clicking "Save Current View" or "Apply").
+- **No Granted Blanket Access:** Installation grants no website host permissions. The manifest declares HTTP/HTTPS sites as optional so access can be requested individually.
+- **On-Demand Access:** After you choose Save, Apply, or Update, StickySite requests a host pattern based on the active origin. Saved-view matching requires the exact origin and normalized page path. Chrome interprets permissions using its [host match-pattern rules](https://developer.chrome.com/docs/extensions/develop/concepts/match-patterns).
 - **Excluded Sensitive Fields:** StickySite strictly excludes passwords, emails, phone numbers, credit card or financial inputs, one-time authentication codes (OTP), and sensitive query tokens (such as `token`, `session`, `auth`, `jwt`, `secret`, `sig`).
 
 ---
@@ -31,7 +31,7 @@ StickySite is designed from the ground up to protect your privacy and personal d
 StickySite includes minimal, privacy-first technical analytics to measure extension reliability and improve site compatibility.
 
 ### What We Collect (Allowlisted Technical Metadata Only)
-When analytics is enabled, the extension may transmit only:
+When analytics is enabled and an endpoint is configured, the extension may transmit only:
 1. An anonymous, randomly generated installation identifier (`UUID`).
 2. The extension version (e.g. `1.0.0`).
 3. Standard event names (`extension_installed`, `site_permission_granted`, `save_view_started`, `view_created`, `view_apply_started`, `view_apply_full`, `view_apply_partial`, `view_apply_failed`, `view_updated`, `view_deleted`).
@@ -42,15 +42,18 @@ When analytics is enabled, the extension may transmit only:
    - Number of skipped settings (e.g. `1`)
 5. Coarse site-count bucket calculated locally without domain names (e.g. `"1"`, `"2-5"`, `"6-10"`, `"10+"`).
 6. Coarse failure category (e.g. `no_match`, `permission_denied`, `timeout`).
+7. Event timestamp.
 
 ### What We NEVER Collect
-StickySite **never** accesses, logs, or transmits:
+Analytics payloads exclude the following data. StickySite reads eligible page settings locally when you capture or apply a view; that local processing is separate from analytics.
 - Domain names, website origins, or page URLs
 - Query strings or URL parameters
 - Control labels, values, placeholders, or form contents
 - Element IDs, class names, CSS selectors, or DOM fingerprints
 - Keystrokes, search text, or page text
-- Personal information, IP addresses, or browsing history
+- Personal information or browsing history
+
+No IP address is included in the application payload. Any configured remote server receives a network connection and may observe its source IP; operator, retention, and hosting disclosures must be reviewed before enabling a production endpoint. This policy does not claim that an unspecified server discards connection metadata.
 
 ---
 
@@ -59,7 +62,7 @@ StickySite **never** accesses, logs, or transmits:
 You maintain complete control over your data:
 - **Disable Analytics:** You can toggle off product analytics at any time directly in the extension popup settings. When disabled, no network requests are sent.
 - **Reset Anonymous Identity:** You can reset your anonymous installation UUID at any time with a single click.
-- **Compatibility Issue Reporting:** If a view fails to restore on a site, you may choose to submit a compatibility report. Before sending, StickySite displays the exact technical metadata payload for your inspection and requires explicit confirmation.
+- **Compatibility Issue Reporting:** You can preview technical metadata before confirming a compatibility report. Delivery adds the installation identifier, extension version, and timestamp listed above. Disabled, unconfigured, and failed delivery are reported separately; an unconfigured build does not submit reports.
 
 ---
 

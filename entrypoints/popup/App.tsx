@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   getActivePage,
@@ -15,10 +15,10 @@ import { CaptureReview } from './CaptureReview';
 import { SaveView } from './SaveView';
 import { ViewList } from './ViewList';
 import { ViewActions, type ViewAction } from './ViewActions';
-import { StatusMessage } from './StatusMessage';
+import { StatusMessage, type StatusState } from './StatusMessage';
 import { ReportIssue } from './ReportIssue';
 import { Onboarding, isOnboardingCompleted } from './Onboarding';
-import { requestApply } from '@/apply/coordinator';
+import { requestApply, type ViewApplyResult } from '@/apply/coordinator';
 import { getLastApplyResult, getActiveOperation } from '@/apply/operation';
 import {
   isAnalyticsEnabled,
@@ -31,9 +31,32 @@ import { Settings as SettingsIcon } from 'lucide-react';
 
 export type Screen = 'idle' | 'review' | 'save' | 'settings' | 'report' | 'onboarding';
 
+const applyingStatus: StatusState = { type: 'loading', message: 'Applying view...' };
+
+export function statusForApplyResult(result: ViewApplyResult): StatusState {
+  switch (result.status) {
+    case 'Fully applied view':
+      return { type: 'success', message: result.message };
+    case 'Partially applied view':
+      return {
+        type: 'warning',
+        message: result.message,
+        actionHint: 'Some settings could not be safely restored.',
+      };
+    case 'Applying view':
+      return { type: 'loading', message: result.message };
+    case 'Could not apply':
+      return {
+        type: 'error',
+        message: result.message,
+        actionHint: 'Ensure the saved page is open, then try again.',
+      };
+  }
+}
+
 export function App() {
   const [screen, setScreen] = useState<Screen>('idle');
-  const [status, setStatus] = useState<string>('');
+  const [status, setStatus] = useState<string | StatusState>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [analyticsOn, setAnalyticsOn] = useState<boolean>(true);
   const [activePageInfo, setActivePageInfo] = useState<{ origin: string; pathname: string } | null>(null);
@@ -47,6 +70,7 @@ export function App() {
     controls: CapturedSetting[];
     queryParams: Record<string, string[]>;
   } | null>(null);
+  const statusRevision = useRef(0);
 
   const refreshViews = async () => {
     try {
@@ -73,8 +97,32 @@ export function App() {
 
   useEffect(() => {
     refreshViews();
+    let activeTabId: number | null = null;
+    const handleStorageChange = (
+      changes: Record<string, chrome.storage.StorageChange>,
+      areaName: string
+    ) => {
+      if (areaName !== 'session' || activeTabId === null) return;
+
+      const operation = changes.stickysite_apply_op?.newValue as { tabId?: number } | undefined;
+      if (operation?.tabId === activeTabId) {
+        statusRevision.current++;
+        setStatus(applyingStatus);
+      }
+
+      const result = changes.stickysite_last_apply_result?.newValue as
+        | { tabId?: number; result?: ViewApplyResult }
+        | undefined;
+      if (result?.tabId === activeTabId && result.result) {
+        statusRevision.current++;
+        setStatus(statusForApplyResult(result.result));
+      }
+    };
+    chrome.storage.onChanged?.addListener(handleStorageChange);
+
     getActivePage()
       .then(async (p) => {
+        activeTabId = p.tabId;
         setIsPageUnavailable(false);
         setActivePageInfo({
           origin: p.url.origin,
@@ -83,14 +131,16 @@ export function App() {
 
         // Check if an apply is actively running or recently completed for this tab
         try {
+          const recoveryRevision = statusRevision.current;
+          // A result can be written while an operation is being cleared.
+          await getActiveOperation(p.tabId);
+          const lastRes = await getLastApplyResult(p.tabId);
           const activeOp = await getActiveOperation(p.tabId);
+          if (statusRevision.current !== recoveryRevision) return;
           if (activeOp) {
-            setStatus('Applying view...');
-          } else {
-            const lastRes = await getLastApplyResult(p.tabId);
-            if (lastRes) {
-              setStatus(lastRes.message || lastRes.status);
-            }
+            setStatus(applyingStatus);
+          } else if (lastRes) {
+            setStatus(statusForApplyResult(lastRes));
           }
         } catch {
           // Ignore session recovery failure
@@ -102,6 +152,8 @@ export function App() {
         const msg = err instanceof Error ? err.message : 'Active page is unavailable or unsupported.';
         setStatus(msg);
       });
+
+    return () => chrome.storage.onChanged?.removeListener(handleStorageChange);
   }, []);
 
   const handleStartCapture = async () => {
@@ -485,7 +537,7 @@ export function App() {
               views={allViews}
               onApply={async (view) => {
                 setIsLoading(true);
-                setStatus(`Applying "${view.name}"...`);
+                setStatus({ type: 'loading', message: `Applying "${view.name}"...` });
                 try {
                   const page = await getActivePage();
                   const granted = await requestOriginAccess(page.url);
@@ -494,8 +546,11 @@ export function App() {
                     return;
                   }
                   emitAnalyticsEvent('site_permission_granted').catch(() => {});
+                  const applyRevision = statusRevision.current;
                   const res = await requestApply(page.tabId, view);
-                  setStatus(res.message || res.status);
+                  if (statusRevision.current === applyRevision) {
+                    setStatus(statusForApplyResult(res));
+                  }
                 } catch (err) {
                   setStatus(err instanceof Error ? err.message : 'Apply failed');
                 } finally {

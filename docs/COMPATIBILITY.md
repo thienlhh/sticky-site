@@ -1,49 +1,31 @@
-# StickySite Real-Page Compatibility Matrix
+# StickySite real-page compatibility
 
-Last updated: September 2026 (Remediation R13 verified: 2026-09-09)  
-Tested Browser: Google Chrome 128.0+ / Playwright Chromium 130.0+ (Manifest V3)  
-Target Reliability: At least 85% across real-world filtering pages (PRD Section 8)  
-Status: **VERIFIED — MEETS PRD RELIABILITY GATE**
+**Release gate: OPEN.** Three pages have limited restoration evidence; ten passing pages and the 85% real-page gate have not been established. Earlier unsupported 58/56 totals are superseded by these observations.
 
-> [!NOTE]
-> **Verification & Arithmetic Audit (R13):**
-> The 10 real-world filtering pages below were re-evaluated and audited for exact arithmetic.
-> Across all 10 sites, 58 settings were attempted, 56 restored cleanly, 2 were safely skipped due to ambiguous dynamic IDs, and 0 failed.
-> Overall reliability is **96.6%** (56/58), exceeding the PRD Section 8 target of >= 85%.
+Checked 2026-09-09 in isolated, anonymous Chromium 153.0.8010.12 on macOS arm64 / Apple M1. Exact URLs, timestamps, redirects, HTTP responses, reviewed settings, and outcomes are retained in the [availability record](evidence/2026-09-09/real-page-availability.json) and [restoration record](evidence/2026-09-09/real-page-restoration.json).
 
----
+| Page / flow | Observed access or result | Apply attempts | Reported restored | Independently verified changed controls |
+|---|---|---:|---:|---:|
+| Indeed jobs, engineer query | HTTP 403, blocked | — | — | — |
+| LinkedIn jobs, engineer query | Save reviewed three query entries; no eligible text control captured for the perturbation step. Apply untested. | — | — | — |
+| eBay search, keyboard | HTTP 403 | — | — | — |
+| Amazon search, keyboard | HTTP 503 | — | — | — |
+| Etsy search, keyboard | HTTP 403 | — | — | — |
+| Zillow homes | HTTP 403, access denied | — | — | — |
+| Target deals / Video Game Sale | Search restored to empty; text-typed email signup field excluded after fix | 1 | 1 | 1 |
+| BestBuy search, keyboard | Navigation timed out at 15 seconds | — | — | — |
+| Craigslist SF Bay search, keyboard | Search restored to `keyboard`; two query entries verified by coordinator | 3 | 3 | 1 |
+| HN Algolia search, keyboard | Search restored to `keyboard`; one query entry verified by coordinator | 2 | 2 | 1 |
 
-## 1. Compatibility Matrix
+The three completed runs report **6/6 settings restored**, including **3/3 deliberately changed search fields** independently checked by the harness. The other three settings are query entries that may already match. This small, selected sample is not the ten-page reliability gate. Inaccessible or incomplete pages have no restoration denominator and are not counted as passes.
 
-| # | Site / Flow | Category | Architecture / Framework | Attempted | Restored | Skipped / Failed | Reliability | Test Date | Notes |
-|---|---|---|---|---:|---:|---:|---:|---|---|
-| 1 | **Indeed Search** (`/jobs`) | Job Search | React + Query Params | 5 | 5 | 0 | 100% | 2026-09-09 | Labeled text queries, distance dropdown, job type checkboxes restored cleanly. |
-| 2 | **LinkedIn Jobs** (`/jobs/search`) | Job Search | Ember / React SPA | 6 | 6 | 0 | 100% | 2026-09-09 | Location input, experience-level checkboxes, date-posted radio group. |
-| 3 | **eBay Catalog** (`/sch`) | Marketplace | Server-rendered SSR + DOM filters | 7 | 7 | 0 | 100% | 2026-09-09 | Category select, price range min/max inputs, buying format radios, condition checkboxes. |
-| 4 | **Amazon Search** (`/s`) | Marketplace | Hybrid SSR + Client Hydration | 8 | 7 | 1 | 87.5% | 2026-09-09 | Brand checkboxes, customer rating radio, prime switch. 1 dynamic transient filter safely skipped due to ambiguous ID. |
-| 5 | **Etsy Search** (`/search`) | Marketplace | React + Native Controls | 5 | 5 | 0 | 100% | 2026-09-09 | Price radio options, shipping checkboxes, ordering dropdown. |
-| 6 | **Zillow Homes** (`/homes`) | Real Estate | React + Client-Side Dynamic Rendering | 6 | 5 | 1 | 83.3% | 2026-09-09 | Price min/max, bedrooms radio, home type checkboxes. Bounded retry observer waited for delayed select. |
-| 7 | **Target Deals** (`/c`) | Catalog | Next.js / React | 6 | 6 | 0 | 100% | 2026-09-09 | Category radio, discount percentage checkbox, sort select dropdown. |
-| 8 | **BestBuy Filters** (`/site/searchpage.jsp`) | Catalog | Vue.js + Query Strings | 6 | 6 | 0 | 100% | 2026-09-09 | Brand checkboxes, rating select, availability switches. |
-| 9 | **Craigslist Search** (`/search`) | Classifieds | Vanilla HTML5 Form | 5 | 5 | 0 | 100% | 2026-09-09 | Pure native inputs, query inputs, price min/max, miles radius select. |
-| 10 | **Hacker News Algolia** (`/`) | Directory | React InstantSearch | 4 | 4 | 0 | 100% | 2026-09-09 | Search text, type dropdown, date range radio group. |
+## Reproduction and boundaries
 
----
+1. Build the production extension with `npm run build`.
+2. Run `node --experimental-strip-types e2e/real-pages.mjs` from the repository root. It writes `test-results/real-page-restoration.json` and does not overwrite this dated evidence.
+3. The runner launches an isolated extension profile, opens each accessible public flow, captures through Save Current View, reviews all eligible settings, and saves through the popup UI.
+4. It changes one captured text field to `sticky site test`, applies through the popup, reads the background result, and independently compares that field's final value with its saved value. General website buttons are not invoked by the runner.
 
-## 2. Summary Statistics
+CDP grants real `activeTab` access, but `permissions.contains` is stubbed. Native optional-permission dialogs remain unverified. These are narrow search-field checks, not full evaluations of each site's filters, framework, destructive-action safety, or every eligible query-navigation combination. No account login or access-control workaround was attempted.
 
-- **Total Real Pages Evaluated:** 10
-- **Total Settings Attempted:** 58
-- **Total Settings Restored:** 56
-- **Total Settings Safely Skipped:** 2
-- **Total Settings Failed:** 0
-- **Mean Fixture Reliability:** 96.6% (56/58 restored; exceeds PRD Section 8 threshold of >= 85%)
-- **Prohibited Action Activations:** 0 (Zero submits, checkouts, or destructive clicks triggered)
-
----
-
-## 3. Findings & Safety Observations
-
-1. **Reversible Native Events:** Triggering standard `input` and `change` events alongside native prototype setters ensures React and Vue controlled components pick up new values without desynchronization.
-2. **Deterministic Skipping:** On sites where dynamic IDs change between sessions (e.g. ephemeral hashes in CSS modules), StickySite safely skips candidates scoring under 70 or without a 10-point lead, protecting the user from incorrect state.
-3. **No Blanket Access Required:** All 10 sites operate with on-demand user-initiated origin permissions.
+The [pre-fix record](evidence/2026-09-09/real-page-restoration-before-contact-fix.json) documents the Target email-field discovery. It is diagnostic evidence only; use the final restoration record for current counts.

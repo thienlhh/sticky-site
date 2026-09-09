@@ -50,4 +50,15 @@ describe('matching/fingerprint', () => {
     expect(fp.tag).toBe('select');
     expect(fp.options).toEqual(['asc', 'desc']);
   });
+
+  it('scopes native radio options to the matched form and root', () => {
+    document.body.innerHTML = `
+      <form><input id="shipping-ground" type="radio" name="mode" value="ground" /><input type="radio" name="mode" value="air" /></form>
+      <form><input type="radio" name="mode" value="monthly" /><input type="radio" name="mode" value="yearly" /></form>
+    `;
+
+    const input = document.getElementById('shipping-ground')!;
+
+    expect(fingerprintControl(input, 'Shipping').options).toEqual(['ground', 'air']);
+  });
 });

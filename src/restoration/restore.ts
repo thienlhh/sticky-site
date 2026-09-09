@@ -18,12 +18,23 @@ export interface RestoreReport {
 export async function restoreControls(
   doc: Document,
   controls: CapturedSetting[],
-  options?: { timeoutMs?: number }
+  options?: { timeoutMs?: number; deadlineAt?: number }
 ): Promise<RestoreReport> {
   const candidateQuery =
     'input, select, textarea, [role="switch"], [role="checkbox"], [role="radio"]';
 
   const outcomesMap = new Map<string, SettingOutcome>();
+  const timeoutMs = Math.min(Math.max(options?.timeoutMs ?? 0, 0), 5000);
+  const startedAt = Date.now();
+  const suppliedDeadline = options?.deadlineAt;
+  const operationDeadlineAt =
+    typeof suppliedDeadline === 'number' && Number.isFinite(suppliedDeadline)
+      ? Math.min(suppliedDeadline, startedAt + 5000)
+      : startedAt + 5000;
+  const retryDeadlineAt = timeoutMs > 0
+    ? Math.min(operationDeadlineAt, startedAt + timeoutMs)
+    : operationDeadlineAt;
+  const expired = (deadlineAt: number) => Date.now() >= deadlineAt;
 
   const reverifyAll = () => {
     const rawCandidates = Array.from(doc.querySelectorAll<HTMLElement>(candidateQuery));
@@ -31,22 +42,28 @@ export async function restoreControls(
 
     for (const control of controls) {
       const currentOutcome = outcomesMap.get(control.id);
-      if (currentOutcome === 'restored') {
-        const matched = matchControl(control.fingerprint, candidates);
-        if (!matched || !isControlEligible(matched.element) || !verifyControlValue(matched.element, control)) {
-          // Setting was disturbed, reset, or rejected by framework/subsequent control
-          outcomesMap.set(control.id, 'failed');
-        }
+      const matched = matchControl(control.fingerprint, candidates);
+      if (matched && isControlEligible(matched.element) && verifyControlValue(matched.element, control)) {
+        outcomesMap.set(control.id, 'restored');
+      } else if (currentOutcome === 'restored') {
+        // Setting was disturbed, reset, or rejected by framework/subsequent control.
+        outcomesMap.set(control.id, 'failed');
       }
     }
   };
 
-  const attemptRestoration = (remaining: CapturedSetting[]): CapturedSetting[] => {
+  const attemptRestoration = (
+    remaining: CapturedSetting[],
+    deadlineAt = operationDeadlineAt
+  ): CapturedSetting[] => {
     const rawCandidates = Array.from(doc.querySelectorAll<HTMLElement>(candidateQuery));
     const candidates = rawCandidates.filter((el) => isControlEligible(el));
     const stillUnresolved: CapturedSetting[] = [];
 
-    for (const control of remaining) {
+    for (let index = 0; index < remaining.length; index++) {
+      if (expired(deadlineAt)) return remaining.slice(index);
+
+      const control = remaining[index];
       const matched = matchControl(control.fingerprint, candidates);
       if (!matched) {
         outcomesMap.set(control.id, 'skipped');
@@ -80,16 +97,19 @@ export async function restoreControls(
 
   // Initial pass
   let unresolved = attemptRestoration(controls);
-
-  // If all restored or no observer available or timeout is 0, return immediately after reverification
-  const timeoutMs = options?.timeoutMs ?? 0;
+  const settleMs = (deadlineAt: number) => Math.min(100, Math.max(0, deadlineAt - Date.now()));
+  const settleDeadlineAt = timeoutMs > 0 ? retryDeadlineAt : operationDeadlineAt;
 
   if (
     unresolved.length === 0 ||
     timeoutMs <= 0 ||
     typeof MutationObserver === 'undefined' ||
-    !doc.body
+    !doc.body ||
+    expired(operationDeadlineAt)
   ) {
+    if (!expired(operationDeadlineAt)) {
+      await new Promise<void>((resolve) => setTimeout(resolve, settleMs(settleDeadlineAt)));
+    }
     reverifyAll();
     return {
       outcomes: controls.map((c) => ({
@@ -102,6 +122,8 @@ export async function restoreControls(
   // Bounded retry window with MutationObserver
   return new Promise<RestoreReport>((resolve) => {
     let timer: any = null;
+    let settleTimer: any = null;
+    let retryTimer: any = null;
     let observer: MutationObserver | null = null;
 
     const cleanup = () => {
@@ -112,6 +134,14 @@ export async function restoreControls(
       if (timer) {
         clearTimeout(timer);
         timer = null;
+      }
+      if (settleTimer) {
+        clearTimeout(settleTimer);
+        settleTimer = null;
+      }
+      if (retryTimer) {
+        clearTimeout(retryTimer);
+        retryTimer = null;
       }
     };
 
@@ -126,24 +156,52 @@ export async function restoreControls(
       });
     };
 
-    observer = new MutationObserver(() => {
-      unresolved = attemptRestoration(unresolved);
-      if (unresolved.length === 0) {
-        done();
+    const settle = () => {
+      if (!settleTimer) {
+        settleTimer = setTimeout(done, settleMs(retryDeadlineAt));
       }
-    });
+    };
 
-    try {
-      observer.observe(doc.body, {
+    const observe = () => {
+      observer?.observe(doc.body!, {
         childList: true,
         subtree: true,
         attributes: true,
+        attributeFilter: ['aria-checked', 'aria-disabled', 'class', 'disabled', 'hidden', 'style'],
       });
+    };
+
+    const retry = () => {
+      retryTimer = null;
+      if (expired(retryDeadlineAt)) {
+        done();
+        return;
+      }
+
+      // Ignore mutations caused by our own dispatched control events.
+      observer?.disconnect();
+      unresolved = attemptRestoration(unresolved, retryDeadlineAt);
+      if (expired(retryDeadlineAt)) {
+        done();
+      } else if (unresolved.length === 0) {
+        settle();
+      } else {
+        observe();
+      }
+    };
+
+    observer = new MutationObserver(() => {
+      if (unresolved.length === 0 || retryTimer || expired(retryDeadlineAt)) return;
+      retryTimer = setTimeout(retry, 0);
+    });
+
+    try {
+      observe();
     } catch {
       done();
       return;
     }
 
-    timer = setTimeout(done, timeoutMs);
+    timer = setTimeout(done, Math.max(0, retryDeadlineAt - Date.now()));
   });
 }

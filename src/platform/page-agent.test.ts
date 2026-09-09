@@ -45,14 +45,12 @@ describe('platform/page-agent', () => {
       expect(page.url.pathname).toBe('/path');
     });
 
-    it('falls back to lastFocusedWindow if currentWindow tab is missing or has no url', async () => {
-      mockTabs.query
-        .mockResolvedValueOnce([]) // currentWindow
-        .mockResolvedValueOnce([{ id: 99, url: 'https://example.org/search' }]); // lastFocusedWindow
+    it('does not select a tab from another window when the current window has no active tab', async () => {
+      mockTabs.query.mockResolvedValue([]);
 
-      const page = await getActivePage();
-      expect(page.tabId).toBe(99);
-      expect(page.url.origin).toBe('https://example.org');
+      await expect(getActivePage()).rejects.toThrow(/no active tab/i);
+      expect(mockTabs.query).toHaveBeenCalledTimes(1);
+      expect(mockTabs.query).toHaveBeenCalledWith({ active: true, currentWindow: true });
     });
 
     it('uses pendingUrl if url is missing', async () => {
@@ -91,13 +89,8 @@ describe('platform/page-agent', () => {
       ]);
       await expect(getActivePage()).rejects.toThrow(/unsupported page/i);
 
-      // Even if another tab is a valid web page, active non-web tab must throw
-      mockTabs.query.mockImplementation(async (queryInfo: any) => {
-        if (queryInfo.active) {
-          return [{ id: 13, url: 'chrome-extension://xyz/popup.html' }];
-        }
-        return [{ id: 99, url: 'https://example.com' }];
-      });
+      // Even if another window has a valid web page, the current active non-web tab must throw.
+      mockTabs.query.mockResolvedValue([{ id: 13, url: 'chrome-extension://xyz/popup.html' }]);
       await expect(getActivePage()).rejects.toThrow(/unsupported page/i);
     });
   });

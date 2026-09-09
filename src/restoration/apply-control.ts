@@ -1,8 +1,22 @@
 import type { CapturedSetting } from '@/domain/view';
+import { isControlEligible } from '@/capture/eligibility';
 
 function dispatchEvents(element: Element): void {
   element.dispatchEvent(new Event('input', { bubbles: true }));
   element.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
+function nativeRadioGroup(element: HTMLInputElement): HTMLInputElement[] {
+  const doc = element.ownerDocument;
+  if (!doc || !element.name) return [element];
+
+  const root = element.getRootNode();
+  return Array.from(doc.querySelectorAll<HTMLInputElement>('input[type="radio"]')).filter(
+    (radio) =>
+      radio.name === element.name &&
+      radio.form === element.form &&
+      radio.getRootNode() === root
+  );
 }
 
 export function applyControlValue(element: Element, setting: CapturedSetting): boolean {
@@ -15,22 +29,8 @@ export function applyControlValue(element: Element, setting: CapturedSetting): b
     if (tag === 'input') {
       const input = element as HTMLInputElement;
       if (input.checked !== targetBoolean) {
-        // Safe reversible state change via click or native setter
-        try {
-          const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'checked')?.set;
-          if (setter) {
-            setter.call(input, targetBoolean);
-          } else {
-            input.checked = targetBoolean;
-          }
-          dispatchEvents(input);
-        } catch {
-          // ignore
-        }
-
-        if (input.checked !== targetBoolean) {
-          input.click();
-        }
+        // Native click is required for framework checkbox change handlers.
+        input.click();
       }
       return input.checked === targetBoolean;
     } else {
@@ -67,7 +67,7 @@ export function applyControlValue(element: Element, setting: CapturedSetting): b
         return val === targetValue;
       });
 
-      if (targetRadio) {
+      if (targetRadio && isControlEligible(targetRadio)) {
         if (targetRadio.getAttribute('aria-checked') !== 'true') {
           targetRadio.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
           dispatchEvents(targetRadio);
@@ -80,10 +80,10 @@ export function applyControlValue(element: Element, setting: CapturedSetting): b
     }
 
     // Native radio input
-    const name = (element as HTMLInputElement).name;
+    const input = element as HTMLInputElement;
+    const name = input.name;
     if (!doc || !name) {
-      if ((element as HTMLInputElement).value === targetValue) {
-        const input = element as HTMLInputElement;
+      if (input.value === targetValue && isControlEligible(input)) {
         if (!input.checked) {
           input.click();
         }
@@ -93,23 +93,12 @@ export function applyControlValue(element: Element, setting: CapturedSetting): b
     }
 
     try {
-      const escapedName = typeof CSS !== 'undefined' && CSS.escape ? CSS.escape(name) : name;
-      const radios = Array.from(
-        doc.querySelectorAll<HTMLInputElement>(`input[type="radio"][name="${escapedName}"]`)
-      );
+      const radios = nativeRadioGroup(input);
 
       const targetRadio = radios.find((r) => r.value === targetValue);
-      if (targetRadio) {
+      if (targetRadio && isControlEligible(targetRadio)) {
         if (!targetRadio.checked) {
           targetRadio.click();
-          if (!targetRadio.checked) {
-            // Try native setter if framework intercepted click
-            const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'checked')?.set;
-            if (setter) {
-              setter.call(targetRadio, true);
-              dispatchEvents(targetRadio);
-            }
-          }
         }
         return targetRadio.checked;
       }
@@ -230,16 +219,14 @@ export function verifyControlValue(element: Element, setting: CapturedSetting): 
     }
 
     const doc = element.ownerDocument;
-    const name = (element as HTMLInputElement).name;
+    const input = element as HTMLInputElement;
+    const name = input.name;
     if (!doc || !name) {
-      return (element as HTMLInputElement).checked && (element as HTMLInputElement).value === targetValue;
+      return input.checked && input.value === targetValue;
     }
 
     try {
-      const escapedName = typeof CSS !== 'undefined' && CSS.escape ? CSS.escape(name) : name;
-      const radios = Array.from(
-        doc.querySelectorAll<HTMLInputElement>(`input[type="radio"][name="${escapedName}"]`)
-      );
+      const radios = nativeRadioGroup(input);
       const checked = radios.find((r) => r.checked);
       return checked ? checked.value === targetValue : !targetValue;
     } catch {

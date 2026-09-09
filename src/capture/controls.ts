@@ -77,20 +77,28 @@ export function capturePage(doc: Document, url: URL): CaptureResult {
     )
   );
 
-  const seenRadioGroups = new Set<string>();
+  const seenRadioGroups = new Set<HTMLInputElement[]>();
   const ordinalCounters: Record<string, number> = {};
 
-  const radioGroupsByName = new Map<string, HTMLInputElement[]>();
+  const radioGroupsByElement = new WeakMap<HTMLInputElement, HTMLInputElement[]>();
+  const nativeRadioGroups: HTMLInputElement[][] = [];
   for (const el of candidateElements) {
     if (el.tagName === 'INPUT' && (el as HTMLInputElement).type === 'radio') {
-      const name = el.getAttribute('name');
+      const radio = el as HTMLInputElement;
+      const name = radio.name;
       if (name) {
-        let list = radioGroupsByName.get(name);
+        let list = nativeRadioGroups.find(
+          (group) =>
+            group[0].name === name &&
+            group[0].form === radio.form &&
+            group[0].getRootNode() === radio.getRootNode()
+        );
         if (!list) {
           list = [];
-          radioGroupsByName.set(name, list);
+          nativeRadioGroups.push(list);
         }
-        list.push(el as HTMLInputElement);
+        list.push(radio);
+        radioGroupsByElement.set(radio, list);
       }
     }
   }
@@ -133,12 +141,11 @@ export function capturePage(doc: Document, url: URL): CaptureResult {
     if (type === 'radio') {
       const name = el.getAttribute('name');
       if (name) {
-        if (seenRadioGroups.has(name)) {
+        const groupRadios = radioGroupsByElement.get(el as HTMLInputElement) || [];
+        if (seenRadioGroups.has(groupRadios)) {
           continue;
         }
-        seenRadioGroups.add(name);
-
-        const groupRadios = radioGroupsByName.get(name) || [];
+        seenRadioGroups.add(groupRadios);
 
         // Check if all radios in group are disabled
         if (groupRadios.every((r) => isDisabled(r, hasDisabledFieldsets))) {

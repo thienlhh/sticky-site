@@ -100,7 +100,7 @@ export function CaptureReview({
       <div className="flex-1 overflow-y-auto space-y-4 max-h-[300px] pr-1">
         {queryParamEntries.length > 0 && (
           <section>
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-600 mb-2">
               URL Query Parameters
             </h3>
             <div className="space-y-2">
@@ -132,7 +132,7 @@ export function CaptureReview({
 
         {captureResult.controls.length > 0 && (
           <section>
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-600 mb-2">
               Page Form Controls
             </h3>
             <div className="space-y-2">

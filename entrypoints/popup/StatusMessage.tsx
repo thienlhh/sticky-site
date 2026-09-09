@@ -22,22 +22,14 @@ export function parseStatus(status: string | StatusState | null): StatusState | 
   const lower = status.toLowerCase();
 
   if (
-    lower.includes('loading') ||
-    lower.includes('connecting') ||
-    lower.includes('capturing') ||
-    lower.includes('applying')
-  ) {
-    return { type: 'loading', message: status };
-  }
-
-  if (
     lower.includes('error') ||
     lower.includes('failed') ||
     lower.includes('denied') ||
     lower.includes('quota') ||
     lower.includes('unsupported') ||
     lower.includes('schema') ||
-    lower.includes('could not')
+    lower.includes('could not') ||
+    lower.includes('page changed')
   ) {
     let actionHint: string | undefined;
     if (lower.includes('denied')) {
@@ -58,6 +50,23 @@ export function parseStatus(status: string | StatusState | null): StatusState | 
       message: status,
       actionHint: 'Some controls could not be safely identified or restored.',
     };
+  }
+
+  if (/\b\d+ of \d+ settings restored\b/i.test(status) && /\b(skipped|failed)\b/i.test(status)) {
+    return {
+      type: 'warning',
+      message: status,
+      actionHint: 'Some controls could not be safely identified or restored.',
+    };
+  }
+
+  if (
+    lower.includes('loading') ||
+    lower.includes('connecting') ||
+    lower.includes('capturing') ||
+    lower.includes('applying')
+  ) {
+    return { type: 'loading', message: status };
   }
 
   if (

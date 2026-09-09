@@ -119,13 +119,14 @@ export function matchControl(
   let eligibleCandidates = candidates;
   if (saved.kind === 'radio') {
     if (saved.name) {
-      const seenNames = new Set<string>();
+      const seenGroups: Array<{ form: HTMLFormElement | null; root: Node }> = [];
       eligibleCandidates = candidates.filter((el) => {
         if (el.tagName.toLowerCase() === 'input' && (el as HTMLInputElement).type === 'radio') {
-          const n = (el as HTMLInputElement).name;
-          if (n === saved.name) {
-            if (seenNames.has(n)) return false;
-            seenNames.add(n);
+          const radio = el as HTMLInputElement;
+          if (radio.name === saved.name) {
+            const group = { form: radio.form, root: radio.getRootNode() };
+            if (seenGroups.some((seen) => seen.form === group.form && seen.root === group.root)) return false;
+            seenGroups.push(group);
             return true;
           }
         }

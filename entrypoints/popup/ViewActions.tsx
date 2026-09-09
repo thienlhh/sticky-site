@@ -163,9 +163,9 @@ export function ViewActions({
                 {renameError}
               </p>
             ) : (
-              <span className="text-slate-400">1–60 characters</span>
+              <span className="text-slate-600">1–60 characters</span>
             )}
-            <span className={name.length > 60 ? 'text-red-600 font-bold' : 'text-slate-400'}>
+            <span className={name.length > 60 ? 'text-red-600 font-bold' : 'text-slate-600'}>
               {name.length}/60
             </span>
           </div>

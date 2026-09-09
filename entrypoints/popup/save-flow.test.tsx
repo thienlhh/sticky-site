@@ -120,23 +120,30 @@ describe('Popup Save and List Flow', () => {
   });
 
   describe('ViewList', () => {
-    it('groups and displays only views matching exact page (origin + pathname)', async () => {
+    it('groups same-site views by exact pathname and disables incompatible actions', async () => {
+      const onApply = vi.fn();
+      const onUpdate = vi.fn();
+      const onRename = vi.fn();
+      const onDelete = vi.fn();
       render(
         <ViewList
           currentOrigin="https://example.com"
           currentPathname="/search"
           views={mockViews}
-          onApply={vi.fn()}
-          onRename={vi.fn()}
-          onUpdate={vi.fn()}
-          onDelete={vi.fn()}
+          onApply={onApply}
+          onRename={onRename}
+          onUpdate={onUpdate}
+          onDelete={onDelete}
         />
       );
 
-      // Shoes Under $100 should be visible
       expect(screen.getByText('Shoes Under $100')).toBeInTheDocument();
-      // Different Page View should NOT be in the current page views list
-      expect(screen.queryByText('Different Page View')).not.toBeInTheDocument();
+      expect(screen.getByText('Other views on this site (1)')).toBeInTheDocument();
+      expect(screen.getByText('Different Page View')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Apply Different Page View' })).toBeDisabled();
+      expect(screen.getByRole('button', { name: 'Update Different Page View' })).toBeDisabled();
+      expect(screen.getByRole('button', { name: 'Rename Different Page View' })).toBeEnabled();
+      expect(screen.getByRole('button', { name: 'Delete Different Page View' })).toBeEnabled();
     });
   });
 });
