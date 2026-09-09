@@ -1,9 +1,14 @@
 # StickySite Real-Page Compatibility Matrix
 
-Last updated: September 2026  
+Last updated: September 2026 (Remediation active: 2026-09-09)  
 Tested Browser: Google Chrome 128.0+ (Manifest V3)  
 Target Reliability: At least 85% across real-world filtering pages (PRD Section 8)  
-Observed Benchmark Average: **94.8%**
+Status: **UNVERIFIED / HISTORICAL REVIEW PENDING R13**
+
+> [!WARNING]
+> **Arithmetic Discrepancy & Verification Notice:**
+> The table rows below sum to 58 attempted, 56 restored, and 2 skipped/failed (96.6%), whereas the historical summary claimed 55 restored and 3 skipped (94.8%). Neither figure has been independently verified.
+> All rows represent historical review findings pending complete re-verification and live browser audit in remediation task R13 ([plan.md](../tasks/plan.md#r13--rebuild-release-evidence-p1-finding-10)).
 
 ---
 

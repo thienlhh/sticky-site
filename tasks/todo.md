@@ -1,5 +1,31 @@
 # StickySite MVP Task Checklist
 
+## Active remediation — 2026-09-09 review
+
+**Release status: blocked.** Follow the review-fix tasks in [plan.md](plan.md#active-work--review-fixes-2026-09-09). The completed phase checklist below records previous claims; it is not current release evidence. Complete focused verification and the project check before checking off a behavior task.
+
+- [x] **R0:** Correct release status and evidence claims.
+- [ ] **R1:** Restrict actions to the active supported page.
+- [ ] **R2:** Share capture and restoration eligibility.
+- [ ] **Checkpoint A:** Unsupported pages and ineligible controls remain untouched.
+- [ ] **R3:** Complete ARIA radio support and truthful state changes.
+- [ ] **R4:** Verify final values and enable bounded dynamic restoration.
+- [ ] **R5:** Coordinate Apply lifetime in the service worker.
+- [ ] **Checkpoint B:** Safe restoration and bounded operation lifetime pass.
+- [ ] **R6:** Report verified URL and control results.
+- [ ] **R7:** Review Update before replacing settings.
+- [ ] **R8:** Surface storage-load failures.
+- [ ] **Checkpoint C:** Accurate results and lossless management pass.
+- [ ] **R9:** Wire configurable background analytics delivery.
+- [ ] **R10:** Emit required events and truthful report status.
+- [ ] **R11:** Prove permission, Save, and browser restart.
+- [ ] **Checkpoint D:** Analytics and real Save persistence have evidence.
+- [ ] **R12:** Prove restoration and management in Chrome.
+- [ ] **R13:** Rebuild real-site, performance, privacy, and release evidence.
+- [ ] **Final checkpoint:** All ten findings resolved; all PRD gates supported by current evidence.
+
+## Historical implementation checklist
+
 Work top to bottom. Do not begin a task until its dependency and checkpoint requirements pass. Detailed steps and interfaces are in `tasks/plan.md`.
 
 ## Phase 0 — Scaffold
