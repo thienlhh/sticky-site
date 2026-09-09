@@ -73,7 +73,7 @@ export function capturePage(doc: Document, url: URL): CaptureResult {
 
   const candidateElements = Array.from(
     doc.querySelectorAll<HTMLElement>(
-      'input, select, textarea, [role="switch"], [role="checkbox"]'
+      'input, select, textarea, [role="switch"], [role="checkbox"], [role="radio"]'
     )
   );
 
@@ -95,6 +95,23 @@ export function capturePage(doc: Document, url: URL): CaptureResult {
     }
   }
 
+  // Collect ARIA radio groups
+  const ariaRadioGroups = new Map<Element, HTMLElement[]>();
+  for (const el of candidateElements) {
+    if (el.getAttribute('role')?.toLowerCase() === 'radio') {
+      const group = el.closest('[role="radiogroup"], fieldset') || el.parentElement;
+      if (group) {
+        let list = ariaRadioGroups.get(group);
+        if (!list) {
+          list = [];
+          ariaRadioGroups.set(group, list);
+        }
+        list.push(el);
+      }
+    }
+  }
+
+  const seenAriaRadioGroups = new Set<Element>();
   let settingIndex = 0;
 
   for (const el of candidateElements) {
@@ -108,7 +125,7 @@ export function capturePage(doc: Document, url: URL): CaptureResult {
       continue;
     }
 
-    // Radio group handling
+    // Native radio group handling
     if (type === 'radio') {
       const name = el.getAttribute('name');
       if (name) {
@@ -157,6 +174,79 @@ export function capturePage(doc: Document, url: URL): CaptureResult {
           id: settingId,
           kind: 'radio',
           label,
+          value: selectedValue,
+          fingerprint,
+        });
+        continue;
+      }
+    }
+
+    // ARIA radio group handling
+    if (role === 'radio') {
+      const group = el.closest('[role="radiogroup"], fieldset') || el.parentElement;
+      if (group) {
+        if (seenAriaRadioGroups.has(group)) {
+          continue;
+        }
+        seenAriaRadioGroups.add(group);
+
+        const groupRadios = ariaRadioGroups.get(group) || [];
+        if (groupRadios.every((r) => isDisabled(r, hasDisabledFieldsets))) {
+          unsupportedCount++;
+          continue;
+        }
+
+        // Group label from radiogroup/fieldset or first radio
+        const groupLabel = resolveLabel(group, labelsByFor) || resolveLabel(el, labelsByFor);
+        if (!groupLabel) {
+          unsupportedCount++;
+          continue;
+        }
+
+        const checkedRadio = groupRadios.find(
+          (r) => r.getAttribute('aria-checked') === 'true'
+        );
+
+        const options = groupRadios.map(
+          (r) =>
+            r.getAttribute('data-value') ||
+            r.getAttribute('value') ||
+            resolveLabel(r, labelsByFor) ||
+            r.id ||
+            ''
+        ).filter(Boolean);
+
+        const selectedValue = checkedRadio
+          ? checkedRadio.getAttribute('data-value') ||
+            checkedRadio.getAttribute('value') ||
+            resolveLabel(checkedRadio, labelsByFor) ||
+            checkedRadio.id ||
+            ''
+          : '';
+
+        const counterKey = `radio_aria`;
+        const ordinal = ordinalCounters[counterKey] || 0;
+        ordinalCounters[counterKey] = ordinal + 1;
+
+        settingIndex++;
+        const settingId = `setting-${settingIndex}`;
+
+        const fingerprint: Fingerprint = {
+          kind: 'radio',
+          tag,
+          role: 'radio',
+          label: groupLabel,
+          id: group.id || el.id || undefined,
+          semanticAttribute: group.getAttribute('data-testid') || el.getAttribute('data-testid') || undefined,
+          options,
+          region: getRegion(group, hasLandmarks),
+          ordinal,
+        };
+
+        controls.push({
+          id: settingId,
+          kind: 'radio',
+          label: groupLabel,
           value: selectedValue,
           fingerprint,
         });

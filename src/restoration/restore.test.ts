@@ -272,4 +272,74 @@ describe('restoration/restore', () => {
     expect(numInput.value).toBe('1');
     expect(stockInput.checked).toBe(false);
   });
+
+  it('restores ARIA radios via click when state differs and never forces aria-checked', async () => {
+    document.body.innerHTML = `
+      <div role="radiogroup" aria-label="Theme Mode">
+        <div id="r-light" role="radio" aria-checked="true" data-value="light">Light</div>
+        <div id="r-dark" role="radio" aria-checked="false" data-value="dark">Dark</div>
+      </div>
+    `;
+
+    const darkRadio = document.getElementById('r-dark')!;
+    let clickFired = false;
+    darkRadio.addEventListener('click', () => {
+      clickFired = true;
+      // Framework sets aria-checked on click
+      darkRadio.setAttribute('aria-checked', 'true');
+      document.getElementById('r-light')!.setAttribute('aria-checked', 'false');
+    });
+
+    const ariaControl: CapturedSetting = {
+      id: 'aria-theme',
+      label: 'Theme Mode',
+      value: 'dark',
+      fingerprint: {
+        kind: 'radio',
+        tag: 'div',
+        role: 'radio',
+        label: 'Theme Mode',
+        options: ['light', 'dark'],
+        ordinal: 0,
+      },
+    };
+
+    const report = await restoreControls(document, [ariaControl]);
+    expect(clickFired).toBe(true);
+    expect(report.outcomes[0].outcome).toBe('restored');
+    expect(darkRadio.getAttribute('aria-checked')).toBe('true');
+  });
+
+  it('reports failed and does not manufacture success if click is ignored/rejected', async () => {
+    document.body.innerHTML = `
+      <div role="radiogroup" aria-label="Locked Setting">
+        <div id="r-opt1" role="radio" aria-checked="true" data-value="opt1">Option 1</div>
+        <div id="r-opt2" role="radio" aria-checked="false" data-value="opt2">Option 2</div>
+      </div>
+    `;
+
+    const opt2 = document.getElementById('r-opt2')!;
+    opt2.addEventListener('click', (e) => {
+      // Intercepted or prevented by app logic: aria-checked NOT changed
+      e.preventDefault();
+    });
+
+    const lockedControl: CapturedSetting = {
+      id: 'locked-setting',
+      label: 'Locked Setting',
+      value: 'opt2',
+      fingerprint: {
+        kind: 'radio',
+        tag: 'div',
+        role: 'radio',
+        label: 'Locked Setting',
+        options: ['opt1', 'opt2'],
+        ordinal: 0,
+      },
+    };
+
+    const report = await restoreControls(document, [lockedControl]);
+    expect(report.outcomes[0].outcome).toBe('failed');
+    expect(opt2.getAttribute('aria-checked')).toBe('false');
+  });
 });

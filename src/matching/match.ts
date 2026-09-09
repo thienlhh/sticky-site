@@ -117,19 +117,35 @@ export function matchControl(
   candidates: Element[]
 ): { element: Element; score: number } | null {
   let eligibleCandidates = candidates;
-  if (saved.kind === 'radio' && saved.name) {
-    const seenNames = new Set<string>();
-    eligibleCandidates = candidates.filter((el) => {
-      if (el.tagName.toLowerCase() === 'input' && (el as HTMLInputElement).type === 'radio') {
-        const n = (el as HTMLInputElement).name;
-        if (n === saved.name) {
-          if (seenNames.has(n)) return false;
-          seenNames.add(n);
-          return true;
+  if (saved.kind === 'radio') {
+    if (saved.name) {
+      const seenNames = new Set<string>();
+      eligibleCandidates = candidates.filter((el) => {
+        if (el.tagName.toLowerCase() === 'input' && (el as HTMLInputElement).type === 'radio') {
+          const n = (el as HTMLInputElement).name;
+          if (n === saved.name) {
+            if (seenNames.has(n)) return false;
+            seenNames.add(n);
+            return true;
+          }
         }
-      }
-      return true;
-    });
+        return true;
+      });
+    } else {
+      // ARIA radio groups: keep one radio per group container
+      const seenGroups = new Set<Element>();
+      eligibleCandidates = candidates.filter((el) => {
+        if (el.getAttribute('role')?.toLowerCase() === 'radio') {
+          const group = el.closest('[role="radiogroup"], fieldset') || el.parentElement;
+          if (group) {
+            if (seenGroups.has(group)) return false;
+            seenGroups.add(group);
+            return true;
+          }
+        }
+        return true;
+      });
+    }
   }
 
   const scored = eligibleCandidates

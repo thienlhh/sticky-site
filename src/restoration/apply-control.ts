@@ -15,8 +15,19 @@ export function applyControlValue(element: Element, setting: CapturedSetting): b
     if (tag === 'input') {
       const input = element as HTMLInputElement;
       if (input.checked !== targetBoolean) {
-        input.checked = targetBoolean;
-        dispatchEvents(input);
+        // Safe reversible state change via click or native setter
+        try {
+          const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'checked')?.set;
+          if (setter) {
+            setter.call(input, targetBoolean);
+          } else {
+            input.checked = targetBoolean;
+          }
+          dispatchEvents(input);
+        } catch {
+          // ignore
+        }
+
         if (input.checked !== targetBoolean) {
           input.click();
         }
@@ -26,24 +37,57 @@ export function applyControlValue(element: Element, setting: CapturedSetting): b
       // ARIA switch / checkbox
       const current = element.getAttribute('aria-checked') === 'true';
       if (current !== targetBoolean) {
-        element.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-        element.setAttribute('aria-checked', String(targetBoolean));
+        element.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+        dispatchEvents(element);
       }
+      // Never force aria-checked; report actual observable state
       return (element.getAttribute('aria-checked') === 'true') === targetBoolean;
     }
   }
 
-  // 2. Radio group
+  // 2. Radio group (native or ARIA)
   if (kind === 'radio') {
     const targetValue = String(setting.value);
     const doc = element.ownerDocument;
-    const name = (element as HTMLInputElement).name;
 
+    // ARIA radio group
+    if (element.getAttribute('role')?.toLowerCase() === 'radio' || !tag.includes('input')) {
+      const group = element.closest('[role="radiogroup"], fieldset') || element.parentElement;
+      const radios = group
+        ? Array.from(group.querySelectorAll<HTMLElement>('[role="radio"]'))
+        : [element as HTMLElement];
+
+      const targetRadio = radios.find((r) => {
+        const val =
+          r.getAttribute('data-value') ||
+          r.getAttribute('value') ||
+          r.getAttribute('aria-label') ||
+          r.textContent?.trim() ||
+          r.id;
+        return val === targetValue;
+      });
+
+      if (targetRadio) {
+        if (targetRadio.getAttribute('aria-checked') !== 'true') {
+          targetRadio.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+          dispatchEvents(targetRadio);
+        }
+        return targetRadio.getAttribute('aria-checked') === 'true';
+      }
+
+      if (!targetValue) return true;
+      return false;
+    }
+
+    // Native radio input
+    const name = (element as HTMLInputElement).name;
     if (!doc || !name) {
       if ((element as HTMLInputElement).value === targetValue) {
-        (element as HTMLInputElement).checked = true;
-        dispatchEvents(element);
-        return (element as HTMLInputElement).checked;
+        const input = element as HTMLInputElement;
+        if (!input.checked) {
+          input.click();
+        }
+        return input.checked;
       }
       return false;
     }
@@ -58,8 +102,14 @@ export function applyControlValue(element: Element, setting: CapturedSetting): b
       if (targetRadio) {
         if (!targetRadio.checked) {
           targetRadio.click();
-          targetRadio.checked = true;
-          dispatchEvents(targetRadio);
+          if (!targetRadio.checked) {
+            // Try native setter if framework intercepted click
+            const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'checked')?.set;
+            if (setter) {
+              setter.call(targetRadio, true);
+              dispatchEvents(targetRadio);
+            }
+          }
         }
         return targetRadio.checked;
       }

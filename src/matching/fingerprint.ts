@@ -1,4 +1,5 @@
 import type { ControlKind, Fingerprint } from '@/domain/view';
+import { resolveLabel } from '@/capture/labels';
 
 function determineKind(tag: string, type: string, role: string | null): ControlKind {
   if (role === 'switch' || role === 'checkbox' || type === 'checkbox') return 'checkbox';
@@ -51,18 +52,36 @@ export function fingerprintControl(element: Element, label: string): Fingerprint
       kind = 'select-one';
     }
   } else if (kind === 'radio' && element.ownerDocument) {
-    const name = element.getAttribute('name');
-    if (name) {
-      try {
-        const escaped = typeof CSS !== 'undefined' && CSS.escape ? CSS.escape(name) : name;
-        const radios = Array.from(
-          element.ownerDocument.querySelectorAll<HTMLInputElement>(
-            `input[type="radio"][name="${escaped}"]`
+    if (tag === 'input') {
+      const name = element.getAttribute('name');
+      if (name) {
+        try {
+          const escaped = typeof CSS !== 'undefined' && CSS.escape ? CSS.escape(name) : name;
+          const radios = Array.from(
+            element.ownerDocument.querySelectorAll<HTMLInputElement>(
+              `input[type="radio"][name="${escaped}"]`
+            )
+          );
+          options = radios.map((r) => r.value);
+        } catch {
+          // ignore selector errors
+        }
+      }
+    } else {
+      // ARIA radio
+      const group = element.closest('[role="radiogroup"], fieldset') || element.parentElement;
+      if (group) {
+        const radios = Array.from(group.querySelectorAll<HTMLElement>('[role="radio"]'));
+        options = radios
+          .map(
+            (r) =>
+              r.getAttribute('data-value') ||
+              r.getAttribute('value') ||
+              resolveLabel(r) ||
+              r.id ||
+              ''
           )
-        );
-        options = radios.map((r) => r.value);
-      } catch {
-        // ignore selector errors
+          .filter(Boolean);
       }
     }
   }

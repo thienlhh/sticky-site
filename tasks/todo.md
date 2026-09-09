@@ -8,7 +8,7 @@
 - [x] **R1:** Restrict actions to the active supported page.
 - [x] **R2:** Share capture and restoration eligibility.
 - [x] **Checkpoint A:** Unsupported pages and ineligible controls remain untouched.
-- [ ] **R3:** Complete ARIA radio support and truthful state changes.
+- [x] **R3:** Complete ARIA radio support and truthful state changes.
 - [ ] **R4:** Verify final values and enable bounded dynamic restoration.
 - [ ] **R5:** Coordinate Apply lifetime in the service worker.
 - [ ] **Checkpoint B:** Safe restoration and bounded operation lifetime pass.

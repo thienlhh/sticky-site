@@ -94,7 +94,13 @@ export function resolveLabel(element: Element, labelsByFor?: Map<string, string>
     if (text) return text;
   }
 
-  // 5. Concise text in same field container / fieldset legend
+  // 5. Concise text in same field container / fieldset legend / radiogroup label
+  const radiogroup = element.closest('[role="radiogroup"]');
+  if (radiogroup && radiogroup !== element) {
+    const rgLabel = resolveLabel(radiogroup, labelsByFor);
+    if (rgLabel) return rgLabel;
+  }
+
   const fieldset = element.closest('fieldset');
   if (fieldset) {
     const legend = fieldset.querySelector('legend');

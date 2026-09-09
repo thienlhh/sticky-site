@@ -150,6 +150,23 @@ describe('capture/controls', () => {
       expect(result.controls[0].value).toBe('express');
       expect(result.controls[0].fingerprint.options).toEqual(['standard', 'express', 'overnight']);
     });
+
+    it('groups ARIA radio buttons into a single setting with options and selected value', () => {
+      document.body.innerHTML = `
+        <div role="radiogroup" aria-label="Color Palette">
+          <div role="radio" aria-checked="false" data-value="light" aria-label="Light Theme">Light</div>
+          <div role="radio" aria-checked="true" data-value="dark" aria-label="Dark Theme">Dark</div>
+          <div role="radio" aria-checked="false" data-value="system" aria-label="System Theme">System</div>
+        </div>
+      `;
+
+      const result = capturePage(document, new URL('https://example.com/theme'));
+      expect(result.controls).toHaveLength(1);
+      expect(result.controls[0].kind).toBe('radio');
+      expect(result.controls[0].label).toBe('Color Palette');
+      expect(result.controls[0].value).toBe('dark');
+      expect(result.controls[0].fingerprint.options).toEqual(['light', 'dark', 'system']);
+    });
   });
 
   describe('exclusions and security checks', () => {
