@@ -17,7 +17,7 @@
 - [x] **R8:** Surface storage-load failures.
 - [x] **Checkpoint C:** Accurate results and lossless management pass.
 - [x] **R9:** Wire configurable background analytics delivery.
-- [ ] **R10:** Emit required events and truthful report status.
+- [x] **R10:** Emit required events and truthful report status.
 - [ ] **R11:** Prove permission, Save, and browser restart.
 - [ ] **Checkpoint D:** Analytics and real Save persistence have evidence.
 - [ ] **R12:** Prove restoration and management in Chrome.

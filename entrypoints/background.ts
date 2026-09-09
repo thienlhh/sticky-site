@@ -31,15 +31,30 @@ export default defineBackground(() => {
 
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     if (message?.type === 'TRACK_ANALYTICS') {
-      try {
-        validateEvent(message.event);
-        const props = validatePayload(message.properties || {});
-        track(message.event, props)
-          .then(() => sendResponse({ status: 'ok' }))
-          .catch((err) => sendResponse({ status: 'error', error: err.message }));
-      } catch (err) {
-        sendResponse({ status: 'error', error: err instanceof Error ? err.message : String(err) });
-      }
+      (async () => {
+        try {
+          validateEvent(message.event);
+          const props = validatePayload(message.properties || {});
+          const { isAnalyticsEnabled, isAdapterConfigured } = await import('@/analytics');
+          const enabled = await isAnalyticsEnabled();
+          if (!enabled) {
+            sendResponse({ status: 'ok', delivery: 'disabled' });
+            return;
+          }
+          if (!isAdapterConfigured()) {
+            sendResponse({ status: 'ok', delivery: 'unconfigured' });
+            return;
+          }
+          await track(message.event, props);
+          sendResponse({ status: 'ok', delivery: 'delivered' });
+        } catch (err) {
+          sendResponse({
+            status: 'error',
+            delivery: 'failed',
+            error: err instanceof Error ? err.message : String(err),
+          });
+        }
+      })();
       return true;
     }
 

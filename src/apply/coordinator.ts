@@ -2,6 +2,7 @@ import type { CapturedSetting, SavedView } from '@/domain/view';
 import { normalizePathname } from '@/domain/view';
 import { replaceEligibleQuery, verifyQueryParams, type QueryVerificationResult } from '@/domain/url';
 import { listViews } from '@/storage/views';
+import { track, calculateDistinctSiteBucket } from '@/analytics';
 import { ensurePageAgent, sendPageCommand } from '@/platform/page-agent';
 import type { RestoreResponse } from '@/shared/page-messages';
 import type { RestoreReport, RestoreOutcome } from '@/restoration/restore';
@@ -172,6 +173,8 @@ export async function startApply(
   const startedAt = Date.now();
   const deadline = startedAt + APPLY_TIMEOUT_MS;
 
+  await track('view_apply_started', { attemptedCount: totalAttempted }).catch(() => {});
+
   // Calculate target URL with eligible query parameters
   const targetUrl = replaceEligibleQuery(tabUrl, view.queryParams, new URL(view.origin + view.pathname));
   const queryDiffers = targetUrl.search !== tabUrl.search;
@@ -214,6 +217,12 @@ export async function startApply(
       };
     } catch (err) {
       await clearOperation(tabId);
+      await track('view_apply_failed', {
+        attemptedCount: totalAttempted,
+        restoredCount: 0,
+        skippedCount: totalAttempted,
+        failureCategory: 'navigation_failed',
+      }).catch(() => {});
       return {
         status: 'Could not apply',
         restoredCount: 0,
@@ -241,6 +250,12 @@ export async function startApply(
     return result;
   } catch (err) {
     await clearOperation(tabId);
+    await track('view_apply_failed', {
+      attemptedCount: totalAttempted,
+      restoredCount: 0,
+      skippedCount: totalAttempted,
+      failureCategory: 'restore_failed',
+    }).catch(() => {});
     return {
       status: 'Could not apply',
       restoredCount: 0,
@@ -393,6 +408,27 @@ export async function resumeApply(
       result: aggregated,
       completedAt: Date.now(),
     });
+
+    try {
+      const allViews = await listViews();
+      const distinctOrigins = new Set(allViews.map((v) => v.origin)).size;
+      const distinctSiteBucket = calculateDistinctSiteBucket(distinctOrigins);
+      const props: Record<string, number | string> = {
+        attemptedCount: aggregated.totalAttempted,
+        restoredCount: aggregated.restoredCount,
+        skippedCount: aggregated.skippedCount,
+        distinctSiteBucket,
+      };
+      if (aggregated.status === 'Fully applied view') {
+        await track('view_apply_full', props);
+      } else if (aggregated.status === 'Partially applied view') {
+        await track('view_apply_partial', { ...props, failureCategory: 'partial_restore' });
+      } else {
+        await track('view_apply_failed', { ...props, failureCategory: 'restore_failed' });
+      }
+    } catch {
+      // Analytics error should not fail apply
+    }
 
     return fullResult;
   } finally {

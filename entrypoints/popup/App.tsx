@@ -24,7 +24,8 @@ import {
   isAnalyticsEnabled,
   setAnalyticsEnabled,
   clearInstallationId,
-  track,
+  emitAnalyticsEvent,
+  calculateDistinctSiteBucket,
 } from '@/analytics';
 import { Settings as SettingsIcon } from 'lucide-react';
 
@@ -104,6 +105,7 @@ export function App() {
   }, []);
 
   const handleStartCapture = async () => {
+    emitAnalyticsEvent('save_view_started').catch(() => {});
     setIsLoading(true);
     setStatus('Connecting to page...');
     try {
@@ -118,6 +120,7 @@ export function App() {
         setStatus('Permission denied.');
         return;
       }
+      emitAnalyticsEvent('site_permission_granted').catch(() => {});
       await ensurePageAgent(page.tabId);
       const ping = await sendPageCommand<PingResponse>(page.tabId, { type: 'PING' });
       if (!ping?.pong) {
@@ -159,6 +162,9 @@ export function App() {
       await refreshViews();
       setStatus('View deleted.');
       setActiveAction(null);
+      const remainingOrigins = new Set(allViews.filter((v) => v.id !== id).map((v) => v.origin)).size;
+      const distinctSiteBucket = calculateDistinctSiteBucket(remainingOrigins);
+      emitAnalyticsEvent('view_deleted', { distinctSiteBucket }).catch(() => {});
     } catch (err) {
       setStatus(err instanceof Error ? err.message : 'Delete failed');
     }
@@ -183,6 +189,7 @@ export function App() {
         setActiveAction(null);
         return;
       }
+      emitAnalyticsEvent('site_permission_granted').catch(() => {});
 
       await ensurePageAgent(page.tabId);
       setStatus('Capturing page settings for update...');
@@ -256,6 +263,13 @@ export function App() {
                 await replaceView(updatedView);
                 await refreshViews();
                 setStatus(`Updated "${updatingView.name}"`);
+                const capturedCount = updatedView.controls.length + Object.keys(updatedView.queryParams).length;
+                const distinctOrigins = new Set(allViews.map((v) => v.origin)).size;
+                const distinctSiteBucket = calculateDistinctSiteBucket(distinctOrigins);
+                emitAnalyticsEvent('view_updated', {
+                  capturedCount,
+                  distinctSiteBucket,
+                }).catch(() => {});
               } catch (err) {
                 setStatus(err instanceof Error ? err.message : 'Update failed');
               } finally {
@@ -293,7 +307,13 @@ export function App() {
             setCaptureData(null);
             setReviewSelection(null);
             setStatus(`Saved "${savedView.name}"`);
-            track('view_created', { capturedCount: savedView.controls.length }).catch(() => {});
+            const capturedCount = savedView.controls.length + Object.keys(savedView.queryParams).length;
+            const distinctOrigins = new Set([...allViews.map((v) => v.origin), savedView.origin]).size;
+            const distinctSiteBucket = calculateDistinctSiteBucket(distinctOrigins);
+            emitAnalyticsEvent('view_created', {
+              capturedCount,
+              distinctSiteBucket,
+            }).catch(() => {});
           }}
         />
       </main>
@@ -357,6 +377,8 @@ export function App() {
 
         <footer className="pt-3 border-t border-slate-200 mt-3">
           <Button
+            type="button"
+            variant="outline"
             onClick={() => setScreen('idle')}
             className="w-full min-h-[44px]"
           >
@@ -382,8 +404,14 @@ export function App() {
           onCancel={() => setScreen('settings')}
           onSend={async (payload) => {
             try {
-              await track('view_apply_failed', payload);
-              setStatus('Compatibility report sent. Thank you!');
+              const res = await emitAnalyticsEvent('view_apply_failed', payload);
+              if (res.delivery === 'disabled') {
+                setStatus('Analytics is disabled. Report was not sent.');
+              } else if (res.delivery === 'unconfigured') {
+                setStatus('Analytics delivery is unconfigured. Report was recorded locally.');
+              } else {
+                setStatus('Compatibility report delivered. Thank you!');
+              }
             } catch {
               setStatus('Failed to send report.');
             }
@@ -465,6 +493,7 @@ export function App() {
                     setStatus('Permission denied.');
                     return;
                   }
+                  emitAnalyticsEvent('site_permission_granted').catch(() => {});
                   const res = await requestApply(page.tabId, view);
                   setStatus(res.message || res.status);
                 } catch (err) {

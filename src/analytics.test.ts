@@ -261,4 +261,94 @@ describe('Analytics & Privacy Engine (Task 10A)', () => {
       expect(sendMock).not.toHaveBeenCalled();
     });
   });
+
+  describe('Lifecycle Event Ordering and Integrity (R10)', () => {
+    it('emits view_apply_started before view_apply_full and prevents duplicate events', async () => {
+      const delivered: string[] = [];
+      setAnalyticsAdapter({
+        send: async (event) => {
+          delivered.push(event);
+        },
+      });
+
+      const { startApply } = await import('@/apply/coordinator');
+      const sampleView: import('@/domain/view').SavedView = {
+        schemaVersion: 1,
+        id: 'test-v1',
+        name: 'Test View',
+        origin: 'https://example.com',
+        pathname: '/search',
+        queryParams: { q: ['test'] },
+        controls: [],
+        createdAt: '2026-09-09T00:00:00.000Z',
+        updatedAt: '2026-09-09T00:00:00.000Z',
+      };
+
+      // @ts-ignore
+      chrome.tabs = {
+        get: vi.fn(async () => ({
+          id: 101,
+          url: 'https://example.com/search?q=test',
+        })),
+        update: vi.fn(async () => {}),
+      } as any;
+
+      await startApply(101, sampleView);
+
+      expect(delivered).toEqual(['view_apply_started', 'view_apply_full']);
+    });
+
+    it('emits view_apply_failed and never emits view_apply_full when restoration fails', async () => {
+      const delivered: string[] = [];
+      setAnalyticsAdapter({
+        send: async (event) => {
+          delivered.push(event);
+        },
+      });
+
+      const { startApply } = await import('@/apply/coordinator');
+      const pageAgent = await import('@/platform/page-agent');
+      vi.spyOn(pageAgent, 'ensurePageAgent').mockResolvedValue(undefined as any);
+      vi.spyOn(pageAgent, 'sendPageCommand').mockResolvedValue({
+        status: 'ok',
+        data: {
+          outcomes: [{ index: 0, outcome: 'failed', reason: 'control not found' }],
+        },
+      } as any);
+
+      const sampleView: import('@/domain/view').SavedView = {
+        schemaVersion: 1,
+        id: 'test-v2',
+        name: 'Failed View',
+        origin: 'https://example.com',
+        pathname: '/search',
+        queryParams: {},
+        controls: [
+          {
+            id: 'c1',
+            fingerprint: { kind: 'text', tag: 'input', label: 'Search', ordinal: 0 },
+            label: 'Search',
+            value: 'foo',
+          },
+        ],
+        createdAt: '2026-09-09T00:00:00.000Z',
+        updatedAt: '2026-09-09T00:00:00.000Z',
+      };
+
+      // @ts-ignore
+      chrome.tabs = {
+        get: vi.fn(async () => ({
+          id: 102,
+          url: 'https://example.com/search',
+        })),
+        update: vi.fn(async () => {}),
+      } as any;
+
+      await startApply(102, sampleView);
+
+      expect(delivered).toEqual(['view_apply_started', 'view_apply_failed']);
+      expect(delivered).not.toContain('view_apply_full');
+      expect(delivered).not.toContain('view_apply_partial');
+    });
+  });
 });

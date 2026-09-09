@@ -100,11 +100,51 @@ describe('Privacy Controls & Compatibility Reporting (Task 10B)', () => {
       expect(await isAnalyticsEnabled()).toBe(false);
     });
 
-    it('clears installation identity', async () => {
+    it('clears installation identity and reflects new ID in subsequent report', async () => {
       const initialId = await getInstallationId();
-      await chrome.storage.local.remove('analytics_install_id');
-      const refreshedId = await getInstallationId();
-      expect(refreshedId).not.toBe(initialId);
+      const { clearInstallationId } = await import('@/analytics');
+      const newId = await clearInstallationId();
+      expect(newId).not.toBe(initialId);
+
+      const report = await generateCompatibilityReport({
+        failureCategory: 'restore_failed',
+        attemptedCount: 1,
+        restoredCount: 0,
+        skippedCount: 1,
+        distinctSitesCount: 1,
+      });
+      expect(report.installationId).toBe(newId);
+    });
+
+    it('distinguishes delivered, disabled, and unconfigured delivery outcomes', async () => {
+      const { emitAnalyticsEvent, setAnalyticsAdapter, setAnalyticsEnabled } = await import('@/analytics');
+
+      // 1. Disabled
+      await setAnalyticsEnabled(false);
+      const disabledRes = await emitAnalyticsEvent('view_apply_failed', {
+        failureCategory: 'restore_failed',
+        attemptedCount: 1,
+      });
+      expect(disabledRes.delivery).toBe('disabled');
+
+      // 2. Enabled but unconfigured
+      await setAnalyticsEnabled(true);
+      setAnalyticsAdapter(null);
+      const unconfRes = await emitAnalyticsEvent('view_apply_failed', {
+        failureCategory: 'restore_failed',
+        attemptedCount: 1,
+      });
+      expect(unconfRes.delivery).toBe('unconfigured');
+
+      // 3. Configured and delivered
+      setAnalyticsAdapter({
+        send: vi.fn().mockResolvedValue(undefined),
+      });
+      const deliveredRes = await emitAnalyticsEvent('view_apply_failed', {
+        failureCategory: 'restore_failed',
+        attemptedCount: 1,
+      });
+      expect(deliveredRes.delivery).toBe('delivered');
     });
   });
 });

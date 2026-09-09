@@ -48,6 +48,10 @@ export function setAnalyticsAdapter(adapter: AnalyticsAdapter | null): void {
   currentAdapter = adapter;
 }
 
+export function isAdapterConfigured(): boolean {
+  return currentAdapter !== null;
+}
+
 export function createHttpAdapter(
   endpoint: string,
   fetchFn: typeof fetch = globalThis.fetch
@@ -163,30 +167,40 @@ export async function track(
   }
 }
 
+export type DeliveryStatus = 'delivered' | 'disabled' | 'unconfigured' | 'failed';
+
+export interface AnalyticsDeliveryResult {
+  delivery: DeliveryStatus;
+}
+
 export async function emitAnalyticsEvent(
   event: AnalyticsEvent,
   properties: Record<string, number | string> = {}
-): Promise<void> {
+): Promise<AnalyticsDeliveryResult> {
   validateEvent(event);
   validatePayload(properties);
 
   if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
-    return new Promise<void>((resolve, reject) => {
+    return new Promise<AnalyticsDeliveryResult>((resolve, reject) => {
       chrome.runtime.sendMessage(
         { type: 'TRACK_ANALYTICS', event, properties },
         (response) => {
           if (chrome.runtime.lastError) {
-            resolve();
+            resolve({ delivery: 'unconfigured' });
           } else if (response?.status === 'error') {
             reject(new Error(response.error));
           } else {
-            resolve();
+            resolve({ delivery: response?.delivery || 'delivered' });
           }
         }
       );
     });
   }
 
+  const enabled = await isAnalyticsEnabled();
+  if (!enabled) return { delivery: 'disabled' };
+  if (!isAdapterConfigured()) return { delivery: 'unconfigured' };
   await track(event, properties);
+  return { delivery: 'delivered' };
 }
 
