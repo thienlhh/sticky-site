@@ -217,4 +217,34 @@ describe('restoration/restore', () => {
 
     expect(reliability).toBeGreaterThanOrEqual(0.95);
   });
+
+  it('retries unresolved controls via MutationObserver when elements appear dynamically', async () => {
+    const delayedControl: CapturedSetting = {
+      id: 'delayed-1',
+      label: 'Delayed Input',
+      value: 'async-value',
+      fingerprint: {
+        kind: 'text',
+        tag: 'input',
+        type: 'text',
+        label: 'Delayed Input',
+        name: 'delayed_field',
+        id: 'delayed-field',
+        ordinal: 0,
+      },
+    };
+
+    // Insert input into DOM after 30ms
+    setTimeout(() => {
+      const input = document.createElement('input');
+      input.id = 'delayed-field';
+      input.name = 'delayed_field';
+      input.placeholder = 'Delayed Input';
+      document.body.appendChild(input);
+    }, 30);
+
+    const report = await restoreControls(document, [delayedControl], { timeoutMs: 500 });
+    expect(report.outcomes[0].outcome).toBe('restored');
+    expect((document.getElementById('delayed-field') as HTMLInputElement).value).toBe('async-value');
+  });
 });

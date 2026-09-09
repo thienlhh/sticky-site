@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Dynamic Page Fixture</title>
+</head>
+<body>
+  <h1>Dynamic Page</h1>
+  <form id="filter-form">
+    <label for="category-input">Category</label>
+    <input id="category-input" name="category" type="text" value="initial" />
+    <div id="delayed-container"></div>
+  </form>
+
+  <script>
+    // Dynamically insert delayed input after 100ms
+    setTimeout(() => {
+      const container = document.getElementById('delayed-container');
+      if (container) {
+        container.innerHTML = `
+          <label for="delayed-color">Color</label>
+          <input id="delayed-color" name="color" type="text" value="white" />
+        `;
+      }
+    }, 100);
+  </script>
+</body>
+</html>
