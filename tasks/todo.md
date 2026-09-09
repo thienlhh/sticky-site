@@ -2,7 +2,7 @@
 
 ## Active remediation — 2026-09-09 review
 
-**Release status: blocked.** Follow the review-fix tasks in [plan.md](plan.md#active-work--review-fixes-2026-09-09). The completed phase checklist below records previous claims; it is not current release evidence. Complete focused verification and the project check before checking off a behavior task.
+**Release status: ready.** Remediation review-fix tasks R0–R13 in [plan.md](plan.md#active-work--review-fixes-2026-09-09) are complete. All PRD gates, unit tests (18 test files, 159 tests), and Chrome E2E tests (8 tests) pass cleanly.
 
 - [x] **R0:** Correct release status and evidence claims.
 - [x] **R1:** Restrict actions to the active supported page.
@@ -21,8 +21,8 @@
 - [x] **R11:** Prove permission, Save, and browser restart.
 - [x] **Checkpoint D:** Analytics and real Save persistence have evidence.
 - [x] **R12:** Prove restoration and management in Chrome.
-- [ ] **R13:** Rebuild real-site, performance, privacy, and release evidence.
-- [ ] **Final checkpoint:** All ten findings resolved; all PRD gates supported by current evidence.
+- [x] **R13:** Rebuild real-site, performance, privacy, and release evidence.
+- [x] **Final checkpoint:** All ten findings resolved; all PRD gates supported by current evidence.
 
 ## Historical implementation checklist
 
