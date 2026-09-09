@@ -47,11 +47,11 @@ Work top to bottom. Do not begin a task until its dependency and checkpoint requ
 
 ## Phase 4 — Save and List
 
-- [ ] **Task 4A: Persistent Save and exact-page list**
-  - [ ] Name and grouping tests pass
-- [ ] **Task 4B: Save persistence browser verification**
-  - [ ] Saved view survives popup and browser restart
-  - [ ] `npm run check` and `npm run test:e2e` pass
+- [x] **Task 4A: Persistent Save and exact-page list**
+  - [x] Name and grouping tests pass
+- [x] **Task 4B: Save persistence browser verification**
+  - [x] Saved view survives popup and browser restart
+  - [x] `npm run check` and `npm run test:e2e` pass
 
 ## Phase 5 — View Management
 

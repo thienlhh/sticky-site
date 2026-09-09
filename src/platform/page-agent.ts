@@ -3,7 +3,19 @@ import type { PageCommand } from '@/shared/page-messages';
 export const PAGE_AGENT_SCRIPT = 'content-scripts/page-agent.js';
 
 export async function getActivePage(): Promise<{ tabId: number; url: URL }> {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+  let tab = tabs[0];
+
+  // If current tab is extension page (e.g. popup opened as tab in testing), look for web tab
+  if (tab?.url && !tab.url.startsWith('http:') && !tab.url.startsWith('https:')) {
+    const allTabs = await chrome.tabs.query({});
+    const webTab = allTabs.find(
+      (t) => t.url && (t.url.startsWith('http:') || t.url.startsWith('https:'))
+    );
+    if (webTab) {
+      tab = webTab;
+    }
+  }
 
   if (!tab || tab.id == null || !tab.url) {
     throw new Error('No active tab found');

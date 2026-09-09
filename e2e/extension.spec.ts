@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { chromium, type BrowserContext } from '@playwright/test';
 import path from 'path';
 
-test.describe('StickySite Extension Shell E2E', () => {
+test.describe('StickySite Extension E2E', () => {
   let context: BrowserContext;
   let extensionId: string;
 
@@ -32,7 +32,7 @@ test.describe('StickySite Extension Shell E2E', () => {
     }
   });
 
-  test('popup renders title and disabled save button', async () => {
+  test('popup renders title and enabled save button', async () => {
     const page = await context.newPage();
     if (extensionId) {
       await page.goto(`chrome-extension://${extensionId}/popup.html`);
@@ -47,5 +47,57 @@ test.describe('StickySite Extension Shell E2E', () => {
     const saveButton = page.locator('button[aria-label="Save Current View"]');
     await expect(saveButton).toBeVisible();
     await expect(saveButton).toBeEnabled();
+    await page.close();
+  });
+
+  test('saved view persists across popup reopen and browser pages', async () => {
+    const page = await context.newPage();
+    const url = extensionId
+      ? `chrome-extension://${extensionId}/popup.html`
+      : `file://${path.resolve(import.meta.dirname, '../.output/chrome-mv3/popup.html')}`;
+    await page.goto(url);
+
+    // Seed storage with a view for the popup page's key
+    await page.evaluate(async () => {
+      const key = 'stickysite_saved_views';
+      const testView = {
+        schemaVersion: 1,
+        id: 'e2e-view-1',
+        name: 'E2E Test View',
+        origin: window.location.origin,
+        pathname: window.location.pathname,
+        queryParams: { test: ['1'] },
+        controls: [
+          {
+            id: 'c1',
+            label: 'Test Setting',
+            value: 'hello',
+            fingerprint: { kind: 'text', tag: 'input', label: 'Test Setting', ordinal: 0 },
+          },
+        ],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      await chrome.storage.local.set({
+        [key]: {
+          version: 1,
+          views: [testView],
+        },
+      });
+    });
+
+    // Reload popup
+    await page.reload();
+
+    const viewItem = page.locator('text=E2E Test View');
+    await expect(viewItem).toBeVisible();
+
+    // Close popup and open fresh page
+    await page.close();
+
+    const freshPage = await context.newPage();
+    await freshPage.goto(url);
+    await expect(freshPage.locator('text=E2E Test View')).toBeVisible();
+    await freshPage.close();
   });
 });
