@@ -11,46 +11,13 @@ export interface CaptureResult {
   unsupportedCount: number;
 }
 
-const EXCLUDED_INPUT_TYPES = new Set<string>([
-  'password',
-  'email',
-  'tel',
-  'file',
-  'hidden',
-  'color',
-  'button',
-  'submit',
-  'reset',
-  'image',
-]);
-
-const SENSITIVE_AUTOCOMPLETE_TOKENS = [
-  'password',
-  'current-password',
-  'new-password',
-  'one-time-code',
-  'cc-number',
-  'cc-exp',
-  'cc-csc',
-  'cc-type',
-  'cc-name',
-  'transaction-amount',
-  'transaction-currency',
-];
-
-function isSensitiveAutocomplete(el: Element): boolean {
-  if (!el.hasAttribute('autocomplete')) return false;
-  const ac = el.getAttribute('autocomplete')?.toLowerCase().trim();
-  if (!ac) return false;
-  return SENSITIVE_AUTOCOMPLETE_TOKENS.some((sens) => ac.includes(sens));
-}
-
-function isDisabled(el: Element, hasDisabledFieldsets: boolean): boolean {
-  if (el.hasAttribute('disabled')) return true;
-  if (el.getAttribute('aria-disabled') === 'true') return true;
-  if (!hasDisabledFieldsets) return false;
-  return el.closest('fieldset[disabled]') !== null;
-}
+import {
+  isControlEligible,
+  isDisabled,
+  EXCLUDED_INPUT_TYPES,
+  isSensitiveAutocomplete,
+  isRendered,
+} from './eligibility';
 
 function getRegion(el: Element, hasLandmarks: boolean): string | undefined {
   const fieldset = el.closest('fieldset');
@@ -135,18 +102,8 @@ export function capturePage(doc: Document, url: URL): CaptureResult {
     const type = tag === 'input' ? (el as HTMLInputElement).type.toLowerCase() : '';
     const role = el.getAttribute('role')?.toLowerCase() || null;
 
-    // Check exclusions
-    if (EXCLUDED_INPUT_TYPES.has(type)) {
-      unsupportedCount++;
-      continue;
-    }
-
-    if (isSensitiveAutocomplete(el)) {
-      unsupportedCount++;
-      continue;
-    }
-
-    if (isDisabled(el, hasDisabledFieldsets)) {
+    // Check exclusions and eligibility
+    if (!isControlEligible(el, hasDisabledFieldsets)) {
       unsupportedCount++;
       continue;
     }

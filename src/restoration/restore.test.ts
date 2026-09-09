@@ -247,4 +247,29 @@ describe('restoration/restore', () => {
     expect(report.outcomes[0].outcome).toBe('restored');
     expect((document.getElementById('delayed-field') as HTMLInputElement).value).toBe('async-value');
   });
+
+  it('safely skips controls changed to password, disabled, hidden, or prohibited types', async () => {
+    // Modify existing input #q to type="password"
+    const qInput = document.getElementById('q') as HTMLInputElement;
+    qInput.type = 'password';
+
+    // Modify #num to disabled
+    const numInput = document.getElementById('num') as HTMLInputElement;
+    numInput.disabled = true;
+
+    // Modify #in-stock to hidden
+    const stockInput = document.getElementById('in-stock') as HTMLInputElement;
+    stockInput.hidden = true;
+
+    const report = await restoreControls(document, sampleControls.slice(0, 3));
+    expect(report.outcomes).toHaveLength(3);
+    expect(report.outcomes[0].outcome).toBe('skipped');
+    expect(report.outcomes[1].outcome).toBe('skipped');
+    expect(report.outcomes[2].outcome).toBe('skipped');
+
+    // Values remain untouched
+    expect(qInput.value).toBe('old text');
+    expect(numInput.value).toBe('1');
+    expect(stockInput.checked).toBe(false);
+  });
 });

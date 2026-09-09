@@ -2,6 +2,8 @@ import type { CapturedSetting } from '@/domain/view';
 import { matchControl } from '@/matching/match';
 import { applyControlValue } from './apply-control';
 
+import { isControlEligible } from '@/capture/eligibility';
+
 export type SettingOutcome = 'restored' | 'skipped' | 'failed';
 
 export interface RestoreReport {
@@ -19,12 +21,20 @@ export async function restoreControls(
   const outcomesMap = new Map<string, SettingOutcome>();
 
   const attemptRestoration = (remaining: CapturedSetting[]): CapturedSetting[] => {
-    const candidates = Array.from(doc.querySelectorAll<HTMLElement>(candidateQuery));
+    const rawCandidates = Array.from(doc.querySelectorAll<HTMLElement>(candidateQuery));
+    const candidates = rawCandidates.filter((el) => isControlEligible(el));
     const stillUnresolved: CapturedSetting[] = [];
 
     for (const control of remaining) {
       const matched = matchControl(control.fingerprint, candidates);
       if (!matched) {
+        outcomesMap.set(control.id, 'skipped');
+        stillUnresolved.push(control);
+        continue;
+      }
+
+      // Recheck eligibility immediately before mutation
+      if (!isControlEligible(matched.element)) {
         outcomesMap.set(control.id, 'skipped');
         stillUnresolved.push(control);
         continue;

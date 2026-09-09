@@ -207,17 +207,23 @@ describe('capture/controls', () => {
       expect(result.unsupportedCount).toBe(2);
     });
 
-    it('preserves benign fields like zipcode', () => {
+    it('excludes non-rendered and hidden controls', () => {
       document.body.innerHTML = `
-        <label for="zip">Zip Code</label>
-        <input id="zip" name="zipcode" type="text" value="94103" />
+        <label for="hid">Hidden Input</label>
+        <input id="hid" type="text" hidden value="secret" />
+
+        <div style="display: none">
+          <label for="none">Display None Input</label>
+          <input id="none" type="text" value="hidden" />
+        </div>
+
+        <label for="aria-hid">Aria Hidden</label>
+        <input id="aria-hid" type="text" aria-hidden="true" value="invisible" />
       `;
 
-      const result = capturePage(document, new URL('https://example.com/address'));
-      expect(result.controls).toHaveLength(1);
-      expect(result.controls[0].label).toBe('Zip Code');
-      expect(result.controls[0].value).toBe('94103');
-      expect(result.unsupportedCount).toBe(0);
+      const result = capturePage(document, new URL('https://example.com/hidden'));
+      expect(result.controls).toHaveLength(0);
+      expect(result.unsupportedCount).toBe(3);
     });
   });
 });
