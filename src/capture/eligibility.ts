@@ -40,23 +40,24 @@ export function isDisabled(el: Element, hasDisabledFieldsets = true): boolean {
 }
 
 export function isRendered(el: Element): boolean {
-  if (el.getAttribute('aria-hidden') === 'true') return false;
-  if (el.closest('[hidden], [aria-hidden="true"]')) return false;
-
   if (el instanceof HTMLElement) {
-    if (el.hidden) return false;
-    if (el.style.display === 'none' || el.style.visibility === 'hidden') return false;
+    if (el.hidden || el.style.display === 'none' || el.style.visibility === 'hidden') return false;
   }
+  if (el.getAttribute('aria-hidden') === 'true') return false;
 
-  // Check inline styles or closest ancestor with display:none / visibility:hidden
-  let curr: Element | null = el;
-  while (curr && curr instanceof HTMLElement) {
-    if (curr.hidden || curr.style.display === 'none' || curr.style.visibility === 'hidden') {
+  // Walk parents only if parent is not body/html
+  let curr: Element | null = el.parentElement;
+  while (curr && curr instanceof HTMLElement && curr !== document.body && curr !== document.documentElement) {
+    if (
+      curr.hidden ||
+      curr.getAttribute('aria-hidden') === 'true' ||
+      curr.style.display === 'none' ||
+      curr.style.visibility === 'hidden'
+    ) {
       return false;
     }
     curr = curr.parentElement;
   }
-
   return true;
 }
 

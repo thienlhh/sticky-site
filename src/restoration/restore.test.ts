@@ -342,4 +342,69 @@ describe('restoration/restore', () => {
     expect(report.outcomes[0].outcome).toBe('failed');
     expect(opt2.getAttribute('aria-checked')).toBe('false');
   });
+
+  it('reverifies final values and marks as failed if a later control or framework resets an earlier value', async () => {
+    document.body.innerHTML = `
+      <form id="dependent-form">
+        <label for="country">Country</label>
+        <select id="country">
+          <option value="us">United States</option>
+          <option value="ca">Canada</option>
+        </select>
+
+        <label for="state">State</label>
+        <select id="state">
+          <option value="ny">New York</option>
+          <option value="ca-on">Ontario</option>
+        </select>
+      </form>
+    `;
+
+    const countrySelect = document.getElementById('country') as HTMLSelectElement;
+    const stateSelect = document.getElementById('state') as HTMLSelectElement;
+
+    // Simulate reactive framework: changing state to Ontario unexpectedly resets country to CA,
+    // or changing country resets state back to default
+    countrySelect.addEventListener('change', () => {
+      // Whenever country changes, state is cleared/reset
+      stateSelect.value = '';
+    });
+
+    const settings: CapturedSetting[] = [
+      {
+        id: 'c-state',
+        label: 'State',
+        value: 'ny',
+        fingerprint: {
+          kind: 'select-one',
+          tag: 'select',
+          label: 'State',
+          id: 'state',
+          options: ['ny', 'ca-on'],
+          ordinal: 1,
+        },
+      },
+      {
+        id: 'c-country',
+        label: 'Country',
+        value: 'ca',
+        fingerprint: {
+          kind: 'select-one',
+          tag: 'select',
+          label: 'Country',
+          id: 'country',
+          options: ['us', 'ca'],
+          ordinal: 0,
+        },
+      },
+    ];
+
+    const report = await restoreControls(document, settings);
+    // Because restoring c-country reset stateSelect value from 'ny' to '', c-state must be marked 'failed'
+    const stateOutcome = report.outcomes.find((o) => o.id === 'c-state');
+    const countryOutcome = report.outcomes.find((o) => o.id === 'c-country');
+
+    expect(countryOutcome?.outcome).toBe('restored');
+    expect(stateOutcome?.outcome).toBe('failed');
+  });
 });

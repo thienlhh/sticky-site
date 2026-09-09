@@ -196,3 +196,79 @@ export function applyControlValue(element: Element, setting: CapturedSetting): b
     return inputEl.value === targetString;
   }
 }
+
+export function verifyControlValue(element: Element, setting: CapturedSetting): boolean {
+  const tag = element.tagName.toLowerCase();
+  const kind = setting.fingerprint.kind;
+
+  if (kind === 'checkbox') {
+    const targetBoolean = Boolean(setting.value);
+    if (tag === 'input') {
+      return (element as HTMLInputElement).checked === targetBoolean;
+    }
+    return (element.getAttribute('aria-checked') === 'true') === targetBoolean;
+  }
+
+  if (kind === 'radio') {
+    const targetValue = String(setting.value);
+    if (element.getAttribute('role')?.toLowerCase() === 'radio' || !tag.includes('input')) {
+      const group = element.closest('[role="radiogroup"], fieldset') || element.parentElement;
+      const radios = group
+        ? Array.from(group.querySelectorAll<HTMLElement>('[role="radio"]'))
+        : [element as HTMLElement];
+
+      const checkedRadio = radios.find((r) => r.getAttribute('aria-checked') === 'true');
+      const val = checkedRadio
+        ? checkedRadio.getAttribute('data-value') ||
+          checkedRadio.getAttribute('value') ||
+          checkedRadio.getAttribute('aria-label') ||
+          checkedRadio.textContent?.trim() ||
+          checkedRadio.id ||
+          ''
+        : '';
+      return val === targetValue;
+    }
+
+    const doc = element.ownerDocument;
+    const name = (element as HTMLInputElement).name;
+    if (!doc || !name) {
+      return (element as HTMLInputElement).checked && (element as HTMLInputElement).value === targetValue;
+    }
+
+    try {
+      const escapedName = typeof CSS !== 'undefined' && CSS.escape ? CSS.escape(name) : name;
+      const radios = Array.from(
+        doc.querySelectorAll<HTMLInputElement>(`input[type="radio"][name="${escapedName}"]`)
+      );
+      const checked = radios.find((r) => r.checked);
+      return checked ? checked.value === targetValue : !targetValue;
+    } catch {
+      return false;
+    }
+  }
+
+  if (kind === 'select-one' && tag === 'select') {
+    const select = element as HTMLSelectElement;
+    const targetValue = String(setting.value);
+    if (select.value === targetValue) return true;
+    const normTarget = targetValue.trim().toLowerCase();
+    const opt = select.selectedOptions[0];
+    return opt ? opt.text.trim().toLowerCase() === normTarget : false;
+  }
+
+  if (kind === 'select-multiple' && tag === 'select') {
+    const select = element as HTMLSelectElement;
+    const targetValues = Array.isArray(setting.value)
+      ? setting.value.map(String)
+      : [String(setting.value)];
+    const observableSelected = Array.from(select.selectedOptions).map((o) => o.value);
+    return (
+      targetValues.length === observableSelected.length &&
+      targetValues.every((v) => observableSelected.includes(v))
+    );
+  }
+
+  const targetString = String(setting.value);
+  const inputEl = element as HTMLInputElement | HTMLTextAreaElement;
+  return inputEl.value === targetString;
+}

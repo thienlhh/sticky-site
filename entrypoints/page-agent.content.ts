@@ -23,7 +23,8 @@ export default defineContentScript({
         return true;
       }
       if (message?.type === 'RESTORE') {
-        restoreControls(document, message.controls || [])
+        const timeoutMs = Math.min(message.timeoutMs ?? 5000, 5000);
+        restoreControls(document, message.controls || [], { timeoutMs })
           .then((report) => {
             sendResponse({ status: 'ok', data: report });
           })

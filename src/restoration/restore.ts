@@ -1,6 +1,6 @@
 import type { CapturedSetting } from '@/domain/view';
 import { matchControl } from '@/matching/match';
-import { applyControlValue } from './apply-control';
+import { applyControlValue, verifyControlValue } from './apply-control';
 
 import { isControlEligible } from '@/capture/eligibility';
 
@@ -19,6 +19,22 @@ export async function restoreControls(
     'input, select, textarea, [role="switch"], [role="checkbox"], [role="radio"]';
 
   const outcomesMap = new Map<string, SettingOutcome>();
+
+  const reverifyAll = () => {
+    const rawCandidates = Array.from(doc.querySelectorAll<HTMLElement>(candidateQuery));
+    const candidates = rawCandidates.filter((el) => isControlEligible(el));
+
+    for (const control of controls) {
+      const currentOutcome = outcomesMap.get(control.id);
+      if (currentOutcome === 'restored') {
+        const matched = matchControl(control.fingerprint, candidates);
+        if (!matched || !isControlEligible(matched.element) || !verifyControlValue(matched.element, control)) {
+          // Setting was disturbed, reset, or rejected by framework/subsequent control
+          outcomesMap.set(control.id, 'failed');
+        }
+      }
+    }
+  };
 
   const attemptRestoration = (remaining: CapturedSetting[]): CapturedSetting[] => {
     const rawCandidates = Array.from(doc.querySelectorAll<HTMLElement>(candidateQuery));
@@ -60,7 +76,7 @@ export async function restoreControls(
   // Initial pass
   let unresolved = attemptRestoration(controls);
 
-  // If all restored or no observer available or timeout is 0, return immediately
+  // If all restored or no observer available or timeout is 0, return immediately after reverification
   const timeoutMs = options?.timeoutMs ?? 0;
 
   if (
@@ -69,6 +85,7 @@ export async function restoreControls(
     typeof MutationObserver === 'undefined' ||
     !doc.body
   ) {
+    reverifyAll();
     return {
       outcomes: controls.map((c) => ({
         id: c.id,
@@ -95,6 +112,7 @@ export async function restoreControls(
 
     const done = () => {
       cleanup();
+      reverifyAll();
       resolve({
         outcomes: controls.map((c) => ({
           id: c.id,

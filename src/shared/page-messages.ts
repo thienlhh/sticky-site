@@ -3,7 +3,7 @@ import type { CapturedSetting } from '@/domain/view';
 export type PageCommand =
   | { type: 'PING' }
   | { type: 'CAPTURE' }
-  | { type: 'RESTORE'; controls: CapturedSetting[] };
+  | { type: 'RESTORE'; controls: CapturedSetting[]; timeoutMs?: number };
 
 export interface PingResponse {
   status: 'ok';
