@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { normalizePathname, type SavedView } from '@/domain/view';
-import { MoreVertical, Trash2, Edit2, RefreshCw, Globe } from 'lucide-react';
+import { MoreVertical, Trash2, Edit2, RefreshCw, Globe, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export interface ViewListProps {
@@ -9,6 +9,7 @@ export interface ViewListProps {
   currentPathname: string;
   views: SavedView[];
   onApply: (view: SavedView) => void;
+  onNavigate?: (url: string) => void;
   onRename?: (view: SavedView) => void;
   onUpdate?: (view: SavedView) => void;
   onDelete?: (view: SavedView) => void;
@@ -74,6 +75,7 @@ interface ViewCardProps {
   view: SavedView;
   compatible: boolean;
   onApply: (view: SavedView) => void;
+  onNavigate?: (url: string) => void;
   onRename?: (view: SavedView) => void;
   onUpdate?: (view: SavedView) => void;
   onDelete?: (view: SavedView) => void;
@@ -83,6 +85,7 @@ function ViewCard({
   view,
   compatible,
   onApply,
+  onNavigate,
   onRename,
   onUpdate,
   onDelete,
@@ -125,23 +128,55 @@ function ViewCard({
         <SiteIcon origin={view.origin} pathname={view.pathname} />
         <div className="flex-1 min-w-0">
           <h4 className="text-xs sm:text-sm font-semibold text-slate-900 truncate">{view.name}</h4>
-          <p className="text-[11px] text-slate-500 mt-0.5">
+          <p className="text-[11px] text-slate-500 mt-0.5 truncate">
             {controlCount} control{controlCount === 1 ? '' : 's'}
             {queryCount > 0 && `, ${queryCount} query param${queryCount === 1 ? '' : 's'}`}
           </p>
+          {!compatible && (
+            <div className="mt-1 flex items-center">
+              <span
+                className="font-mono text-[10px] text-slate-600 bg-slate-100 border border-slate-200/70 px-1.5 py-0.5 rounded max-w-full truncate"
+                title={`Saved for page: ${view.pathname}`}
+              >
+                Page: {view.pathname}
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
       <div className="flex items-center gap-1 shrink-0 relative" ref={menuRef}>
-        <Button
-          variant="ghost"
-          onClick={() => onApply(view)}
-          disabled={!compatible}
-          className="h-8 min-h-[32px] px-2.5 min-w-[48px] text-xs font-semibold text-blue-600 hover:text-blue-700 hover:bg-blue-50 opacity-0 group-hover:opacity-100 focus:opacity-100 group-focus-within:opacity-100 transition-opacity disabled:opacity-40 disabled:hover:bg-transparent"
-          aria-label={`Apply ${view.name}`}
-        >
-          Apply
-        </Button>
+        {compatible ? (
+          <Button
+            variant="ghost"
+            onClick={() => onApply(view)}
+            className="h-8 min-h-[32px] px-2.5 min-w-[48px] text-xs font-semibold text-blue-600 hover:text-blue-700 hover:bg-blue-50 opacity-0 group-hover:opacity-100 focus:opacity-100 group-focus-within:opacity-100 transition-opacity"
+            aria-label={`Apply ${view.name}`}
+          >
+            Apply
+          </Button>
+        ) : onNavigate ? (
+          <Button
+            variant="ghost"
+            onClick={() => onNavigate(`${view.origin}${view.pathname}`)}
+            className="h-8 min-h-[32px] px-2 min-w-[48px] text-xs font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-100 opacity-0 group-hover:opacity-100 focus:opacity-100 group-focus-within:opacity-100 transition-opacity flex items-center gap-1"
+            aria-label={`Go to page ${view.pathname} for ${view.name}`}
+            title={`Navigate to ${view.origin}${view.pathname} to apply`}
+          >
+            <ExternalLink className="h-3 w-3 text-slate-400" aria-hidden="true" />
+            <span>Go to page</span>
+          </Button>
+        ) : (
+          <Button
+            variant="ghost"
+            disabled
+            className="h-8 min-h-[32px] px-2.5 min-w-[48px] text-xs font-semibold text-slate-400 opacity-40 cursor-not-allowed"
+            aria-label={`Cannot apply ${view.name} on current page`}
+            title={`Only applies to ${view.pathname}`}
+          >
+            Apply
+          </Button>
+        )}
 
         {hasSecondaryActions && (
           <Button
@@ -164,8 +199,23 @@ function ViewCard({
           <div
             role="menu"
             aria-label={`Options for ${view.name}`}
-            className="absolute right-0 top-8 z-30 w-28 rounded-md bg-white py-1 shadow-lg border border-slate-200"
+            className="absolute right-0 top-8 z-30 w-32 rounded-md bg-white py-1 shadow-lg border border-slate-200"
           >
+            {!compatible && onNavigate && (
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setMenuOpen(false);
+                  onNavigate(`${view.origin}${view.pathname}`);
+                }}
+                className="w-full flex items-center px-2.5 py-1.5 text-xs text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-colors text-left cursor-pointer"
+                aria-label={`Go to ${view.pathname}`}
+              >
+                <ExternalLink className="h-3.5 w-3.5 mr-2 text-slate-400" />
+                Go to page
+              </button>
+            )}
             {onRename && (
               <button
                 type="button"
@@ -224,6 +274,7 @@ export function ViewList({
   currentPathname,
   views,
   onApply,
+  onNavigate,
   onRename,
   onUpdate,
   onDelete,
@@ -268,9 +319,14 @@ export function ViewList({
       )}
       {otherViews.length > 0 && (
         <>
-          <h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">
-            Other views on this site ({otherViews.length})
-          </h3>
+          <div className="pt-1">
+            <h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">
+              Other views on this site ({otherViews.length})
+            </h3>
+            <p className="text-[11px] text-slate-500 mt-0.5">
+              Saved for other pages on this site. Navigate to the page to apply.
+            </p>
+          </div>
           <div className="space-y-1.5">
             {otherViews.map((view) => (
               <ViewCard
@@ -278,6 +334,7 @@ export function ViewList({
                 view={view}
                 compatible={false}
                 onApply={onApply}
+                onNavigate={onNavigate}
                 onRename={onRename}
                 onUpdate={onUpdate}
                 onDelete={onDelete}

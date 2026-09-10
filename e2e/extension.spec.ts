@@ -143,8 +143,10 @@ test.describe('Production extension through its native action popup', () => {
     await web.goto(`${origin}/dynamic-page.html`);
     ui = await popup();
     await expect.poll(ui.text).toContain('OTHER VIEWS ON THIS SITE');
-    expect(await ui.evaluate<boolean>(`document.querySelector('[aria-label="Apply Catalog"]').disabled`)).toBe(true);
+    await expect.poll(ui.text).toContain('Page: /filter-page.html');
+    expect(await ui.evaluate<boolean>(`Boolean(document.querySelector('[aria-label="Go to page /filter-page.html for Catalog"]'))`)).toBe(true);
     await ui.click('View options for Catalog');
+    expect(await ui.evaluate<boolean>(`Boolean(document.querySelector('[aria-label="Go to /filter-page.html"]'))`)).toBe(true);
     expect(await ui.evaluate<boolean>(`document.querySelector('[aria-label="Update Catalog"]').disabled`)).toBe(true);
     await ui.click('Rename'); await ui.fill('#rename-input', 'Renamed'); await ui.click('Save Name');
     await expect.poll(ui.text).toContain('Renamed');

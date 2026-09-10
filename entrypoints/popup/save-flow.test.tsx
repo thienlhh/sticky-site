@@ -140,13 +140,43 @@ describe('Popup Save and List Flow', () => {
       expect(screen.getByText('Shoes Under $100')).toBeInTheDocument();
       expect(screen.getByText('Other views on this site (1)')).toBeInTheDocument();
       expect(screen.getByText('Different Page View')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'Apply Different Page View' })).toBeDisabled();
+      expect(screen.getByRole('button', { name: 'Cannot apply Different Page View on current page' })).toBeDisabled();
 
       // Open context menu for Different Page View to inspect secondary actions
       await userEvent.click(screen.getByRole('button', { name: 'View options for Different Page View' }));
       expect(screen.getByRole('menuitem', { name: 'Update Different Page View' })).toBeDisabled();
       expect(screen.getByRole('menuitem', { name: 'Rename Different Page View' })).toBeEnabled();
       expect(screen.getByRole('menuitem', { name: 'Delete Different Page View' })).toBeEnabled();
+    });
+
+    it('renders Go to page button, badge, and menu item when onNavigate is provided for incompatible views', async () => {
+      const onApply = vi.fn();
+      const onNavigate = vi.fn();
+      render(
+        <ViewList
+          currentOrigin="https://example.com"
+          currentPathname="/search"
+          views={mockViews}
+          onApply={onApply}
+          onNavigate={onNavigate}
+          onRename={vi.fn()}
+        />
+      );
+
+      expect(screen.getByText(/Page:\s+\/categories/)).toBeInTheDocument();
+      expect(screen.getByText(/Navigate to the page to apply/i)).toBeInTheDocument();
+
+      const goToPageBtn = screen.getByRole('button', { name: 'Go to page /categories for Different Page View' });
+      expect(goToPageBtn).toBeInTheDocument();
+      await userEvent.click(goToPageBtn);
+      expect(onNavigate).toHaveBeenCalledWith('https://example.com/categories');
+
+      // Check context menu also has Go to page
+      await userEvent.click(screen.getByRole('button', { name: 'View options for Different Page View' }));
+      const menuGoToPage = screen.getByRole('menuitem', { name: 'Go to /categories' });
+      expect(menuGoToPage).toBeInTheDocument();
+      await userEvent.click(menuGoToPage);
+      expect(onNavigate).toHaveBeenCalledWith('https://example.com/categories');
     });
   });
 });

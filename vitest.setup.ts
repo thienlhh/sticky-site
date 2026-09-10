@@ -1,5 +1,9 @@
 import '@testing-library/jest-dom/vitest';
 
+if (typeof window !== 'undefined') {
+  window.close = () => {};
+}
+
 // Safe default mock for chrome APIs in tests
 if (typeof (globalThis as any).chrome === 'undefined') {
   const store: Record<string, unknown> = {
@@ -99,6 +103,7 @@ if (typeof (globalThis as any).chrome === 'undefined') {
     tabs: {
       query: async () => [],
       get: async (tabId: number) => ({ id: tabId, url: '' }),
+      update: async (tabId: number, updateProperties: Record<string, unknown>) => ({ id: tabId, ...updateProperties }),
       sendMessage: async () => {},
       onActivated: {
         addListener: () => {},

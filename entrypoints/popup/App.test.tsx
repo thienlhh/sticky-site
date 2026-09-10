@@ -536,6 +536,36 @@ describe('Popup App Shell', () => {
       expect(recoveredItem).toBeInTheDocument();
       expect(screen.queryByText('Storage Load Error')).not.toBeInTheDocument();
     });
+
+    it('navigates the active tab when clicking Go to page on an incompatible view', async () => {
+      const user = userEvent.setup();
+      const storageModule = await import('@/storage/views');
+      vi.spyOn(pageAgent, 'getActivePage').mockResolvedValue({
+        tabId: 101,
+        url: new URL('https://example.com/'),
+      });
+      const incompatibleView = {
+        schemaVersion: 1 as const,
+        id: 'view-jobs-1',
+        name: 'Jobs View',
+        origin: 'https://example.com',
+        pathname: '/jobs',
+        queryParams: {},
+        controls: [],
+        createdAt: '2026-09-09T08:00:00.000Z',
+        updatedAt: '2026-09-09T08:00:00.000Z',
+      };
+      vi.spyOn(storageModule, 'listViews').mockResolvedValue([incompatibleView]);
+      const updateSpy = vi.spyOn(chrome.tabs, 'update');
+
+      render(<App />);
+
+      const goToPageBtn = await screen.findByRole('button', { name: 'Go to page /jobs for Jobs View' });
+      expect(goToPageBtn).toBeInTheDocument();
+      await user.click(goToPageBtn);
+
+      expect(updateSpy).toHaveBeenCalledWith(101, { url: 'https://example.com/jobs' });
+    });
   });
 });
 

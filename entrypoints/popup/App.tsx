@@ -582,6 +582,15 @@ export function App() {
                   setIsLoading(false);
                 }
               }}
+              onNavigate={async (url) => {
+                try {
+                  const page = await getActivePage();
+                  await chrome.tabs.update(page.tabId, { url });
+                  window.close();
+                } catch {
+                  window.open(url, '_blank');
+                }
+              }}
               onRename={(v) => setActiveAction({ type: 'rename', view: v })}
               onUpdate={(v) => setActiveAction({ type: 'update', view: v })}
               onDelete={(v) => setActiveAction({ type: 'delete', view: v })}
