@@ -124,4 +124,28 @@ describe('CaptureReview', () => {
     const continueBtn = screen.getByRole('button', { name: /Continue/i });
     expect(continueBtn).toBeDisabled();
   });
+
+  it('toggles settings when clicking either the checkbox or the label/value text', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <CaptureReview
+        captureResult={sampleCapture}
+        onContinue={vi.fn()}
+        onCancel={vi.fn()}
+      />
+    );
+
+    const checkbox = screen.getByLabelText(/In Stock Only/i);
+    expect(checkbox).toBeChecked();
+
+    // Click checkbox directly
+    await user.click(checkbox);
+    expect(checkbox).not.toBeChecked();
+
+    // Click value description inside the label
+    const valueText = screen.getByText('Yes / Checked');
+    await user.click(valueText);
+    expect(checkbox).toBeChecked();
+  });
 });

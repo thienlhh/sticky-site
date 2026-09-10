@@ -28,10 +28,10 @@ export const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
           checked={checked}
           disabled={disabled}
           onChange={(e) => onCheckedChange?.(e.target.checked)}
-          className="sr-only peer"
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 m-0"
           {...props}
         />
-        {checked && <Check className="h-3 w-3 stroke-[3]" />}
+        {checked && <Check className="h-3 w-3 stroke-[3] pointer-events-none" />}
       </span>
     );
   }

@@ -121,12 +121,12 @@ export function CaptureReview({
                       checked={isChecked}
                       onCheckedChange={(c) => toggleQueryParam(key, c)}
                     />
-                    <div className="flex-1 text-xs">
-                      <Label htmlFor={inputId} className="font-semibold text-slate-800 cursor-pointer">
+                    <Label htmlFor={inputId} className="flex-1 text-xs cursor-pointer block select-none">
+                      <span className="font-semibold text-slate-800 block">
                         {key}
-                      </Label>
-                      <p className="text-slate-500 truncate">{values.join(', ')}</p>
-                    </div>
+                      </span>
+                      <p className="text-slate-500 truncate font-normal mt-0.5">{values.join(', ')}</p>
+                    </Label>
                   </div>
                 );
               })}
@@ -153,14 +153,14 @@ export function CaptureReview({
                       checked={isChecked}
                       onCheckedChange={(c) => toggleControl(control.id, c)}
                     />
-                    <div className="flex-1 text-xs">
-                      <Label htmlFor={inputId} className="font-semibold text-slate-800 cursor-pointer">
+                    <Label htmlFor={inputId} className="flex-1 text-xs cursor-pointer block select-none">
+                      <span className="font-semibold text-slate-800 block">
                         {control.label}
-                      </Label>
-                      <p className="text-slate-500 truncate">
+                      </span>
+                      <p className="text-slate-500 truncate font-normal mt-0.5">
                         {formatValue(control.value)}
                       </p>
-                    </div>
+                    </Label>
                   </div>
                 );
               })}
