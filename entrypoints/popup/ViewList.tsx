@@ -291,26 +291,24 @@ export function ViewList({
   );
 
   return (
-    <div className="flex-1 overflow-y-auto space-y-2 pr-0.5">
+    <div className="flex-1 min-h-0 overflow-y-auto space-y-2 pr-0.5">
+      <h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">
+        Views for this page ({pageViews.length})
+      </h3>
       {pageViews.length > 0 ? (
-        <>
-          <h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">
-            Views for this page ({pageViews.length})
-          </h3>
-          <div className="space-y-1.5">
-            {pageViews.map((view) => (
-              <ViewCard
-                key={view.id}
-                view={view}
-                compatible={true}
-                onApply={onApply}
-                onRename={onRename}
-                onUpdate={onUpdate}
-                onDelete={onDelete}
-              />
-            ))}
-          </div>
-        </>
+        <div className="space-y-1.5">
+          {pageViews.map((view) => (
+            <ViewCard
+              key={view.id}
+              view={view}
+              compatible={true}
+              onApply={onApply}
+              onRename={onRename}
+              onUpdate={onUpdate}
+              onDelete={onDelete}
+            />
+          ))}
+        </div>
       ) : (
         <div className="text-center py-6">
           <p className="text-sm text-slate-500">No saved views for this page yet.</p>
@@ -323,9 +321,6 @@ export function ViewList({
             <h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">
               Other views on this site ({otherViews.length})
             </h3>
-            <p className="text-[11px] text-slate-500 mt-0.5">
-              Saved for other pages on this site. Navigate to the page to apply.
-            </p>
           </div>
           <div className="space-y-1.5">
             {otherViews.map((view) => (

@@ -285,7 +285,7 @@ export function App() {
 
   if (screen === 'onboarding') {
     return (
-      <main data-ready={onboardingChecked ? 'true' : 'false'} className="w-[360px] min-h-[440px] p-3 bg-white text-slate-900 flex flex-col justify-between">
+      <main data-ready={onboardingChecked ? 'true' : 'false'} className="w-[360px] h-[500px] p-3 bg-white text-slate-900 flex flex-col justify-between overflow-hidden">
         <Onboarding
           onComplete={() => {
             setScreen('idle');
@@ -298,7 +298,7 @@ export function App() {
 
   if (screen === 'review' && captureData) {
     return (
-      <main data-ready={onboardingChecked ? 'true' : 'false'} className="w-[360px] min-h-[440px] p-3 bg-white text-slate-900 flex flex-col justify-between">
+      <main data-ready={onboardingChecked ? 'true' : 'false'} className="w-[360px] h-[500px] p-3 bg-white text-slate-900 flex flex-col justify-between overflow-hidden">
         <CaptureReview
           captureResult={captureData}
           onCancel={() => {
@@ -359,7 +359,7 @@ export function App() {
 
   if (screen === 'save' && captureData && reviewSelection) {
     return (
-      <main data-ready={onboardingChecked ? 'true' : 'false'} className="w-[360px] min-h-[440px] p-3 bg-white text-slate-900 flex flex-col justify-between">
+      <main data-ready={onboardingChecked ? 'true' : 'false'} className="w-[360px] h-[500px] p-3 bg-white text-slate-900 flex flex-col justify-between overflow-hidden">
         <SaveView
           origin={captureData.origin}
           pathname={captureData.pathname}
@@ -389,7 +389,7 @@ export function App() {
 
   if (screen === 'settings') {
     return (
-      <main data-ready={onboardingChecked ? 'true' : 'false'} className="w-[360px] min-h-[440px] p-3 bg-white text-slate-900 flex flex-col justify-between">
+      <main data-ready={onboardingChecked ? 'true' : 'false'} className="w-[360px] h-[500px] p-3 bg-white text-slate-900 flex flex-col justify-between overflow-hidden">
         <header className="border-b border-slate-200 pb-2 mb-2.5 flex items-center gap-2">
           <StickySiteLogo className="h-7 w-7 shrink-0" />
           <div>
@@ -466,7 +466,7 @@ export function App() {
   if (screen === 'report') {
     const distinctSites = new Set(allViews.map((v) => v.origin)).size;
     return (
-      <main data-ready={onboardingChecked ? 'true' : 'false'} className="w-[360px] min-h-[440px] p-3 bg-white text-slate-900 flex flex-col justify-between">
+      <main data-ready={onboardingChecked ? 'true' : 'false'} className="w-[360px] h-[500px] p-3 bg-white text-slate-900 flex flex-col justify-between overflow-hidden">
         <ReportIssue
           reportData={{
             failureCategory: 'user_reported_issue',
@@ -497,7 +497,7 @@ export function App() {
   }
 
   return (
-    <main data-ready={onboardingChecked ? 'true' : 'false'} className="w-[360px] min-h-[440px] p-3 bg-white text-slate-900 flex flex-col justify-between">
+    <main data-ready={onboardingChecked ? 'true' : 'false'} className="w-[360px] h-[500px] p-3 bg-white text-slate-900 flex flex-col justify-between overflow-hidden">
       <header className="border-b border-slate-200 pb-2 mb-2.5 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <StickySiteLogo className="h-7 w-7 shrink-0" />

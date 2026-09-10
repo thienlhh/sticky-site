@@ -25,6 +25,39 @@ describe('Popup App Shell', () => {
     expect(saveButton).not.toBeDisabled();
   });
 
+  it('enforces fixed 360x500 dimensions and scrollable list to prevent height expansion', async () => {
+    const storageModule = await import('@/storage/views');
+    vi.spyOn(pageAgent, 'getActivePage').mockResolvedValue({
+      tabId: 101,
+      url: new URL('https://example.com/search'),
+    });
+    const views = Array.from({ length: 8 }, (_, i) => ({
+      schemaVersion: 1 as const,
+      id: `view-${i}`,
+      name: `View ${i}`,
+      origin: 'https://example.com',
+      pathname: '/search',
+      queryParams: {},
+      controls: [],
+      createdAt: '2026-09-09T08:00:00.000Z',
+      updatedAt: '2026-09-09T08:00:00.000Z',
+    }));
+    vi.spyOn(storageModule, 'listViews').mockResolvedValue(views);
+
+    const { container } = render(<App />);
+    const main = container.querySelector('main');
+    expect(main).toHaveClass('w-[360px]');
+    expect(main).toHaveClass('h-[500px]');
+    expect(main).toHaveClass('overflow-hidden');
+    expect(main).not.toHaveClass('min-h-[440px]');
+
+    const scrollList = await screen.findByText('View 0');
+    const listContainer = scrollList.closest('.overflow-y-auto');
+    expect(listContainer).toBeInTheDocument();
+    expect(listContainer).toHaveClass('min-h-0');
+    expect(listContainer).toHaveClass('flex-1');
+  });
+
   it('navigates to capture review screen when capture succeeds', async () => {
     const user = userEvent.setup();
     vi.spyOn(pageAgent, 'getActivePage').mockResolvedValue({

@@ -164,7 +164,6 @@ describe('Popup Save and List Flow', () => {
       );
 
       expect(screen.getByText(/Page:\s+\/categories/)).toBeInTheDocument();
-      expect(screen.getByText(/Navigate to the page to apply/i)).toBeInTheDocument();
 
       const goToPageBtn = screen.getByRole('button', { name: 'Go to page /categories for Different Page View' });
       expect(goToPageBtn).toBeInTheDocument();
