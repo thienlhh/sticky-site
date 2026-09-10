@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" fill="none">
+  <defs>
+    <linearGradient id="ss16Top" x1="3" y1="2" x2="13" y2="6" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3B82F6" />
+      <stop offset="100%" stop-color="#2563EB" />
+    </linearGradient>
+    <linearGradient id="ss16Mid" x1="3" y1="4" x2="13" y2="12" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#2563EB" />
+      <stop offset="100%" stop-color="#1E40AF" />
+    </linearGradient>
+    <linearGradient id="ss16Bottom" x1="13" y1="10" x2="3" y2="14" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#2563EB" />
+      <stop offset="100%" stop-color="#1D4ED8" />
+    </linearGradient>
+  </defs>
+
+  <!-- Bottom Tape -->
+  <path d="M 8 10 H 12.5 C 13.3 10 14 10.6 14 11.5 C 14 12.4 13.3 13.5 12.5 13.5 H 4 L 3 11.75 L 4 10 H 8 Z" fill="url(#ss16Bottom)" />
+  <!-- Bottom Toggle Accent -->
+  <circle cx="7" cy="11.75" r="1.1" fill="#FFFFFF" />
+
+  <!-- Diagonal Fold Spine -->
+  <path d="M 3 5.5 L 13 12.5 L 11.5 13.5 L 3 6.5 Z" fill="url(#ss16Mid)" />
+
+  <!-- Top Tape -->
+  <path d="M 3.5 2.5 H 12 L 13 4.25 L 12 6 H 3.5 C 2.7 6 2 5.3 2 4.25 C 2 3.2 2.7 2.5 3.5 2.5 Z" fill="url(#ss16Top)" />
+  <!-- Top Toggle Accent -->
+  <circle cx="10" cy="4.25" r="1.1" fill="#FFFFFF" />
+</svg>

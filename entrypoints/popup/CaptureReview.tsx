@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { StickySiteLogo } from '@/components/StickySiteLogo';
 import type { CaptureResult } from '@/capture/controls';
 import type { CapturedSetting, StoredValue } from '@/domain/view';
 
@@ -80,11 +81,14 @@ export function CaptureReview({
 
   return (
     <div className="flex flex-col h-full justify-between">
-      <header className="border-b border-slate-200 pb-2 mb-2">
-        <h2 className="text-base font-bold text-slate-900">Review Captured Settings</h2>
-        <p className="text-xs text-slate-500">
-          Choose which page values to include in this view.
-        </p>
+      <header className="border-b border-slate-200 pb-2 mb-2 flex items-center gap-2">
+        <StickySiteLogo className="h-7 w-7 shrink-0" />
+        <div>
+          <h2 className="text-base font-bold text-slate-900">Review Captured Settings</h2>
+          <p className="text-xs text-slate-500">
+            Choose which page values to include in this view.
+          </p>
+        </div>
       </header>
 
       {captureResult.unsupportedCount > 0 && (

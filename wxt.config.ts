@@ -11,6 +11,20 @@ export default defineConfig({
     version: '1.0.0',
     permissions: ['storage', 'scripting', 'activeTab', 'tabs', 'favicon'],
     optional_host_permissions: ['http://*/*', 'https://*/*'],
+    icons: {
+      16: 'icons/icon-16.png',
+      32: 'icons/icon-32.png',
+      48: 'icons/icon-48.png',
+      128: 'icons/icon-128.png',
+    },
+    action: {
+      default_icon: {
+        16: 'icons/icon-16.png',
+        32: 'icons/icon-32.png',
+        48: 'icons/icon-48.png',
+        128: 'icons/icon-128.png',
+      },
+    },
   },
   vite: () => ({
     plugins: [tailwindcss()],

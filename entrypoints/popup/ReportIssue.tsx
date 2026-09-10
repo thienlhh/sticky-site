@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { StickySiteLogo } from '@/components/StickySiteLogo';
 import {
   validatePayload,
   getInstallationId,
@@ -60,11 +61,14 @@ export function ReportIssue({ reportData, onSend, onCancel }: ReportIssueProps) 
 
   return (
     <div className="flex flex-col h-full justify-between">
-      <header className="border-b border-slate-200 pb-2 mb-2.5">
-        <h2 className="text-base font-bold text-slate-900">Report Compatibility Issue</h2>
-        <p className="text-xs text-slate-500 mt-0.5">
-          Review the exact metadata to be submitted. StickySite never transmits URLs, page content, or saved values.
-        </p>
+      <header className="border-b border-slate-200 pb-2 mb-2.5 flex items-center gap-2">
+        <StickySiteLogo className="h-7 w-7 shrink-0" />
+        <div>
+          <h2 className="text-base font-bold text-slate-900">Report Compatibility Issue</h2>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Review the exact metadata to be submitted. StickySite never transmits URLs, page content, or saved values.
+          </p>
+        </div>
       </header>
 
       <div className="flex-1 space-y-2 overflow-y-auto pr-0.5">

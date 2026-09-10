@@ -1,6 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ShieldCheck, HardDrive, BarChart2 } from 'lucide-react';
+import { StickySiteLogo } from '@/components/StickySiteLogo';
 
 const STORAGE_KEY_ONBOARDING = 'stickysite_onboarding_completed';
 
@@ -30,11 +31,14 @@ export function Onboarding({ onComplete }: OnboardingProps) {
 
   return (
     <div className="flex flex-col h-full justify-between">
-      <header className="border-b border-slate-200 pb-2 mb-2.5">
-        <h2 className="text-base font-bold text-slate-900 tracking-tight">Welcome to StickySite</h2>
-        <p className="text-xs text-slate-500 mt-0.5">
-          Save and restore your favorite web filters effortlessly.
-        </p>
+      <header className="border-b border-slate-200 pb-2 mb-2.5 flex items-center gap-2">
+        <StickySiteLogo className="h-7 w-7 shrink-0" />
+        <div>
+          <h2 className="text-base font-bold text-slate-900 tracking-tight">Welcome to StickySite</h2>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Save and restore your favorite web filters effortlessly.
+          </p>
+        </div>
       </header>
 
       <div className="flex-1 space-y-2 overflow-y-auto pr-0.5">

@@ -28,6 +28,7 @@ import {
   calculateDistinctSiteBucket,
 } from '@/analytics';
 import { Settings as SettingsIcon } from 'lucide-react';
+import { StickySiteLogo } from '@/components/StickySiteLogo';
 
 export type Screen = 'idle' | 'review' | 'save' | 'settings' | 'report' | 'onboarding';
 
@@ -389,9 +390,12 @@ export function App() {
   if (screen === 'settings') {
     return (
       <main data-ready={onboardingChecked ? 'true' : 'false'} className="w-[360px] min-h-[440px] p-3 bg-white text-slate-900 flex flex-col justify-between">
-        <header className="border-b border-slate-200 pb-2 mb-2.5">
-          <h2 className="text-base font-bold text-slate-900">Privacy & Settings</h2>
-          <p className="text-xs text-slate-500">Manage anonymous analytics and identity</p>
+        <header className="border-b border-slate-200 pb-2 mb-2.5 flex items-center gap-2">
+          <StickySiteLogo className="h-7 w-7 shrink-0" />
+          <div>
+            <h2 className="text-base font-bold text-slate-900">Privacy & Settings</h2>
+            <p className="text-xs text-slate-500">Manage anonymous analytics and identity</p>
+          </div>
         </header>
 
         <div className="flex-1 space-y-3">
@@ -495,9 +499,12 @@ export function App() {
   return (
     <main data-ready={onboardingChecked ? 'true' : 'false'} className="w-[360px] min-h-[440px] p-3 bg-white text-slate-900 flex flex-col justify-between">
       <header className="border-b border-slate-200 pb-2 mb-2.5 flex items-center justify-between">
-        <div>
-          <h1 className="text-base font-bold text-slate-900 tracking-tight">StickySite</h1>
-          <p className="text-xs text-slate-500">Save and restore page views</p>
+        <div className="flex items-center gap-2">
+          <StickySiteLogo className="h-7 w-7 shrink-0" />
+          <div>
+            <h1 className="text-base font-bold text-slate-900 tracking-tight">StickySite</h1>
+            <p className="text-xs text-slate-500">Save and restore page views</p>
+          </div>
         </div>
         <Button
           variant="ghost"

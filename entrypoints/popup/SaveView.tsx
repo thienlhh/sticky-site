@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { StickySiteLogo } from '@/components/StickySiteLogo';
 import { listViews, createView } from '@/storage/views';
 import { normalizePathname, type CapturedSetting, type SavedView } from '@/domain/view';
 
@@ -96,11 +97,14 @@ export function SaveView({
 
   return (
     <form onSubmit={handleSave} className="flex flex-col h-full justify-between">
-      <header className="border-b border-slate-200 pb-2 mb-3">
-        <h2 className="text-base font-bold text-slate-900">Name Your View</h2>
-        <p className="text-xs text-slate-500">
-          Saving {totalSettingsCount} setting{totalSettingsCount === 1 ? '' : 's'} for {normalizedPath}
-        </p>
+      <header className="border-b border-slate-200 pb-2 mb-3 flex items-center gap-2">
+        <StickySiteLogo className="h-7 w-7 shrink-0" />
+        <div>
+          <h2 className="text-base font-bold text-slate-900">Name Your View</h2>
+          <p className="text-xs text-slate-500">
+            Saving {totalSettingsCount} setting{totalSettingsCount === 1 ? '' : 's'} for {normalizedPath}
+          </p>
+        </div>
       </header>
 
       <div className="flex-1 space-y-3">
