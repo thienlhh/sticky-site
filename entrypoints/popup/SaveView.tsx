@@ -31,7 +31,7 @@ export function SaveView({
   const normalizedPath = normalizePathname(pathname);
 
   useEffect(() => {
-    listViews().then(setExistingViews).catch(() => {});
+    listViews().then(setExistingViews).catch(() => { });
   }, []);
 
   const handleNameChange = (val: string) => {
@@ -108,8 +108,10 @@ export function SaveView({
       </header>
 
       <div className="flex-1 space-y-3">
-        <div className="space-y-1.5">
-          <Label htmlFor="view-name-input">View Name</Label>
+        <div>
+          <Label htmlFor="view-name-input" className="block mb-2.5">
+            View Name
+          </Label>
           <Input
             id="view-name-input"
             type="text"
@@ -119,7 +121,7 @@ export function SaveView({
             maxLength={65}
             autoFocus
           />
-          <div className="flex justify-between items-center text-xs">
+          <div className="flex justify-between items-center text-xs mt-1.5">
             {error ? (
               <p role="alert" className="text-red-600 font-medium">
                 {error}

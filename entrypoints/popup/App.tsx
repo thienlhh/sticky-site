@@ -381,7 +381,7 @@ export function App() {
           <div className="flex items-center justify-between p-2.5 rounded-md border border-slate-200 bg-slate-50">
             <div className="pr-2">
               <label htmlFor="analytics-toggle" className="text-xs font-semibold text-slate-900 cursor-pointer">
-                Share Anonymous Analytics
+                Share anonymous analytics
               </label>
               <p className="text-[11px] text-slate-500 mt-0.5">
                 Help improve compatibility. Never sends URLs, labels, or values.
@@ -398,30 +398,30 @@ export function App() {
                 setStatus(checked ? 'Analytics enabled' : 'Analytics disabled');
               }}
               className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer shrink-0"
-              aria-label="Share Anonymous Analytics"
+              aria-label="Share anonymous analytics"
             />
           </div>
 
-          <div className="space-y-1.5">
+          <div className="flex flex-col items-start space-y-2 pt-1">
             <Button
-              variant="outline"
+              variant="link"
               size="sm"
               onClick={async () => {
                 await clearInstallationId();
                 setStatus('Anonymous installation identity reset.');
               }}
-              className="w-full h-8 justify-start text-xs font-semibold px-2.5"
+              className="h-auto p-0 text-xs font-medium"
             >
-              Reset Anonymous Identity
+              Reset anonymous identity
             </Button>
 
             <Button
-              variant="outline"
+              variant="link"
               size="sm"
               onClick={() => setScreen('report')}
-              className="w-full h-8 justify-start text-xs font-semibold px-2.5"
+              className="h-auto p-0 text-xs font-medium"
             >
-              Report Compatibility Issue
+              Report compatibility issue
             </Button>
           </div>
         </div>
