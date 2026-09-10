@@ -335,40 +335,23 @@ Responsibilities:
 - **Content script:** scans, labels, fingerprints, matches, restores, and verifies controls only when requested.
 - **Storage module:** validates schemas and performs create, update, rename, and delete without destructive partial writes.
 
-## 11. Analytics and Product Decision Gate
+## 11. Analytics and Reliability Monitoring
 
 ### Analytics
 
 Remote analytics may send only:
 
 - random installation ID, extension version, event name, and timestamp
-- counts of captured, attempted, restored, and skipped settings
-- locally calculated distinct-site count bucket
+- counts of attempted, restored, and skipped settings
 - coarse failure category
 
 Never send origins, URLs, query data, control labels or values, page content, view names, selectors, fingerprints, or keystrokes.
 
-Required events are extension_installed, site_permission_granted, save_view_started, view_created, view_apply_started, view_apply_full, view_apply_partial, view_apply_failed, view_updated, and view_deleted.
+Required events are view_apply_started, view_apply_full, view_apply_partial, and view_apply_failed.
 
 Analytics uses a service-worker adapter. Missing build configuration selects a no-op adapter. Production analytics is enabled by default only when disclosed in the store listing, privacy policy, and onboarding. The popup provides an off switch and a way to clear the analytics identity.
 
 A compatibility report is sent only after explicit confirmation that previews the exact technical metadata. It still excludes page content and saved values.
-
-### Metrics
-
-| Metric | Definition | Target |
-|---|---|---:|
-| Activation | Legitimate install creates a view | 40% |
-| Seven-day retention | Activated user applies a view on days 2–7 | 40% |
-| Weekly reused view | Same view applied on two distinct days in the first seven days | 30% |
-| High repeat | Activated user applies views at least three times in seven days | 30% |
-| Multi-site use | Views created or applied on at least two origins, calculated locally | 10% |
-
-The primary KPI is Weekly reused view among activated users with a complete seven-day observation window.
-
-Evaluate after 100–300 legitimate installs and at least two weeks. Continue only when real-use reliability is at least 85%, weekly reused view reaches 30%, and users try or request additional sites.
-
-Pivot toward the strongest vertical if repetition is strong but multi-site demand is absent. Stop or materially reposition if activation is below 20%, reuse on another day is below 15%, most users never apply a saved view, or reliability remains below 80% after focused compatibility work.
 
 ## 12. Verification and Delivery
 

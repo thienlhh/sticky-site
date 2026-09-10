@@ -31,9 +31,6 @@ export default defineBackground(() => {
 
   chrome.runtime.onInstalled.addListener(() => {
     updateAllTabsBadges().catch(() => {});
-    track('extension_installed').catch((err) => {
-      console.error('Failed to track install:', err);
-    });
   });
 
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {

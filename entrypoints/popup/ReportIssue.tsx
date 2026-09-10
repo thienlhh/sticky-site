@@ -4,7 +4,6 @@ import { StickySiteLogo } from '@/components/StickySiteLogo';
 import {
   validatePayload,
   getInstallationId,
-  calculateDistinctSiteBucket,
 } from '@/analytics';
 
 export interface ReportInput {
@@ -12,7 +11,6 @@ export interface ReportInput {
   attemptedCount: number;
   restoredCount: number;
   skippedCount: number;
-  distinctSitesCount: number;
 }
 
 export interface ReportIssueProps {
@@ -25,7 +23,6 @@ export async function generateCompatibilityReport(
   input: ReportInput
 ): Promise<Record<string, string | number>> {
   const installationId = await getInstallationId();
-  const distinctSiteBucket = calculateDistinctSiteBucket(input.distinctSitesCount);
 
   const rawPayload = {
     installationId,
@@ -34,7 +31,6 @@ export async function generateCompatibilityReport(
     attemptedCount: input.attemptedCount,
     restoredCount: input.restoredCount,
     skippedCount: input.skippedCount,
-    distinctSiteBucket,
   };
 
   // Run through strict allowlist validation

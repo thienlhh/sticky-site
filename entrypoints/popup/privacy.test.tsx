@@ -22,14 +22,12 @@ describe('Privacy Controls & Compatibility Reporting (Task 10B)', () => {
         attemptedCount: 3,
         restoredCount: 1,
         skippedCount: 2,
-        distinctSitesCount: 2,
       });
 
       expect(report.failureCategory).toBe('restore_failed');
       expect(report.attemptedCount).toBe(3);
       expect(report.restoredCount).toBe(1);
       expect(report.skippedCount).toBe(2);
-      expect(report.distinctSiteBucket).toBe('2-5');
       expect(report.extensionVersion).toBe('1.0.0');
       expect(report.installationId).toBeDefined();
 
@@ -53,7 +51,6 @@ describe('Privacy Controls & Compatibility Reporting (Task 10B)', () => {
             attemptedCount: 2,
             restoredCount: 0,
             skippedCount: 2,
-            distinctSitesCount: 1,
           }}
           onSend={onSendMock}
           onCancel={onCancelMock}
@@ -80,7 +77,6 @@ describe('Privacy Controls & Compatibility Reporting (Task 10B)', () => {
             attemptedCount: 2,
             restoredCount: 0,
             skippedCount: 2,
-            distinctSitesCount: 1,
           }}
           onSend={onSendMock}
           onCancel={onCancelMock}
@@ -111,7 +107,6 @@ describe('Privacy Controls & Compatibility Reporting (Task 10B)', () => {
         attemptedCount: 1,
         restoredCount: 0,
         skippedCount: 1,
-        distinctSitesCount: 1,
       });
       expect(report.installationId).toBe(newId);
     });

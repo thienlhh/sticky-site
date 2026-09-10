@@ -7,7 +7,6 @@ import {
   setAnalyticsEnabled,
   getInstallationId,
   clearInstallationId,
-  calculateDistinctSiteBucket,
   type AnalyticsEvent,
   type AnalyticsAdapter,
 } from './analytics';
@@ -23,11 +22,9 @@ describe('Analytics & Privacy Engine (Task 10A)', () => {
   describe('Strict Payload Allowlist & Prohibited Property Rejection', () => {
     it('rejects private text and invalid values hidden inside allowlisted keys', () => {
       const invalid: Record<string, string | number>[] = [
-        { capturedCount: 'private search text' },
         { attemptedCount: -1 },
         { restoredCount: 1.5 },
         { skippedCount: Infinity },
-        { distinctSiteBucket: 'example.com' },
         { failureCategory: 'user@example.com' },
         { installationId: 'private identifier' },
         { extensionVersion: 'page contents' },
@@ -36,17 +33,20 @@ describe('Analytics & Privacy Engine (Task 10A)', () => {
       for (const payload of invalid) expect(() => validatePayload(payload)).toThrow();
     });
 
-    it('accepts strictly allowlisted numerical counts and coarse buckets', () => {
+    it('accepts strictly allowlisted numerical counts and failure category', () => {
       const valid = {
-        capturedCount: 5,
         attemptedCount: 5,
         restoredCount: 4,
         skippedCount: 1,
-        distinctSiteBucket: '2-5',
         failureCategory: 'no_match',
       };
       const result = validatePayload(valid);
       expect(result).toEqual(valid);
+    });
+
+    it('rejects removed KPI properties: distinctSiteBucket, capturedCount', () => {
+      expect(() => validatePayload({ distinctSiteBucket: '2-5' })).toThrow(/prohibited analytics property/i);
+      expect(() => validatePayload({ capturedCount: 5 })).toThrow(/prohibited analytics property/i);
     });
 
     it('rejects prohibited fields: url, origin, pathname', () => {
@@ -115,14 +115,6 @@ describe('Analytics & Privacy Engine (Task 10A)', () => {
       await setAnalyticsEnabled(true);
       expect(await isAnalyticsEnabled()).toBe(true);
     });
-
-    it('calculates distinct site buckets without revealing domain names', () => {
-      expect(calculateDistinctSiteBucket(0)).toBe('0');
-      expect(calculateDistinctSiteBucket(1)).toBe('1');
-      expect(calculateDistinctSiteBucket(3)).toBe('2-5');
-      expect(calculateDistinctSiteBucket(7)).toBe('6-10');
-      expect(calculateDistinctSiteBucket(15)).toBe('10+');
-    });
   });
 
   describe('Delivery via Adapter', () => {
@@ -142,14 +134,18 @@ describe('Analytics & Privacy Engine (Task 10A)', () => {
       };
       setAnalyticsAdapter(testAdapter);
 
-      await track('view_created', {
-        capturedCount: 4,
+      await track('view_apply_full', {
+        attemptedCount: 4,
+        restoredCount: 4,
+        skippedCount: 0,
       });
 
       expect(sendMock).toHaveBeenCalledTimes(1);
       const [event, props] = sendMock.mock.calls[0];
-      expect(event).toBe('view_created');
-      expect(props.capturedCount).toBe(4);
+      expect(event).toBe('view_apply_full');
+      expect(props.attemptedCount).toBe(4);
+      expect(props.restoredCount).toBe(4);
+      expect(props.skippedCount).toBe(0);
       expect(props.installationId).toBeDefined();
       expect(props.extensionVersion).toBe('1.0.0');
       expect(typeof props.timestamp).toBe('string');
@@ -171,7 +167,6 @@ describe('Analytics & Privacy Engine (Task 10A)', () => {
         attemptedCount: 3,
         restoredCount: 3,
         skippedCount: 0,
-        distinctSiteBucket: '1',
       });
 
       expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -185,7 +180,6 @@ describe('Analytics & Privacy Engine (Task 10A)', () => {
       expect(parsedBody.attemptedCount).toBe(3);
       expect(parsedBody.restoredCount).toBe(3);
       expect(parsedBody.skippedCount).toBe(0);
-      expect(parsedBody.distinctSiteBucket).toBe('1');
       expect(parsedBody.installationId).toBeDefined();
       expect(parsedBody.extensionVersion).toBe('1.0.0');
       expect(parsedBody.timestamp).toBeDefined();
@@ -198,7 +192,7 @@ describe('Analytics & Privacy Engine (Task 10A)', () => {
         fetchMock as unknown as typeof fetch
       );
 
-      await expect(adapter.send('view_created', {})).rejects.toThrow(/analytics request failed: 500/i);
+      await expect(adapter.send('view_apply_failed', {})).rejects.toThrow(/analytics request failed: 500/i);
     });
 
     it('does NOT make any network request when analytics is disabled even with HTTP adapter configured', async () => {
@@ -211,8 +205,10 @@ describe('Analytics & Privacy Engine (Task 10A)', () => {
 
       await setAnalyticsEnabled(false);
 
-      await track('view_created', {
-        capturedCount: 2,
+      await track('view_apply_full', {
+        attemptedCount: 2,
+        restoredCount: 2,
+        skippedCount: 0,
       });
 
       expect(fetchMock).not.toHaveBeenCalled();
@@ -224,8 +220,10 @@ describe('Analytics & Privacy Engine (Task 10A)', () => {
 
       await setAnalyticsEnabled(false);
 
-      await track('view_created', {
-        capturedCount: 2,
+      await track('view_apply_full', {
+        attemptedCount: 2,
+        restoredCount: 2,
+        skippedCount: 0,
       });
 
       expect(sendMock).not.toHaveBeenCalled();
@@ -236,20 +234,26 @@ describe('Analytics & Privacy Engine (Task 10A)', () => {
     it('validates allowed PRD event names and rejects unknown events', async () => {
       const { validateEvent } = await import('./analytics');
       const validEvents = [
-        'extension_installed',
-        'site_permission_granted',
-        'save_view_started',
-        'view_created',
         'view_apply_started',
         'view_apply_full',
         'view_apply_partial',
         'view_apply_failed',
-        'view_updated',
-        'view_deleted',
       ];
 
       for (const ev of validEvents) {
         expect(() => validateEvent(ev)).not.toThrow();
+      }
+
+      const removedEvents = [
+        'extension_installed',
+        'site_permission_granted',
+        'save_view_started',
+        'view_created',
+        'view_updated',
+        'view_deleted',
+      ];
+      for (const ev of removedEvents) {
+        expect(() => validateEvent(ev)).toThrow(/prohibited or unknown analytics event/i);
       }
 
       expect(() => validateEvent('random_event')).toThrow(/prohibited or unknown analytics event/i);
@@ -262,13 +266,23 @@ describe('Analytics & Privacy Engine (Task 10A)', () => {
       const sendMock = vi.fn((_msg, cb) => cb?.({ status: 'ok' }));
       chrome.runtime.sendMessage = sendMock;
 
-      await emitAnalyticsEvent('view_created', { capturedCount: 3 });
+      await emitAnalyticsEvent('view_apply_failed', {
+        attemptedCount: 3,
+        restoredCount: 0,
+        skippedCount: 3,
+        failureCategory: 'user_reported_issue',
+      });
 
       expect(sendMock).toHaveBeenCalledWith(
         {
           type: 'TRACK_ANALYTICS',
-          event: 'view_created',
-          properties: { capturedCount: 3 },
+          event: 'view_apply_failed',
+          properties: {
+            attemptedCount: 3,
+            restoredCount: 0,
+            skippedCount: 3,
+            failureCategory: 'user_reported_issue',
+          },
         },
         expect.any(Function)
       );

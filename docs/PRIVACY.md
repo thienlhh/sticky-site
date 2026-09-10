@@ -34,15 +34,13 @@ StickySite includes minimal, privacy-first technical analytics to measure extens
 When analytics is enabled and an endpoint is configured, the extension may transmit only:
 1. An anonymous, randomly generated installation identifier (`UUID`).
 2. The extension version (e.g. `1.0.0`).
-3. Standard event names (`extension_installed`, `site_permission_granted`, `save_view_started`, `view_created`, `view_apply_started`, `view_apply_full`, `view_apply_partial`, `view_apply_failed`, `view_updated`, `view_deleted`).
+3. Standard event names (`view_apply_started`, `view_apply_full`, `view_apply_partial`, `view_apply_failed`).
 4. Coarse numerical counters:
-   - Number of captured settings (e.g. `3`)
    - Number of attempted settings (e.g. `3`)
    - Number of restored settings (e.g. `2`)
    - Number of skipped settings (e.g. `1`)
-5. Coarse site-count bucket calculated locally without domain names (e.g. `"1"`, `"2-5"`, `"6-10"`, `"10+"`).
-6. Coarse failure category (e.g. `no_match`, `permission_denied`, `timeout`).
-7. Event timestamp.
+5. Coarse failure category (e.g. `no_match`, `permission_denied`, `timeout`).
+6. Event timestamp.
 
 ### What We NEVER Collect
 Analytics payloads exclude the following data. StickySite reads eligible page settings locally when you capture or apply a view; that local processing is separate from analytics.

@@ -2,7 +2,7 @@ import type { CapturedSetting, SavedView } from '@/domain/view';
 import { normalizePathname } from '@/domain/view';
 import { replaceEligibleQuery, verifyQueryParams, type QueryVerificationResult } from '@/domain/url';
 import { listViews } from '@/storage/views';
-import { track, calculateDistinctSiteBucket } from '@/analytics';
+import { track } from '@/analytics';
 import { ensurePageAgent, sendPageCommand } from '@/platform/page-agent';
 import type { RestoreResponse } from '@/shared/page-messages';
 import type { RestoreReport, RestoreOutcome } from '@/restoration/restore';
@@ -202,13 +202,10 @@ function busyResult(view: SavedView): ViewApplyResult {
 function trackApplyCompletion(result: ViewApplyResult): void {
   void (async () => {
     try {
-      const allViews = await listViews();
-      const distinctSiteBucket = calculateDistinctSiteBucket(new Set(allViews.map((v) => v.origin)).size);
       const props: Record<string, number | string> = {
         attemptedCount: result.totalAttempted,
         restoredCount: result.restoredCount,
         skippedCount: result.skippedCount,
-        distinctSiteBucket,
       };
       if (result.status === 'Fully applied view') {
         await track('view_apply_full', props);

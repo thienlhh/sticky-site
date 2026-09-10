@@ -1,26 +1,14 @@
 export type AnalyticsEvent =
-  | 'extension_installed'
-  | 'site_permission_granted'
-  | 'save_view_started'
-  | 'view_created'
   | 'view_apply_started'
   | 'view_apply_full'
   | 'view_apply_partial'
-  | 'view_apply_failed'
-  | 'view_updated'
-  | 'view_deleted';
+  | 'view_apply_failed';
 
 export const ALLOWED_EVENTS = new Set<AnalyticsEvent>([
-  'extension_installed',
-  'site_permission_granted',
-  'save_view_started',
-  'view_created',
   'view_apply_started',
   'view_apply_full',
   'view_apply_partial',
   'view_apply_failed',
-  'view_updated',
-  'view_deleted',
 ]);
 
 export interface AnalyticsAdapter {
@@ -31,11 +19,9 @@ export const ALLOWED_PROPERTIES = new Set<string>([
   'installationId',
   'extensionVersion',
   'timestamp',
-  'capturedCount',
   'attemptedCount',
   'restoredCount',
   'skippedCount',
-  'distinctSiteBucket',
   'failureCategory',
 ]);
 
@@ -98,11 +84,8 @@ export function validatePayload(
 
     let valid = false;
     switch (key) {
-      case 'capturedCount': case 'attemptedCount': case 'restoredCount': case 'skippedCount':
+      case 'attemptedCount': case 'restoredCount': case 'skippedCount':
         valid = typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
-        break;
-      case 'distinctSiteBucket':
-        valid = typeof value === 'string' && ['0', '1', '2-5', '6-10', '10+'].includes(value);
         break;
       case 'failureCategory':
         valid = typeof value === 'string' && ['no_match', 'permission_denied', 'timeout', 'partial_restore', 'restore_failed', 'navigation_failed', 'user_reported_issue'].includes(value);
@@ -159,13 +142,6 @@ export async function clearInstallationId(): Promise<string> {
   return newId;
 }
 
-export function calculateDistinctSiteBucket(distinctCount: number): string {
-  if (distinctCount <= 0) return '0';
-  if (distinctCount === 1) return '1';
-  if (distinctCount <= 5) return '2-5';
-  if (distinctCount <= 10) return '6-10';
-  return '10+';
-}
 
 export async function track(
   event: AnalyticsEvent,
