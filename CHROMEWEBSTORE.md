@@ -10,9 +10,9 @@
 StickySite
 
 **Short Description** [REQUIRED]
-Save and restore search filters, form inputs, and custom page views on any website in one click. 100% private and local.
+Save and restore search filters, form inputs, and custom page views on any website in one click. Fast, private, and local-first.
 
-*(Length: 120 characters / max 132)*
+*(Length: 122 characters / max 132)*
 
 **Detailed Description** [REQUIRED]
 
@@ -64,7 +64,7 @@ HOW TO USE
 
 PRIVACY & SECURITY FIRST
 
-• 100% Local Storage: All saved views and presets reside strictly on your device. Zero cloud sync, no remote database, and no accounts required.
+• Local-First by Default: All saved views and presets reside strictly on your device in local storage. No account is required to use StickySite today. If cloud sync is introduced in a future update, it will be strictly opt-in with explicit user consent.
 
 • Proactive Safety Filtering: StickySite automatically detects and ignores sensitive fields. Passwords, credit cards, bank account details, SSNs, phone numbers, and security tokens are NEVER captured or saved.
 
@@ -154,7 +154,7 @@ Yes (locally for user-saved views; zero off-device transmission by default).
 | **Location** | No | No | N/A | No |
 | **Web History** | No | No | N/A | No |
 | **User Activity** | No | No | N/A | No |
-| **Website Content** | Yes | **No** (Stored 100% locally) | Allows the extension to capture and restore user-selected form values and filter parameters. Data never leaves the browser. | No |
+| **Website Content** | Yes | **No** (Stored locally on-device) | Allows the extension to capture and restore user-selected form values and filter parameters. Data stays in the browser; any future cloud sync will require explicit user opt-in. | No |
 
 ### Data Use Certification
 - [x] Data is **NOT** sold to third parties.

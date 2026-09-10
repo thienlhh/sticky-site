@@ -14,7 +14,7 @@ Saving and applying views runs locally and requires no account or product backen
 
 - **Saved Views:** Filter configurations, selected options, search terms, and form states that you explicitly save are stored locally on your device via `chrome.storage.local`.
 - **Retention:** Saved views persist until you delete them or clear extension storage. Rename changes a view's name; Update replaces its reviewed settings. In-progress Apply and recent results use temporary session storage.
-- **No Cloud Synchronization:** StickySite does not synchronize, upload, or backup your saved views or form values to any remote server.
+- **Local-First Architecture & Future Cloud Sync:** Saved views are stored locally on your device by default. StickySite does not upload or sync your saved views to external servers today. If optional cloud backup or multi-device synchronization is introduced in a future release, it will be strictly opt-in, requiring explicit user activation with updated privacy disclosures and end-to-end security protections.
 
 ---
 
