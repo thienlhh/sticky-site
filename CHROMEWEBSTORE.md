@@ -10,36 +10,54 @@
 StickySite
 
 **Short Description** [REQUIRED]
-Save and restore exact web page views, search filters, and form states in one click.
+Save and restore search filters, form inputs, and custom page views on any website in one click. 100% private and local.
 
-*(Length: 85 characters / max 132)*
+*(Length: 120 characters / max 132)*
 
 **Detailed Description** [REQUIRED]
-Never spend time re-configuring the same search filters, dropdowns, and date ranges again.
+Save and restore your favorite search filters, form selections, and custom page views on any website in a single click.
 
-StickySite is a privacy-first, local-first extension that captures your current filter settings and form inputs on any website and restores them whenever you return—all in a single click.
+Tired of resetting the same filters, dropdowns, and search terms every time you open a dashboard, web app, or online store? Traditional browser bookmarks only save URLs—they lose interactive form controls, date range pickers, dropdown selections, and checkbox filters.
 
-Key Features:
-- Instant One-Click Restoration: Reapply complex filters and form selections on analytics dashboards, internal tools, and e-commerce sites without re-entering them manually.
-- Selective Capture Review: Easily inspect every detected filter and interactive input before saving. Uncheck any specific setting you prefer not to include.
-- Cross-Page Navigation: If you are not on the target page, clicking a saved view automatically navigates you to the right URL before applying your settings.
-- View Management: Organize multiple custom views per website. Rename views, update existing views with your current page state, or remove old ones anytime.
-- Transparent Feedback: Know exactly what was restored. StickySite displays an immediate breakdown of all successfully applied settings and notifies you if a page layout changed.
+StickySite acts as your personal filter preset manager, saving your exact webpage configurations and form states locally so you can return to them instantly.
 
-How to Use StickySite:
-1. Open any webpage and set up your desired filters, dropdowns, dates, or search fields.
-2. Click the StickySite icon in your toolbar.
-3. Review the captured settings, give your view a name (e.g., "Q3 Open Tickets" or "In-Stock Electronics"), and click Save View.
-4. Whenever you need those settings again, open StickySite and click your saved view.
+KEY FEATURES
+• One-Click Filter & View Restoration — Reapply your saved search parameters, dropdown selections, text inputs, radio buttons, and checkboxes instantly.
+• Selective Capture Review — Inspect every detected filter and form control before saving. Easily exclude individual parameters with a single toggle.
+• Multi-View Management — Save multiple named view presets per website (e.g., "Q3 Open Bugs", "In-Stock Laptops Under $1000", "Weekly Analytics Report").
+• Automatic Cross-Page Navigation — Clicking a saved view takes you directly to the correct URL and automatically restores all form settings upon page load.
+• Transparent Status Feedback — Real-time visual feedback confirms which settings were applied, partial matches, or if a webpage updated its layout.
+• Quick Updates & Renaming — Update existing views with current page settings in one click, rename them, or delete them when no longer needed.
 
-Built for Privacy and Safety:
-- 100% Local Storage: All saved views stay exclusively in your browser's local storage. There are no user accounts, no cloud sync, and no remote database servers.
-- Least-Privilege Permissions: StickySite never asks for blanket browsing permissions on install. Website access is requested only when you choose to save or apply a view on that specific site.
-- Sensitive Data Protection: StickySite strictly ignores passwords, credit cards, bank account details, government IDs, phone numbers, and authentication tokens.
-- No Destructive Actions: StickySite only populates form inputs. It is programmed to never click submit, buy, pay, delete, or confirm buttons.
+POPULAR USE CASES
+• Analytics & Dashboards: Save complex date ranges, metric filters, and breakdown segments on Google Analytics, Mixpanel, Datadog, or Tableau.
+• Project Management & Issue Trackers: Remember custom sprint filters, assignee dropdowns, and milestone queries on Jira, GitHub, Linear, or Asana.
+• E-Commerce & Shopping: Keep your favorite size, brand, price range, and sorting preferences saved across retail sites.
+• CRM & Sales Tools: Reapply lead filters, pipeline stages, and custom account views in Salesforce, HubSpot, or internal back-office admin portals.
+• Real Estate & Job Boards: Retain advanced search parameters, location radii, and salary filters without retyping.
 
-Support & Feedback:
-For questions, feature requests, or issue reports, contact kaoxofu@gmail.com.
+HOW TO USE
+1. Open any webpage and set up your filters, search terms, and dropdowns.
+2. Click the StickySite icon in your Chrome toolbar.
+3. Name your view and click 'Save View' (or open the review screen to customize captured fields).
+4. Return to the site anytime, open StickySite, and click your saved view to restore everything in one click.
+
+PRIVACY & SECURITY FIRST
+• 100% Local Storage: All saved views and presets reside strictly on your device. Zero cloud sync, no remote database, and no accounts required.
+• Proactive Safety Filtering: StickySite automatically detects and ignores sensitive fields. Passwords, credit cards, bank account details, SSNs, phone numbers, and security tokens are NEVER captured or saved.
+• No Destructive Actions: StickySite only populates form inputs and filters. It never triggers 'Submit', 'Pay', 'Buy', 'Delete', or confirmation buttons.
+• Least-Privilege Permissions: No blanket browsing permissions upon install. Origin access is requested only when you actively choose to use StickySite on a website.
+
+PERMISSIONS EXPLAINED
+• Storage: Saves your filter presets locally in your browser.
+• ActiveTab & Scripting: Scans form controls and restores saved values on the current page when you click a view.
+• Tabs: Navigates to the correct webpage URL before applying a saved view.
+• Favicon: Displays website icons next to saved views for easy visual identification.
+
+SUPPORT & FEEDBACK
+Found a bug, have a suggestion, or need help? Contact us at kaoxofu@gmail.com.
+
+Version 1.0.0 — Initial production release.
 
 **Category** [REQUIRED]
 Productivity
