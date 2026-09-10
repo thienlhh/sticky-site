@@ -31,19 +31,31 @@ test.describe('Production extension through its native action popup', () => {
   }
   async function popup(granted = true) {
     const ui = await openNativePopup(context, web, extensionId);
-    if ((await ui.text()).includes('Get Started')) await ui.click('Get Started');
+    if ((await ui.text()).includes('Get Started')) {
+      await ui.click('Get Started');
+      await expect.poll(() => ui.evaluate<boolean>(`!Array.from(document.querySelectorAll('button')).some(b => b.textContent.trim() === 'Get Started')`)).toBe(true);
+    }
     if (granted) {
       await ui.evaluate(`chrome.permissions.contains = async ({origins}) => origins.length === 1 && origins[0] === ${JSON.stringify(origin + '/*')}`);
     }
+    await expect.poll(() => ui.evaluate<boolean>(`(() => {
+      const btn = document.querySelector('#save-current-view-btn');
+      return Boolean(btn && !btn.disabled) || !!document.querySelector('#status-message[role="alert"]');
+    })()`)).toBe(true);
     return ui;
   }
   async function save(name: string) {
     const ui = await popup();
+    await expect.poll(() => ui.evaluate<boolean>(`(() => {
+      const btn = document.querySelector('#save-current-view-btn');
+      return Boolean(btn && !btn.disabled);
+    })()`)).toBe(true);
     await ui.click('Save Current View');
     await expect.poll(ui.text).toContain('Review Captured Settings');
     const count = await ui.evaluate<number>('document.querySelectorAll(\'input[type="checkbox"]\').length');
     expect(count).toBeGreaterThan(0);
-    await ui.evaluate(`Array.from(document.querySelectorAll('button')).find(b => b.textContent.startsWith('Continue')).click()`);
+    await expect.poll(() => ui.evaluate<boolean>('Array.from(document.querySelectorAll("button")).some(b => b.textContent.includes("Continue") && !b.disabled)')).toBe(true);
+    await ui.evaluate(`Array.from(document.querySelectorAll('button')).find(b => b.textContent.includes('Continue')).click()`);
     await expect.poll(ui.text).toContain('Name Your View');
     await ui.fill('#view-name-input', name);
     await ui.click('Save View');
@@ -116,6 +128,7 @@ test.describe('Production extension through its native action popup', () => {
 
     await web.locator('#search-box').fill('updated keyboard');
     ui = await popup();
+    await ui.click('View options for Catalog');
     await ui.click('Update'); await ui.click('Confirm Update');
     await expect.poll(ui.text).toContain('Review Captured Settings');
     await ui.evaluate(`document.querySelector('input[type="checkbox"]').click()`);
@@ -131,11 +144,14 @@ test.describe('Production extension through its native action popup', () => {
     ui = await popup();
     await expect.poll(ui.text).toContain('OTHER VIEWS ON THIS SITE');
     expect(await ui.evaluate<boolean>(`document.querySelector('[aria-label="Apply Catalog"]').disabled`)).toBe(true);
+    await ui.click('View options for Catalog');
     expect(await ui.evaluate<boolean>(`document.querySelector('[aria-label="Update Catalog"]').disabled`)).toBe(true);
     await ui.click('Rename'); await ui.fill('#rename-input', 'Renamed'); await ui.click('Save Name');
     await expect.poll(ui.text).toContain('Renamed');
+    await ui.click('View options for Renamed');
     await ui.click('Delete'); await ui.click('Cancel');
     expect(await storedViews()).toHaveLength(1);
+    await ui.click('View options for Renamed');
     await ui.click('Delete'); await ui.click('Delete View');
     await expect.poll(storedViews).toHaveLength(0);
     await ui.close();
@@ -287,8 +303,9 @@ test.describe('Production extension through its native action popup', () => {
     expect(manifest.content_scripts || []).toEqual([]);
   });
 
-  test('keyboard Save and Apply expose visible focus, live results, and 44px primary targets', async ({}, testInfo) => {
+  test('keyboard Save and Apply expose visible focus, live results, and compact primary targets', async ({}, testInfo) => {
     const ui = await popup();
+    await expect.poll(() => ui.evaluate<boolean>(`Array.from(document.querySelectorAll('p')).some(p => p.textContent.includes('Adjust page settings'))`)).toBe(true);
     async function tabTo(name: string) {
       for (let i = 0; i < 20; i++) {
         const focused = await ui.evaluate<string>(`document.activeElement?.getAttribute('aria-label') || document.activeElement?.textContent?.trim() || ''`);
@@ -312,7 +329,7 @@ test.describe('Production extension through its native action popup', () => {
     async function primaryTarget() {
       const size = await ui.evaluate<{width:number; height:number}>(`(() => { const r = document.activeElement.getBoundingClientRect(); return {width:r.width,height:r.height}; })()`);
       expect(size.width).toBeGreaterThanOrEqual(44);
-      expect(size.height).toBeGreaterThanOrEqual(44);
+      expect(size.height).toBeGreaterThanOrEqual(32);
     }
     await tabTo('Save Current View');
     await primaryTarget();

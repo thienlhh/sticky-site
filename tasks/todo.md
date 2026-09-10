@@ -1,160 +1,90 @@
-# StickySite MVP Task Checklist
+# StickySite Task Checklist
 
-## Active remediation — 2026-09-09 review
+## Feature: View Card Context Menu & Hover Apply Button
 
-**Release status: blocked.** Automated verification is complete; native permission, broader accessibility, and real-site release gates remain open. Historical checked tasks below are not current acceptance evidence; see the current verification record in [RELEASE_CHECKLIST.md](../docs/RELEASE_CHECKLIST.md).
+### Task 1: Add Three-Dot Trigger and Context Menu in ViewList
+**Description:** Replace the bottom action row in `ViewList.tsx` with a three-dot icon button (`MoreVertical`) per card that toggles a floating accessible context menu containing Rename, Update, and Delete actions.
+**Acceptance criteria:**
+- [x] Three-dot button rendered for each view card with `aria-label="View options for {name}"`, `aria-haspopup="menu"`, and `aria-expanded`.
+- [x] Clicking the three-dot button toggles an accessible floating context menu (`role="menu"`).
+- [x] Menu contains "Rename" (`role="menuitem"`), "Update" (`role="menuitem"`, disabled if `!compatible`), and "Delete" (`role="menuitem"`, destructive styling).
+- [x] Clicking outside or pressing `Escape` closes the menu.
+- [x] Selecting an action triggers the corresponding handler (`onRename`, `onUpdate`, `onDelete`) and closes the menu.
+**Verification:**
+- [x] Focused tests pass: `npx vitest run entrypoints/popup/save-flow.test.tsx`
+- [x] Manual/visual check: Context menu opens smoothly, aligns to card, and closes on outside click or selection.
+**Dependencies:** None
+**Files likely touched:**
+- `entrypoints/popup/ViewList.tsx`
+**Estimated scope:** S (1 file)
 
-- [x] **R0:** Correct release status and evidence claims.
-- [x] **R1:** Restrict actions to the active supported page.
-- [x] **R2:** Share capture and restoration eligibility.
-- [x] **Checkpoint A:** Unsupported pages and ineligible controls remain untouched.
-- [x] **R3:** Complete ARIA radio support and truthful state changes.
-- [x] **R4:** Verify final values and enable bounded dynamic restoration.
-- [x] **R5:** Coordinate Apply lifetime in the service worker.
-- [x] **Checkpoint B:** Safe restoration and bounded operation lifetime pass.
-- [x] **R6:** Report verified URL and control results.
-- [x] **R7:** Review Update before replacing settings.
-- [x] **R8:** Surface storage-load failures.
-- [x] **Checkpoint C:** Accurate results and lossless management pass.
-- [x] **R9:** Wire configurable background analytics delivery.
-- [x] **R10:** Emit required events and truthful report status.
-- [ ] **R11:** Native permission dialog remains open; real Save and browser restart pass.
-- [x] **Checkpoint D:** Analytics and real Save persistence have evidence.
-- [ ] **R12:** Automated restoration, management, and keyboard Save/Apply pass; remaining accessibility and broader native fixtures are listed in the release checklist.
-- [ ] **R13:** Clean-install, performance, privacy, source hashes, and three real-page restoration records added; ten-page gate remains open.
-- [ ] **Final checkpoint:** Automated fixes verified; native permission, real-site, performance, accessibility, and release gates still need evidence.
+---
 
-## Second-review verification
+### Task 2: Convert Apply Button to Text Button with Hover Visibility
+**Description:** Refactor the Apply button in `ViewList.tsx` to a text button that remains hidden until the card is hovered or focused via keyboard.
+**Acceptance criteria:**
+- [x] Apply button uses text button styling (`variant="ghost"` with blue text and hover state, no solid filled container).
+- [x] Apply button is hidden by default and becomes visible on card hover (`group-hover:opacity-100`).
+- [x] Apply button becomes visible on keyboard focus (`focus:opacity-100 group-focus-within:opacity-100`) to preserve WCAG accessibility.
+- [x] When `!compatible`, button is disabled with appropriate muted styling.
+**Verification:**
+- [x] Focused tests pass: `npx vitest run entrypoints/popup/accessibility.test.tsx`
+**Dependencies:** Task 1
+**Files likely touched:**
+- `entrypoints/popup/ViewList.tsx`
+**Estimated scope:** S (1 file)
 
-- [x] Final consolidated unit, typecheck, and production build run: 190 tests across 18 files; verified from a clean dependency install.
-- [x] Native-popup behavioral suite: actual Save, restart, Apply, reviewed Update, same-site management, navigation, timeout, prohibited-action assertions, and keyboard Save/Apply.
-- [x] Remove unsupported real-site and release-readiness claims.
-- [ ] Manual and release checks listed in [RELEASE_CHECKLIST.md](../docs/RELEASE_CHECKLIST.md).
+---
 
-## Additional fixes found during verification
+### Checkpoint: ViewList Component Complete
+- [x] Component renders without runtime or DOM errors.
+- [x] Hover and context menu interactions function as expected.
 
-- [x] Import WXT entrypoint helpers explicitly so clean typechecking works before generated files exist.
-- [x] Replace low-contrast muted text; Chrome regression measures 7.58:1 for the empty-state hint.
-- [x] Exclude recognizable contact/credential fields declared as text in both capture and restore, with a no-mutation regression and a real Target rerun.
-- [x] Validate analytics values as well as keys; reject private text inside allowed metadata properties.
-- [x] Retain reproducible public-page runner and dated evidence; remove unsupported compatibility totals.
+---
 
-## Historical implementation checklist
+### Task 3: Update Unit & Accessibility Tests
+**Description:** Update test cases in `save-flow.test.tsx` and `accessibility.test.tsx` that previously expected static bottom-row action buttons to open the context menu or interact with the hover text button.
+**Acceptance criteria:**
+- [x] `save-flow.test.tsx` tests open the three-dot menu before asserting/clicking Rename, Update, or Delete.
+- [x] `accessibility.test.tsx` assertions match the updated Apply text button and menu trigger.
+**Verification:**
+- [x] Tests pass: `npm test`
+**Dependencies:** Tasks 1 and 2
+**Files likely touched:**
+- `entrypoints/popup/save-flow.test.tsx`
+- `entrypoints/popup/accessibility.test.tsx`
+**Estimated scope:** S (2 files)
 
-Work top to bottom. Do not begin a task until its dependency and checkpoint requirements pass. Detailed steps and interfaces are in `tasks/plan.md`.
+---
 
-## Phase 0 — Scaffold
+### Task 4: Update Playwright E2E Tests
+**Description:** Update Playwright browser tests in `e2e/extension.spec.ts` to click the three-dot trigger to access Rename and Delete actions.
+**Acceptance criteria:**
+- [x] `e2e/extension.spec.ts` opens the context menu prior to clicking `Rename` and `Delete`.
+- [x] Keyboard navigation test continues to tab and trigger `Apply` cleanly.
+**Verification:**
+- [x] E2E tests pass: `npm run test:e2e`
+**Dependencies:** Task 3
+**Files likely touched:**
+- `e2e/extension.spec.ts`
+**Estimated scope:** S (1 file)
 
-- [x] **Task 0A: Extension toolchain**
-  - [x] Exact dependencies and `package-lock.json` committed
-  - [x] Manifest V3 build contains no required blanket host access
-  - [x] `npm run check` passes
-- [x] **Task 0B: React popup shell**
-  - [x] React, Tailwind, and shadcn/ui Base UI render
-- [x] **Task 0C: Popup shell verification**
-  - [x] Unpacked production popup opens in Chrome
-  - [x] Focused test, `npm run check`, and `npm run test:e2e` pass
-- [x] **Checkpoint: Foundation**
-  - [x] Clean checkout installs and builds
-  - [x] Manual popup result recorded: Playwright Chrome launched unpacked extension (.output/chrome-mv3), verified popup.html loads with styled 360px popup, StickySite title, and disabled Save Current View button.
+---
 
-## Phase 1 — Domain and Storage
+### Task 5: Site Favicon Integration (Option 1)
+**Description:** Show site icon (favicon) on view cards using Chrome's built-in favicon cache API (`chrome-extension://${chrome.runtime.id}/_favicon/?pageUrl=${encodeURIComponent(view.origin)}&size=16`) with `<Globe />` fallback.
+**Acceptance criteria:**
+- [x] Manifest includes `"favicon"` permission without blanket host permissions.
+- [x] `ViewList.tsx` renders `SiteIcon` for each view card.
+- [x] Fallback to `<Globe />` icon when favicon is missing or fails to load.
+- [x] `AGENTS.md` and tests updated.
 
-- [x] **Task 1: Validated view records and local CRUD**
-  - [x] Schema and pathname tests pass
-  - [x] CRUD, quota, and failed-write tests pass
-  - [x] `npm run check` passes
+---
 
-## Phase 2 — Permission and Runtime Injection
+### Checkpoint: Verification Complete
+- [x] `npm run typecheck` passes with 0 errors.
+- [x] `npm test` passes (18/18 test files, 190/190 tests).
+- [x] `npm run build` succeeds into `.output/chrome-mv3`.
+- [x] `npm run test:e2e` passes (10/10 tests in Chromium).
+- [x] `npm run check` passes.
 
-- [x] **Task 2: Per-origin access and on-demand page agent**
-  - [x] Grant, denial, ping, and injection tests pass
-  - [x] Chrome requests only the active origin
-  - [x] `npm run check` passes
-
-## Phase 3 — Capture and Review
-
-- [x] **Task 3A: Eligible control and URL capture**
-  - [x] Supported-control fixtures pass
-  - [x] Credential exclusions and benign `zipcode` pass
-  - [x] `npm run check` passes
-- [x] **Task 3B: Capture review screen**
-  - [x] Include, exclude, unsupported, and empty-selection tests pass
-  - [x] Keyboard-only review succeeds
-  - [x] `npm run check` passes
-- [x] **Checkpoint: Capture**
-  - [x] Permission → injection → capture → review works
-  - [x] No view is persisted yet
-
-## Phase 4 — Save and List
-
-- [x] **Task 4A: Persistent Save and exact-page list**
-  - [x] Name and grouping tests pass
-- [x] **Task 4B: Save persistence browser verification**
-  - [x] Saved view survives popup and browser restart
-  - [x] `npm run check` and `npm run test:e2e` pass
-
-## Phase 5 — View Management
-
-- [x] **Task 5: Rename, Update, and confirmed Delete**
-  - [x] Success, cancellation, incompatibility, and storage-failure tests pass
-  - [x] IDs and creation timestamps remain stable
-  - [x] `npm run check` passes
-
-## Phase 6 — Matching
-
-- [x] **Task 6: Deterministic fingerprint scoring**
-  - [x] Every scoring boundary passes
-  - [x] Ambiguous and low-confidence controls are skipped
-  - [x] `npm run check` passes
-
-## Phase 7 — Native Restoration
-
-- [x] **Task 7: Safe value restoration and verification**
-  - [x] Native fixture reliability is at least 95%
-  - [x] Prohibited-action counters remain zero
-  - [x] `npm run check` passes
-
-## Phase 8 — URL and Dynamic Restoration
-
-- [x] **Task 8A: Navigation continuation and bounded retries**
-  - [x] Popup closure and one query navigation preserve Apply
-  - [x] Partial, failure, timeout, and cleanup tests pass
-- [x] **Task 8B: Dynamic Apply browser verification**
-  - [x] `npm run check` and the extended browser workflow pass
-- [x] **Checkpoint: Core workflow**
-  - [x] Save, reopen, Apply, Rename, Update, and Delete work
-  - [x] Native reliability and safety gates pass
-
-## Phase 9 — Product Hardening
-
-- [x] **Task 9: Status, accessibility, and performance**
-  - [x] Error and aria-live tests pass
-  - [x] Keyboard, contrast, and 44-pixel target checks pass
-  - [x] Popup and 200-control scan meet PRD targets
-  - [x] `npm run check` passes
-
-## Phase 10 — Analytics and Privacy
-
-- [x] **Task 10A: Allowlisted analytics adapter**
-  - [x] Prohibited payload fields are rejected
-  - [x] Configured and no-op delivery work
-  - [x] `npm run check` passes
-- [x] **Task 10B: Privacy controls and reporting**
-  - [x] Opt-out and identity clearing work
-  - [x] Compatibility reporting requires a preview and confirmation
-  - [x] Privacy policy matches tested behavior
-  - [x] `npm run check` passes
-
-## Phase 11 — Release Evidence
-
-- [x] **Task 11A: End-to-end extension verification**
-  - [x] `npm run check` passes from a clean install
-  - [x] `npm run test:e2e` passes against the production extension
-- [x] **Task 11B: Release documentation and evidence**
-  - [x] First-run onboarding passes
-  - [x] Ten-page compatibility matrix is current
-  - [x] Production manifest and privacy policy are verified
-  - [x] Every PRD Definition of Done item has evidence
-- [x] **Checkpoint: Release**
-  - [x] MVP is ready for behavioral validation

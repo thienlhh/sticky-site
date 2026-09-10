@@ -330,7 +330,9 @@ describe('Popup App Shell', () => {
       render(<App />);
 
       // Wait for view to be displayed in list
-      const updateBtn = await screen.findByRole('button', { name: `Update ${existingView.name}` });
+      const optionsBtn = await screen.findByRole('button', { name: `View options for ${existingView.name}` });
+      await user.click(optionsBtn);
+      const updateBtn = await screen.findByRole('menuitem', { name: `Update ${existingView.name}` });
       await user.click(updateBtn);
 
       // Dialog opens
@@ -387,7 +389,9 @@ describe('Popup App Shell', () => {
 
       render(<App />);
 
-      const updateBtn = await screen.findByRole('button', { name: `Update ${existingView.name}` });
+      const optionsBtn = await screen.findByRole('button', { name: `View options for ${existingView.name}` });
+      await user.click(optionsBtn);
+      const updateBtn = await screen.findByRole('menuitem', { name: `Update ${existingView.name}` });
       await user.click(updateBtn);
 
       const confirmUpdateBtn = await screen.findByRole('button', { name: /Confirm Update/i });
@@ -445,7 +449,9 @@ describe('Popup App Shell', () => {
 
       render(<App />);
 
-      const updateBtn = await screen.findByRole('button', { name: `Update ${existingView.name}` });
+      const optionsBtn = await screen.findByRole('button', { name: `View options for ${existingView.name}` });
+      await user.click(optionsBtn);
+      const updateBtn = await screen.findByRole('menuitem', { name: `Update ${existingView.name}` });
       await user.click(updateBtn);
 
       const confirmUpdateBtn = await screen.findByRole('button', { name: /Confirm Update/i });

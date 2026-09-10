@@ -30,15 +30,15 @@ export function Onboarding({ onComplete }: OnboardingProps) {
 
   return (
     <div className="flex flex-col h-full justify-between">
-      <header className="border-b border-slate-200 pb-3 mb-3">
+      <header className="border-b border-slate-200 pb-2 mb-2.5">
         <h2 className="text-base font-bold text-slate-900 tracking-tight">Welcome to StickySite</h2>
         <p className="text-xs text-slate-500 mt-0.5">
           Save and restore your favorite web filters effortlessly.
         </p>
       </header>
 
-      <div className="flex-1 space-y-3.5 overflow-y-auto pr-1">
-        <div className="flex items-start gap-3 p-3 rounded-lg border border-slate-100 bg-slate-50/80">
+      <div className="flex-1 space-y-2 overflow-y-auto pr-0.5">
+        <div className="flex items-start gap-2.5 p-2 rounded-md border border-slate-100 bg-slate-50/80">
           <ShieldCheck className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
           <div>
             <h3 className="text-xs font-semibold text-slate-900">Per-Site Access</h3>
@@ -48,7 +48,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
           </div>
         </div>
 
-        <div className="flex items-start gap-3 p-3 rounded-lg border border-slate-100 bg-slate-50/80">
+        <div className="flex items-start gap-2.5 p-2 rounded-md border border-slate-100 bg-slate-50/80">
           <HardDrive className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
           <div>
             <h3 className="text-xs font-semibold text-slate-900">Local Storage</h3>
@@ -58,7 +58,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
           </div>
         </div>
 
-        <div className="flex items-start gap-3 p-3 rounded-lg border border-slate-100 bg-slate-50/80">
+        <div className="flex items-start gap-2.5 p-2 rounded-md border border-slate-100 bg-slate-50/80">
           <BarChart2 className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
           <div>
             <h3 className="text-xs font-semibold text-slate-900">Anonymous Technical Metrics</h3>
@@ -69,10 +69,10 @@ export function Onboarding({ onComplete }: OnboardingProps) {
         </div>
       </div>
 
-      <footer className="pt-3 border-t border-slate-200 mt-3">
+      <footer className="pt-2.5 border-t border-slate-200 mt-2.5">
         <Button
           onClick={handleGetStarted}
-          className="w-full min-h-[44px] bg-blue-600 hover:bg-blue-700 text-white"
+          className="w-full min-h-[36px] bg-blue-600 hover:bg-blue-700 text-white"
         >
           Get Started
         </Button>

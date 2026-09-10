@@ -124,7 +124,7 @@ export function StatusMessage({ status, className = '' }: StatusMessageProps) {
       id="status-message"
       role={role}
       aria-live={ariaLive}
-      className={`rounded-md border p-2.5 my-2 flex items-start gap-2 text-xs transition-colors ${config.style} ${className}`}
+      className={`rounded-md border p-2 my-1.5 flex items-start gap-1.5 text-xs transition-colors ${config.style} ${className}`}
     >
       <div className="mt-0.5">{config.icon}</div>
       <div className="flex-1 min-w-0">

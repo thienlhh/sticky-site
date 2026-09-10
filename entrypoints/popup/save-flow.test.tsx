@@ -141,9 +141,12 @@ describe('Popup Save and List Flow', () => {
       expect(screen.getByText('Other views on this site (1)')).toBeInTheDocument();
       expect(screen.getByText('Different Page View')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Apply Different Page View' })).toBeDisabled();
-      expect(screen.getByRole('button', { name: 'Update Different Page View' })).toBeDisabled();
-      expect(screen.getByRole('button', { name: 'Rename Different Page View' })).toBeEnabled();
-      expect(screen.getByRole('button', { name: 'Delete Different Page View' })).toBeEnabled();
+
+      // Open context menu for Different Page View to inspect secondary actions
+      await userEvent.click(screen.getByRole('button', { name: 'View options for Different Page View' }));
+      expect(screen.getByRole('menuitem', { name: 'Update Different Page View' })).toBeDisabled();
+      expect(screen.getByRole('menuitem', { name: 'Rename Different Page View' })).toBeEnabled();
+      expect(screen.getByRole('menuitem', { name: 'Delete Different Page View' })).toBeEnabled();
     });
   });
 });

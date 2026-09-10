@@ -39,6 +39,7 @@ export async function openNativePopup(context: BrowserContext, webPage: Page, ex
     return (await command('Runtime.evaluate', {expression, returnByValue: true, awaitPromise: true, userGesture: true})).result.value;
   }
   await expect.poll(() => evaluate<string>('document.body?.innerText || ""'), {intervals: [5, 10, 20]}).toContain('StickySite');
+  await expect.poll(() => evaluate<boolean>(`document.querySelector('main')?.getAttribute('data-ready') === 'true'`), {intervals: [5, 10, 20]}).toBe(true);
   await expect.poll(() => evaluate<boolean>(`!!document.querySelector('#save-current-view-btn:not(:disabled), #status-message[role="alert"]') || Array.from(document.querySelectorAll('button')).some(b => b.textContent.trim() === 'Get Started')`), {intervals: [5, 10, 20]}).toBe(true);
   return {
     evaluate,
@@ -53,14 +54,18 @@ export async function openNativePopup(context: BrowserContext, webPage: Page, ex
     },
     text: () => evaluate<string>('document.body?.innerText || ""'),
     async click(text: string) {
-      await expect.poll(() => evaluate<boolean>(`Array.from(document.querySelectorAll('button')).some(b => b.textContent.trim() === ${JSON.stringify(text)} && !b.disabled)`)).toBe(true);
-      await evaluate(`Array.from(document.querySelectorAll('button')).find(b => b.textContent.trim() === ${JSON.stringify(text)}).click()`);
+      await expect.poll(() => evaluate<boolean>(`Array.from(document.querySelectorAll('button, [role="menuitem"]')).some(b => (b.textContent.trim() === ${JSON.stringify(text)} || b.getAttribute('aria-label') === ${JSON.stringify(text)}) && !b.disabled)`), {timeout: 10000}).toBe(true);
+      await evaluate(`Array.from(document.querySelectorAll('button, [role="menuitem"]')).find(b => b.textContent.trim() === ${JSON.stringify(text)} || b.getAttribute('aria-label') === ${JSON.stringify(text)}).click()`);
     },
     async fill(selector: string, value: string) {
       await evaluate(`(() => { const el = document.querySelector(${JSON.stringify(selector)}); Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(el, ${JSON.stringify(value)}); el.dispatchEvent(new Event('input', {bubbles:true})); })()`);
     },
     async close() {
       await cdp.send('Target.closeTarget', {targetId}).catch(() => {});
+      await expect.poll(async () => {
+        const { targetInfos } = await cdp.send('Target.getTargets', { filter: [{}] });
+        return targetInfos.some(t => t.targetId === targetId);
+      }, {timeout: 3000, intervals: [10, 25, 50]}).toBe(false);
       await cdp.detach();
     },
   };

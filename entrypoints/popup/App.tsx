@@ -84,13 +84,20 @@ export function App() {
     }
   };
 
+  const [onboardingChecked, setOnboardingChecked] = useState<boolean>(false);
+
   useEffect(() => {
     isAnalyticsEnabled().then(setAnalyticsOn).catch(() => {});
-    isOnboardingCompleted().then((completed) => {
-      if (!completed) {
-        setScreen('onboarding');
-      }
-    }).catch(() => {});
+    isOnboardingCompleted()
+      .then((completed) => {
+        if (!completed) {
+          setScreen('onboarding');
+        }
+        setOnboardingChecked(true);
+      })
+      .catch(() => {
+        setOnboardingChecked(true);
+      });
   }, []);
 
   const [isPageUnavailable, setIsPageUnavailable] = useState<boolean>(false);
@@ -275,15 +282,20 @@ export function App() {
 
   if (screen === 'onboarding') {
     return (
-      <main className="w-[360px] min-h-[440px] p-4 bg-white text-slate-900 flex flex-col justify-between">
-        <Onboarding onComplete={() => setScreen('idle')} />
+      <main data-ready={onboardingChecked ? 'true' : 'false'} className="w-[360px] min-h-[440px] p-3 bg-white text-slate-900 flex flex-col justify-between">
+        <Onboarding
+          onComplete={() => {
+            setScreen('idle');
+            setOnboardingChecked(true);
+          }}
+        />
       </main>
     );
   }
 
   if (screen === 'review' && captureData) {
     return (
-      <main className="w-[360px] min-h-[440px] p-4 bg-white text-slate-900 flex flex-col justify-between">
+      <main data-ready={onboardingChecked ? 'true' : 'false'} className="w-[360px] min-h-[440px] p-3 bg-white text-slate-900 flex flex-col justify-between">
         <CaptureReview
           captureResult={captureData}
           onCancel={() => {
@@ -344,7 +356,7 @@ export function App() {
 
   if (screen === 'save' && captureData && reviewSelection) {
     return (
-      <main className="w-[360px] min-h-[440px] p-4 bg-white text-slate-900 flex flex-col justify-between">
+      <main data-ready={onboardingChecked ? 'true' : 'false'} className="w-[360px] min-h-[440px] p-3 bg-white text-slate-900 flex flex-col justify-between">
         <SaveView
           origin={captureData.origin}
           pathname={captureData.pathname}
@@ -374,19 +386,19 @@ export function App() {
 
   if (screen === 'settings') {
     return (
-      <main className="w-[360px] min-h-[440px] p-4 bg-white text-slate-900 flex flex-col justify-between">
-        <header className="border-b border-slate-200 pb-3 mb-3">
+      <main data-ready={onboardingChecked ? 'true' : 'false'} className="w-[360px] min-h-[440px] p-3 bg-white text-slate-900 flex flex-col justify-between">
+        <header className="border-b border-slate-200 pb-2 mb-2.5">
           <h2 className="text-base font-bold text-slate-900">Privacy & Settings</h2>
           <p className="text-xs text-slate-500">Manage anonymous analytics and identity</p>
         </header>
 
-        <div className="flex-1 space-y-4">
-          <div className="flex items-center justify-between p-3 rounded-lg border border-slate-200 bg-slate-50">
+        <div className="flex-1 space-y-3">
+          <div className="flex items-center justify-between p-2.5 rounded-md border border-slate-200 bg-slate-50">
             <div className="pr-2">
-              <label htmlFor="analytics-toggle" className="text-sm font-semibold text-slate-900 cursor-pointer">
+              <label htmlFor="analytics-toggle" className="text-xs font-semibold text-slate-900 cursor-pointer">
                 Share Anonymous Analytics
               </label>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <p className="text-[11px] text-slate-500 mt-0.5">
                 Help improve compatibility. Never sends URLs, labels, or values.
               </p>
             </div>
@@ -400,39 +412,41 @@ export function App() {
                 await setAnalyticsEnabled(checked);
                 setStatus(checked ? 'Analytics enabled' : 'Analytics disabled');
               }}
-              className="h-5 w-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+              className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer shrink-0"
               aria-label="Share Anonymous Analytics"
             />
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <Button
               variant="outline"
+              size="sm"
               onClick={async () => {
                 await clearInstallationId();
                 setStatus('Anonymous installation identity reset.');
               }}
-              className="w-full min-h-[44px] justify-start text-xs font-semibold"
+              className="w-full h-8 justify-start text-xs font-semibold px-2.5"
             >
               Reset Anonymous Identity
             </Button>
 
             <Button
               variant="outline"
+              size="sm"
               onClick={() => setScreen('report')}
-              className="w-full min-h-[44px] justify-start text-xs font-semibold"
+              className="w-full h-8 justify-start text-xs font-semibold px-2.5"
             >
               Report Compatibility Issue
             </Button>
           </div>
         </div>
 
-        <footer className="pt-3 border-t border-slate-200 mt-3">
+        <footer className="pt-2.5 border-t border-slate-200 mt-2.5">
           <Button
             type="button"
             variant="outline"
             onClick={() => setScreen('idle')}
-            className="w-full min-h-[44px]"
+            className="w-full"
           >
             Back
           </Button>
@@ -444,7 +458,7 @@ export function App() {
   if (screen === 'report') {
     const distinctSites = new Set(allViews.map((v) => v.origin)).size;
     return (
-      <main className="w-[360px] min-h-[440px] p-4 bg-white text-slate-900 flex flex-col justify-between">
+      <main data-ready={onboardingChecked ? 'true' : 'false'} className="w-[360px] min-h-[440px] p-3 bg-white text-slate-900 flex flex-col justify-between">
         <ReportIssue
           reportData={{
             failureCategory: 'user_reported_issue',
@@ -475,10 +489,10 @@ export function App() {
   }
 
   return (
-    <main className="w-[360px] min-h-[440px] p-4 bg-white text-slate-900 flex flex-col justify-between">
-      <header className="border-b border-slate-200 pb-3 mb-3 flex items-center justify-between">
+    <main data-ready={onboardingChecked ? 'true' : 'false'} className="w-[360px] min-h-[440px] p-3 bg-white text-slate-900 flex flex-col justify-between">
+      <header className="border-b border-slate-200 pb-2 mb-2.5 flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-bold text-slate-900 tracking-tight">StickySite</h1>
+          <h1 className="text-base font-bold text-slate-900 tracking-tight">StickySite</h1>
           <p className="text-xs text-slate-500">Save and restore page views</p>
         </div>
         <Button
@@ -486,7 +500,7 @@ export function App() {
           size="sm"
           onClick={() => setScreen('settings')}
           aria-label="Settings and Privacy"
-          className="h-9 w-9 p-0 min-h-[36px] text-slate-500 hover:text-slate-900"
+          className="h-8 w-8 p-0 min-h-[32px] text-slate-500 hover:text-slate-900"
         >
           <SettingsIcon className="h-4 w-4" />
         </Button>
@@ -497,7 +511,7 @@ export function App() {
           <div
             role="alert"
             aria-live="assertive"
-            className="flex-1 flex flex-col items-center justify-center text-center py-8 px-3"
+            className="flex-1 flex flex-col items-center justify-center text-center py-6 px-2"
           >
             <p className="text-sm font-semibold text-red-600">Storage Load Error</p>
             <p className="text-xs text-slate-600 mt-1 max-w-[280px]">{storageError}</p>
@@ -505,7 +519,7 @@ export function App() {
               variant="outline"
               size="sm"
               onClick={() => refreshViews()}
-              className="mt-3 min-h-[36px]"
+              className="mt-2.5 min-h-[32px]"
               aria-label="Retry loading saved views"
             >
               Retry Loading
@@ -517,14 +531,14 @@ export function App() {
               <div
                 role="alert"
                 aria-live="assertive"
-                className="mb-2 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-700 flex items-center justify-between"
+                className="mb-1.5 p-1.5 bg-red-50 border border-red-200 rounded text-xs text-red-700 flex items-center justify-between"
               >
                 <span className="truncate flex-1 mr-2">{storageError}</span>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => refreshViews()}
-                  className="h-6 px-2 text-xs"
+                  className="h-6 px-1.5 text-xs"
                   aria-label="Retry loading saved views"
                 >
                   Retry
@@ -563,14 +577,14 @@ export function App() {
             />
           </>
         ) : isPageUnavailable ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-center py-8 px-2">
+          <div className="flex-1 flex flex-col items-center justify-center text-center py-6 px-2">
             <p className="text-sm font-medium text-slate-700">Page Not Supported</p>
             <p className="text-xs text-slate-500 mt-1">
               StickySite only works on standard web pages (HTTP/HTTPS). Open a web page and try again.
             </p>
           </div>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center text-center py-8">
+          <div className="flex-1 flex flex-col items-center justify-center text-center py-6">
             <p className="text-sm text-slate-500">No saved views for this page yet.</p>
           </div>
         )}
@@ -591,7 +605,7 @@ export function App() {
         />
       )}
 
-      <footer className="pt-3 border-t border-slate-200 mt-3">
+      <footer className="pt-2.5 border-t border-slate-200 mt-2.5">
         <Button
           id="save-current-view-btn"
           disabled={isLoading || isPageUnavailable}

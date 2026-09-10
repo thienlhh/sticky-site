@@ -60,31 +60,31 @@ export function ReportIssue({ reportData, onSend, onCancel }: ReportIssueProps) 
 
   return (
     <div className="flex flex-col h-full justify-between">
-      <header className="border-b border-slate-200 pb-3 mb-3">
+      <header className="border-b border-slate-200 pb-2 mb-2.5">
         <h2 className="text-base font-bold text-slate-900">Report Compatibility Issue</h2>
-        <p className="text-xs text-slate-500 mt-1">
+        <p className="text-xs text-slate-500 mt-0.5">
           Review the exact metadata to be submitted. StickySite never transmits URLs, page content, or saved values.
         </p>
       </header>
 
-      <div className="flex-1 space-y-3 overflow-y-auto">
+      <div className="flex-1 space-y-2 overflow-y-auto pr-0.5">
         <div className="space-y-1">
-          <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+          <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
             Preview Technical Metadata
           </label>
-          <pre className="bg-slate-900 text-slate-100 p-3 rounded-md text-[11px] font-mono whitespace-pre-wrap overflow-x-auto max-h-[220px]">
+          <pre className="bg-slate-900 text-slate-100 p-2.5 rounded-md text-[11px] font-mono whitespace-pre-wrap overflow-x-auto max-h-[190px]">
             {report ? JSON.stringify(report, null, 2) : 'Generating preview...'}
           </pre>
         </div>
       </div>
 
-      <footer className="pt-3 border-t border-slate-200 mt-3 flex items-center justify-between gap-2">
+      <footer className="pt-2.5 border-t border-slate-200 mt-2.5 flex items-center justify-between gap-2">
         <Button
           type="button"
           variant="outline"
           onClick={onCancel}
           disabled={isSending}
-          className="flex-1 min-h-[44px]"
+          className="flex-1"
         >
           Cancel
         </Button>
@@ -92,7 +92,7 @@ export function ReportIssue({ reportData, onSend, onCancel }: ReportIssueProps) 
           type="button"
           onClick={handleConfirm}
           disabled={!report || isSending}
-          className="flex-1 min-h-[44px] bg-blue-600 hover:bg-blue-700 text-white"
+          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
         >
           {isSending ? 'Sending...' : 'Confirm & Send'}
         </Button>

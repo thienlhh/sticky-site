@@ -69,6 +69,7 @@ if (typeof (globalThis as any).chrome === 'undefined') {
       executeScript: async () => [],
     },
     runtime: {
+      getURL: (path: string) => `chrome-extension://mock-id${path.startsWith('/') ? path : '/' + path}`,
       onMessage: {
         addListener: () => {},
         removeListener: () => {},

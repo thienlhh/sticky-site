@@ -80,7 +80,7 @@ export function CaptureReview({
 
   return (
     <div className="flex flex-col h-full justify-between">
-      <header className="border-b border-slate-200 pb-3 mb-3">
+      <header className="border-b border-slate-200 pb-2 mb-2">
         <h2 className="text-base font-bold text-slate-900">Review Captured Settings</h2>
         <p className="text-xs text-slate-500">
           Choose which page values to include in this view.
@@ -91,26 +91,26 @@ export function CaptureReview({
         <div
           role="status"
           aria-live="polite"
-          className="mb-3 p-2.5 rounded bg-amber-50 border border-amber-200 text-amber-800 text-xs"
+          className="mb-2 p-2 rounded bg-amber-50 border border-amber-200 text-amber-800 text-xs"
         >
           {captureResult.unsupportedCount} unsupported or sensitive controls excluded.
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto space-y-4 max-h-[300px] pr-1">
+      <div className="flex-1 overflow-y-auto space-y-3 max-h-[300px] pr-0.5">
         {queryParamEntries.length > 0 && (
           <section>
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-600 mb-2">
+            <h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
               URL Query Parameters
             </h3>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               {queryParamEntries.map(([key, values]) => {
                 const inputId = `qp-${key}`;
                 const isChecked = selectedQueryKeys.has(key);
                 return (
                   <div
                     key={key}
-                    className="flex items-start gap-2.5 p-2 rounded-md hover:bg-slate-50 transition-colors border border-slate-100"
+                    className="flex items-start gap-2 p-1.5 rounded-md hover:bg-slate-50 transition-colors border border-slate-100"
                   >
                     <Checkbox
                       id={inputId}
@@ -118,7 +118,7 @@ export function CaptureReview({
                       onCheckedChange={(c) => toggleQueryParam(key, c)}
                     />
                     <div className="flex-1 text-xs">
-                      <Label htmlFor={inputId} className="font-semibold text-slate-800">
+                      <Label htmlFor={inputId} className="font-semibold text-slate-800 cursor-pointer">
                         {key}
                       </Label>
                       <p className="text-slate-500 truncate">{values.join(', ')}</p>
@@ -132,17 +132,17 @@ export function CaptureReview({
 
         {captureResult.controls.length > 0 && (
           <section>
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-600 mb-2">
+            <h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
               Page Form Controls
             </h3>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               {captureResult.controls.map((control) => {
                 const inputId = `ctrl-${control.id}`;
                 const isChecked = selectedControlIds.has(control.id);
                 return (
                   <div
                     key={control.id}
-                    className="flex items-start gap-2.5 p-2 rounded-md hover:bg-slate-50 transition-colors border border-slate-100"
+                    className="flex items-start gap-2 p-1.5 rounded-md hover:bg-slate-50 transition-colors border border-slate-100"
                   >
                     <Checkbox
                       id={inputId}
@@ -150,7 +150,7 @@ export function CaptureReview({
                       onCheckedChange={(c) => toggleControl(control.id, c)}
                     />
                     <div className="flex-1 text-xs">
-                      <Label htmlFor={inputId} className="font-semibold text-slate-800">
+                      <Label htmlFor={inputId} className="font-semibold text-slate-800 cursor-pointer">
                         {control.label}
                       </Label>
                       <p className="text-slate-500 truncate">
@@ -171,7 +171,7 @@ export function CaptureReview({
         )}
       </div>
 
-      <footer className="pt-3 border-t border-slate-200 mt-3 flex items-center justify-between gap-2">
+      <footer className="pt-2.5 border-t border-slate-200 mt-2.5 flex items-center justify-between gap-2">
         <Button
           type="button"
           variant="outline"

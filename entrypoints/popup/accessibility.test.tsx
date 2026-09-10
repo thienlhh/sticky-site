@@ -64,14 +64,14 @@ describe('Accessibility & Status System', () => {
     });
   });
 
-  describe('WCAG Target Size (44x44px min touch target)', () => {
-    it('verifies primary buttons in App shell meet 44px min height requirement', () => {
+  describe('Compact Extension Target Size', () => {
+    it('verifies primary buttons in App shell meet compact min height requirement', () => {
       render(<App />);
       const saveBtn = screen.getByRole('button', { name: /Save Current View/i });
-      expect(saveBtn).toHaveClass('min-h-[44px]');
+      expect(saveBtn).toHaveClass('min-h-[36px]');
     });
 
-    it('verifies Apply button in ViewList meets 44px min height requirement', () => {
+    it('verifies Apply button in ViewList meets compact min height requirement', () => {
       const sampleView: SavedView = {
         schemaVersion: 1,
         id: 'view-1',
@@ -94,10 +94,10 @@ describe('Accessibility & Status System', () => {
       );
 
       const applyBtn = screen.getByRole('button', { name: /Apply Test View/i });
-      expect(applyBtn).toHaveClass('min-h-[44px]');
+      expect(applyBtn).toHaveClass('min-h-[32px]');
     });
 
-    it('verifies SaveView primary action buttons have accessible names and 44px targets', () => {
+    it('verifies SaveView primary action buttons have accessible names and compact targets', () => {
       render(
         <SaveView
           origin="https://example.com"
@@ -113,8 +113,8 @@ describe('Accessibility & Status System', () => {
       const backBtn = screen.getByRole('button', { name: /Back/i });
       const input = screen.getByRole('textbox', { name: /View Name/i });
 
-      expect(saveBtn).toHaveClass('min-h-[44px]');
-      expect(backBtn).toHaveClass('min-h-[44px]');
+      expect(saveBtn).toHaveClass('min-h-[36px]');
+      expect(backBtn).toHaveClass('min-h-[36px]');
       expect(input).toBeInTheDocument();
     });
   });

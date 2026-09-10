@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { normalizePathname, type SavedView } from '@/domain/view';
-import { Play, Trash2, Edit2, RefreshCw } from 'lucide-react';
+import { MoreVertical, Trash2, Edit2, RefreshCw, Globe } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export interface ViewListProps {
   currentOrigin: string;
@@ -11,6 +12,211 @@ export interface ViewListProps {
   onRename?: (view: SavedView) => void;
   onUpdate?: (view: SavedView) => void;
   onDelete?: (view: SavedView) => void;
+}
+
+function getFaviconUrl(pageUrl: string, size = 32): string {
+  try {
+    if (typeof chrome !== 'undefined' && chrome.runtime?.getURL) {
+      const url = new URL(chrome.runtime.getURL('/_favicon/'));
+      url.searchParams.set('pageUrl', pageUrl);
+      url.searchParams.set('size', String(size));
+      return url.toString();
+    }
+  } catch {
+    // fallback if chrome runtime is not available
+  }
+  return '';
+}
+
+function SiteIcon({ origin, pathname }: { origin: string; pathname?: string }) {
+  const [hasTriedOrigin, setHasTriedOrigin] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
+
+  const fullUrl = pathname && pathname !== '/' ? `${origin}${pathname}` : origin;
+  const activeUrl = hasTriedOrigin ? origin : fullUrl;
+
+  const faviconUrl16 = getFaviconUrl(activeUrl, 16);
+  const faviconUrl32 = getFaviconUrl(activeUrl, 32);
+  const faviconUrl64 = getFaviconUrl(activeUrl, 64);
+
+  if (!faviconUrl32 || loadFailed) {
+    return (
+      <div className="h-5 w-5 rounded bg-slate-100 flex items-center justify-center shrink-0 text-slate-400">
+        <Globe className="h-3.5 w-3.5" aria-hidden="true" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-5 w-5 rounded bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0 overflow-hidden">
+      <img
+        key={activeUrl}
+        src={faviconUrl32}
+        srcSet={`${faviconUrl16} 1x, ${faviconUrl32} 2x, ${faviconUrl64} 3x`}
+        alt=""
+        aria-hidden="true"
+        width={16}
+        height={16}
+        className="h-4 w-4 shrink-0 object-contain"
+        onError={() => {
+          if (!hasTriedOrigin && fullUrl !== origin) {
+            setHasTriedOrigin(true);
+          } else {
+            setLoadFailed(true);
+          }
+        }}
+      />
+    </div>
+  );
+}
+
+interface ViewCardProps {
+  view: SavedView;
+  compatible: boolean;
+  onApply: (view: SavedView) => void;
+  onRename?: (view: SavedView) => void;
+  onUpdate?: (view: SavedView) => void;
+  onDelete?: (view: SavedView) => void;
+}
+
+function ViewCard({
+  view,
+  compatible,
+  onApply,
+  onRename,
+  onUpdate,
+  onDelete,
+}: ViewCardProps) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setMenuOpen(false);
+      }
+    };
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [menuOpen]);
+
+  const controlCount = view.controls.length;
+  const queryCount = Object.keys(view.queryParams).length;
+  const hasSecondaryActions = Boolean(onRename || onUpdate || onDelete);
+
+  return (
+    <div
+      className={cn(
+        'group relative p-2.5 rounded-md border border-slate-200 bg-white flex items-center justify-between gap-2 hover:border-slate-300 transition-colors',
+        menuOpen ? 'z-20' : 'z-0'
+      )}
+    >
+      <div className="flex items-center gap-2 flex-1 min-w-0">
+        <SiteIcon origin={view.origin} pathname={view.pathname} />
+        <div className="flex-1 min-w-0">
+          <h4 className="text-xs sm:text-sm font-semibold text-slate-900 truncate">{view.name}</h4>
+          <p className="text-[11px] text-slate-500 mt-0.5">
+            {controlCount} control{controlCount === 1 ? '' : 's'}
+            {queryCount > 0 && `, ${queryCount} query param${queryCount === 1 ? '' : 's'}`}
+          </p>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-1 shrink-0 relative" ref={menuRef}>
+        <Button
+          variant="ghost"
+          onClick={() => onApply(view)}
+          disabled={!compatible}
+          className="h-8 min-h-[32px] px-2.5 min-w-[48px] text-xs font-semibold text-blue-600 hover:text-blue-700 hover:bg-blue-50 opacity-0 group-hover:opacity-100 focus:opacity-100 group-focus-within:opacity-100 transition-opacity disabled:opacity-40 disabled:hover:bg-transparent"
+          aria-label={`Apply ${view.name}`}
+        >
+          Apply
+        </Button>
+
+        {hasSecondaryActions && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setMenuOpen((prev) => !prev)}
+            className={cn(
+              'h-7 w-7 min-h-[28px] p-0 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded',
+              menuOpen && 'bg-slate-100 text-slate-700'
+            )}
+            aria-label={`View options for ${view.name}`}
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
+          >
+            <MoreVertical className="h-4 w-4" />
+          </Button>
+        )}
+
+        {menuOpen && (
+          <div
+            role="menu"
+            aria-label={`Options for ${view.name}`}
+            className="absolute right-0 top-8 z-30 w-28 rounded-md bg-white py-1 shadow-lg border border-slate-200"
+          >
+            {onRename && (
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setMenuOpen(false);
+                  onRename(view);
+                }}
+                className="w-full flex items-center px-2.5 py-1.5 text-xs text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-colors text-left cursor-pointer"
+                aria-label={`Rename ${view.name}`}
+              >
+                <Edit2 className="h-3.5 w-3.5 mr-2 text-slate-400" />
+                Rename
+              </button>
+            )}
+            {onUpdate && (
+              <button
+                type="button"
+                role="menuitem"
+                disabled={!compatible}
+                onClick={() => {
+                  setMenuOpen(false);
+                  onUpdate(view);
+                }}
+                className="w-full flex items-center px-2.5 py-1.5 text-xs text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-colors text-left cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                aria-label={`Update ${view.name}`}
+              >
+                <RefreshCw className="h-3.5 w-3.5 mr-2 text-slate-400" />
+                Update
+              </button>
+            )}
+            {onDelete && (
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setMenuOpen(false);
+                  onDelete(view);
+                }}
+                className="w-full flex items-center px-2.5 py-1.5 text-xs text-red-600 hover:bg-red-50 transition-colors text-left cursor-pointer"
+                aria-label={`Delete ${view.name}`}
+              >
+                <Trash2 className="h-3.5 w-3.5 mr-2 text-red-500" />
+                Delete
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export function ViewList({
@@ -33,97 +239,51 @@ export function ViewList({
     (v) => v.origin === currentOrigin && normalizePathname(v.pathname) !== normCurrentPath
   );
 
-  const renderView = (view: SavedView, compatible: boolean) => {
-    const controlCount = view.controls.length;
-    const queryCount = Object.keys(view.queryParams).length;
-
-    return (
-      <div key={view.id} className="p-3 rounded-lg border border-slate-200 bg-white flex flex-col gap-2">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex-1 min-w-0">
-            <h4 className="text-sm font-semibold text-slate-900 truncate">{view.name}</h4>
-            <p className="text-xs text-slate-500 mt-0.5">
-              {controlCount} control{controlCount === 1 ? '' : 's'}
-              {queryCount > 0 && `, ${queryCount} query param${queryCount === 1 ? '' : 's'}`}
-            </p>
-          </div>
-          <Button
-            onClick={() => onApply(view)}
-            disabled={!compatible}
-            className="shrink-0 gap-1.5 min-h-[44px] px-3.5 text-xs font-semibold"
-            aria-label={`Apply ${view.name}`}
-          >
-            <Play className="h-3.5 w-3.5 fill-current" />
-            Apply
-          </Button>
-        </div>
-
-        {(onRename || onUpdate || onDelete) && (
-          <div className="flex items-center justify-end gap-1 pt-1 border-t border-slate-100 text-xs">
-                  {onRename && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onRename(view)}
-                      className="h-7 px-2 text-slate-600 hover:text-slate-900 min-h-[28px]"
-                      aria-label={`Rename ${view.name}`}
-                    >
-                      <Edit2 className="h-3 w-3 mr-1" />
-                      Rename
-                    </Button>
-                  )}
-                  {onUpdate && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onUpdate(view)}
-                      disabled={!compatible}
-                      className="h-7 px-2 text-slate-600 hover:text-slate-900 min-h-[28px]"
-                      aria-label={`Update ${view.name}`}
-                    >
-                      <RefreshCw className="h-3 w-3 mr-1" />
-                      Update
-                    </Button>
-                  )}
-                  {onDelete && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onDelete(view)}
-                      className="h-7 px-2 text-red-600 hover:text-red-700 hover:bg-red-50 min-h-[28px]"
-                      aria-label={`Delete ${view.name}`}
-                    >
-                      <Trash2 className="h-3 w-3 mr-1" />
-                      Delete
-                    </Button>
-                  )}
-          </div>
-        )}
-      </div>
-    );
-  };
-
   return (
-    <div className="flex-1 overflow-y-auto space-y-2.5 pr-1">
+    <div className="flex-1 overflow-y-auto space-y-2 pr-0.5">
       {pageViews.length > 0 ? (
         <>
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-600">
+          <h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">
             Views for this page ({pageViews.length})
           </h3>
-          <div className="space-y-2">{pageViews.map((view) => renderView(view, true))}</div>
+          <div className="space-y-1.5">
+            {pageViews.map((view) => (
+              <ViewCard
+                key={view.id}
+                view={view}
+                compatible={true}
+                onApply={onApply}
+                onRename={onRename}
+                onUpdate={onUpdate}
+                onDelete={onDelete}
+              />
+            ))}
+          </div>
         </>
       ) : (
-        <div className="text-center py-8">
+        <div className="text-center py-6">
           <p className="text-sm text-slate-500">No saved views for this page yet.</p>
           <p className="text-xs text-slate-600 mt-1">Adjust page settings and click Save Current View below.</p>
         </div>
       )}
       {otherViews.length > 0 && (
         <>
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-600">
+          <h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">
             Other views on this site ({otherViews.length})
           </h3>
-          <div className="space-y-2">{otherViews.map((view) => renderView(view, false))}</div>
+          <div className="space-y-1.5">
+            {otherViews.map((view) => (
+              <ViewCard
+                key={view.id}
+                view={view}
+                compatible={false}
+                onApply={onApply}
+                onRename={onRename}
+                onUpdate={onUpdate}
+                onDelete={onDelete}
+              />
+            ))}
+          </div>
         </>
       )}
     </div>

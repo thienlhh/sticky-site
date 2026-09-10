@@ -61,17 +61,17 @@ export function ViewActions({
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3"
         >
-          <div className="w-full max-w-sm rounded-lg bg-white p-5 shadow-lg space-y-3">
-            <h3 className="text-base font-semibold text-red-600">
+          <div className="w-full max-w-[300px] rounded-lg bg-white p-3.5 shadow-lg space-y-2.5">
+            <h3 className="text-sm font-semibold text-red-600">
               Incompatible Page
             </h3>
-            <p className="text-sm text-slate-600">
+            <p className="text-xs text-slate-600">
               Cannot update view from a different page. Current page ({normPath}) does not match saved view page ({action.view.pathname}).
             </p>
-            <div className="flex justify-end pt-2">
-              <Button type="button" variant="outline" size="sm" onClick={onClose}>
+            <div className="flex justify-end pt-1.5">
+              <Button type="button" variant="outline" size="sm" onClick={onClose} className="px-2.5">
                 Close
               </Button>
             </div>
@@ -137,18 +137,18 @@ export function ViewActions({
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3"
     >
       <form
         onSubmit={handleRenameSave}
-        className="w-full max-w-sm rounded-lg bg-white p-5 shadow-lg space-y-4"
+        className="w-full max-w-[300px] rounded-lg bg-white p-3.5 shadow-lg space-y-3"
       >
-        <h3 className="text-base font-semibold text-slate-900">
+        <h3 className="text-sm font-semibold text-slate-900">
           Rename View
         </h3>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="rename-input">New Name</Label>
+        <div className="space-y-1">
+          <Label htmlFor="rename-input" className="text-xs">New Name</Label>
           <Input
             id="rename-input"
             type="text"
@@ -157,7 +157,7 @@ export function ViewActions({
             maxLength={65}
             autoFocus
           />
-          <div className="flex justify-between items-center text-xs">
+          <div className="flex justify-between items-center text-[11px]">
             {renameError ? (
               <p role="alert" className="text-red-600 font-medium">
                 {renameError}
@@ -171,11 +171,11 @@ export function ViewActions({
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-2 pt-2">
-          <Button type="button" variant="outline" size="sm" onClick={onClose}>
+        <div className="flex items-center justify-end gap-1.5 pt-1.5">
+          <Button type="button" variant="outline" size="sm" onClick={onClose} className="px-2.5">
             Cancel
           </Button>
-          <Button type="submit" size="sm" disabled={!isRenameValid}>
+          <Button type="submit" size="sm" disabled={!isRenameValid} className="px-2.5">
             Save Name
           </Button>
         </div>

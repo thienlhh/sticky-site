@@ -33,7 +33,7 @@ describe('First-Run Onboarding (Task 11B)', () => {
 
     const getStartedBtn = screen.getByRole('button', { name: /Get Started/i });
     expect(getStartedBtn).toBeInTheDocument();
-    expect(getStartedBtn).toHaveClass('min-h-[44px]');
+    expect(getStartedBtn).toHaveClass('min-h-[36px]');
 
     await user.click(getStartedBtn);
     expect(onCompleteMock).toHaveBeenCalledTimes(1);

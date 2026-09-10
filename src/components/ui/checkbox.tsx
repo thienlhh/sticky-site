@@ -13,7 +13,7 @@ export const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
     return (
       <span
         className={cn(
-          'relative inline-flex items-center justify-center h-5 w-5 rounded border transition-colors cursor-pointer select-none focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-1',
+          'relative inline-flex items-center justify-center h-4 w-4 rounded border transition-colors cursor-pointer select-none focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-1 shrink-0',
           checked
             ? 'bg-blue-600 border-blue-600 text-white'
             : 'border-slate-400 bg-white hover:border-slate-500',
@@ -31,7 +31,7 @@ export const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
           className="sr-only peer"
           {...props}
         />
-        {checked && <Check className="h-3.5 w-3.5 stroke-[3]" />}
+        {checked && <Check className="h-3 w-3 stroke-[3]" />}
       </span>
     );
   }

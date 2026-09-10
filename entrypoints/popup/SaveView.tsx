@@ -96,14 +96,14 @@ export function SaveView({
 
   return (
     <form onSubmit={handleSave} className="flex flex-col h-full justify-between">
-      <header className="border-b border-slate-200 pb-3 mb-4">
+      <header className="border-b border-slate-200 pb-2 mb-3">
         <h2 className="text-base font-bold text-slate-900">Name Your View</h2>
         <p className="text-xs text-slate-500">
           Saving {totalSettingsCount} setting{totalSettingsCount === 1 ? '' : 's'} for {normalizedPath}
         </p>
       </header>
 
-      <div className="flex-1 space-y-4">
+      <div className="flex-1 space-y-3">
         <div className="space-y-1.5">
           <Label htmlFor="view-name-input">View Name</Label>
           <Input
@@ -134,7 +134,7 @@ export function SaveView({
         </div>
       </div>
 
-      <footer className="pt-3 border-t border-slate-200 mt-4 flex items-center justify-between gap-2">
+      <footer className="pt-2.5 border-t border-slate-200 mt-2.5 flex items-center justify-between gap-2">
         <Button
           type="button"
           variant="outline"
