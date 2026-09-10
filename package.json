@@ -18,7 +18,8 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "private": true,
+  "license": "UNLICENSED",
   "dependencies": {
     "@base-ui/react": "1.8.0",
     "class-variance-authority": "0.7.1",
