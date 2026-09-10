@@ -106,17 +106,20 @@ English
 | Asset | Dimensions | Status | Filename / Location | Notes |
 |---|---|---|---|---|
 | **Store Icon** [REQUIRED] | 128×128 PNG | ✅ Ready | `public/icons/icon-128.png` | Verified 128×128 RGBA PNG |
-| **Screenshot 1** [REQUIRED] | 1280×800 or 640×400 | ⬜ To Capture | Recommended: Main view list with saved views | Shows extension popup displaying saved views with site favicons |
-| **Screenshot 2** [RECOMMENDED] | 1280×800 or 640×400 | ⬜ To Capture | Recommended: Capture & Review screen | Shows selective review of detected query parameters and form controls |
-| **Screenshot 3** [RECOMMENDED] | 1280×800 or 640×400 | ⬜ To Capture | Recommended: Save View naming modal | Shows view naming interface and clear action buttons |
-| **Screenshot 4** [RECOMMENDED] | 1280×800 or 640×400 | ⬜ To Capture | Recommended: Applied restoration status | Shows full/partial restoration badge and feedback overlay |
-| **Small Promo Tile** [RECOMMENDED] | 440×280 PNG/JPEG | ⬜ To Create | `store-assets/promo-440x280.png` | Used for Chrome Web Store featured placements |
-| **Marquee Promo Tile** [OPTIONAL] | 1400×560 PNG/JPEG | ⬜ To Create | `store-assets/marquee-1400x560.png` | Banner for store spotlight |
+| **Screenshot 1** [REQUIRED] | 1280×800 | ✅ Ready | `store-assets/screenshot-1-saved-views.png` | Main saved-view list on a sample inventory page |
+| **Screenshot 2** [RECOMMENDED] | 1280×800 | ✅ Ready | `store-assets/screenshot-2-capture-review.png` | Selective review of detected query parameters and form controls |
+| **Screenshot 3** [RECOMMENDED] | 1280×800 | ✅ Ready | `store-assets/screenshot-3-name-view.png` | View naming interface with dummy data |
+| **Screenshot 4** [RECOMMENDED] | 1280×800 | ✅ Ready | `store-assets/screenshot-4-restoration-status.png` | Successful six-setting restoration feedback |
+| **Small Promo Tile** [REQUIRED] | 440×280 PNG | ✅ Ready | `store-assets/promo-440x280.png` | Full-bleed brand tile for listings and discovery surfaces |
+| **Marquee Promo Tile** [OPTIONAL] | 1400×560 PNG | ✅ Ready | `store-assets/marquee-1400x560.png` | Full-bleed brand banner for possible marquee placement |
 
 ### Screenshot Guidance
 1. Use real webpages (e.g. GitHub issue filters, e-commerce tables, or data dashboards) with dummy/sample filter values.
 2. Ensure clean browser window with no distracting bookmarks or unrelated extensions visible.
 3. Export at exactly **1280×800** PNG for crisp rendering on high-DPI displays.
+
+Regenerate the listing screenshots from the production build with `npm run screenshots:store`.
+The same command regenerates both promotional images.
 
 ---
 
