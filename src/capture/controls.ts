@@ -19,20 +19,33 @@ import {
   isRendered,
 } from './eligibility';
 
-function getRegion(el: Element, hasLandmarks: boolean): string | undefined {
-  const fieldset = el.closest('fieldset');
-  if (fieldset) {
-    const legend = fieldset.querySelector('legend');
-    if (legend?.textContent?.trim()) {
-      return legend.textContent.trim().slice(0, 60);
+function getRegion(
+  el: Element,
+  hasFieldsets: boolean,
+  hasForms: boolean,
+  hasLandmarks: boolean
+): string | undefined {
+  if (!hasFieldsets && !hasForms && !hasLandmarks) {
+    return undefined;
+  }
+
+  if (hasFieldsets) {
+    const fieldset = el.closest('fieldset');
+    if (fieldset) {
+      const legend = fieldset.querySelector('legend');
+      if (legend?.textContent?.trim()) {
+        return legend.textContent.trim().slice(0, 60);
+      }
     }
   }
 
-  const form = el.closest('form');
-  if (form) {
-    if (form.getAttribute('aria-label')) return form.getAttribute('aria-label')!;
-    if (form.getAttribute('name')) return form.getAttribute('name')!;
-    if (form.id) return form.id;
+  if (hasForms) {
+    const form = el.closest('form');
+    if (form) {
+      if (form.getAttribute('aria-label')) return form.getAttribute('aria-label')!;
+      if (form.getAttribute('name')) return form.getAttribute('name')!;
+      if (form.id) return form.id;
+    }
   }
 
   if (hasLandmarks) {
@@ -60,6 +73,8 @@ export function capturePage(doc: Document, url: URL): CaptureResult {
   let unsupportedCount = 0;
 
   const hasDisabledFieldsets = doc.querySelector('fieldset[disabled]') !== null;
+  const hasFieldsets = hasDisabledFieldsets || doc.querySelector('fieldset') !== null;
+  const hasForms = doc.querySelector('form') !== null;
   const hasLandmarks = doc.querySelector('section[aria-label], nav[aria-label], aside[aria-label]') !== null;
 
   const labelsByFor = new Map<string, string>();
@@ -81,21 +96,22 @@ export function capturePage(doc: Document, url: URL): CaptureResult {
   const ordinalCounters: Record<string, number> = {};
 
   const radioGroupsByElement = new WeakMap<HTMLInputElement, HTMLInputElement[]>();
-  const nativeRadioGroups: HTMLInputElement[][] = [];
+  const nativeRadioGroupsByScope = new Map<Element | Document | null, Map<string, HTMLInputElement[]>>();
   for (const el of candidateElements) {
     if (el.tagName === 'INPUT' && (el as HTMLInputElement).type === 'radio') {
       const radio = el as HTMLInputElement;
       const name = radio.name;
       if (name) {
-        let list = nativeRadioGroups.find(
-          (group) =>
-            group[0].name === name &&
-            group[0].form === radio.form &&
-            group[0].getRootNode() === radio.getRootNode()
-        );
+        const scope = radio.form || (radio.getRootNode?.() as Document | Element | null) || doc;
+        let scopeMap = nativeRadioGroupsByScope.get(scope);
+        if (!scopeMap) {
+          scopeMap = new Map();
+          nativeRadioGroupsByScope.set(scope, scopeMap);
+        }
+        let list = scopeMap.get(name);
         if (!list) {
           list = [];
-          nativeRadioGroups.push(list);
+          scopeMap.set(name, list);
         }
         list.push(radio);
         radioGroupsByElement.set(radio, list);
@@ -177,7 +193,7 @@ export function capturePage(doc: Document, url: URL): CaptureResult {
           label,
           name,
           options,
-          region: getRegion(el, hasLandmarks),
+          region: getRegion(el, hasFieldsets, hasForms, hasLandmarks),
           ordinal,
         };
 
@@ -250,7 +266,7 @@ export function capturePage(doc: Document, url: URL): CaptureResult {
           id: group.id || el.id || undefined,
           semanticAttribute: group.getAttribute('data-testid') || el.getAttribute('data-testid') || undefined,
           options,
-          region: getRegion(group, hasLandmarks),
+          region: getRegion(group, hasFieldsets, hasForms, hasLandmarks),
           ordinal,
         };
 
@@ -315,7 +331,7 @@ export function capturePage(doc: Document, url: URL): CaptureResult {
       id: el.id || undefined,
       semanticAttribute: el.getAttribute('data-testid') || undefined,
       options,
-      region: getRegion(el, hasLandmarks),
+      region: getRegion(el, hasFieldsets, hasForms, hasLandmarks),
       ordinal,
     };
 

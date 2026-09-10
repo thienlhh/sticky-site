@@ -10,6 +10,8 @@ import {
   type AnalyticsEvent,
 } from '@/analytics';
 import { normalizePathname } from '@/domain/view';
+import { updateTabBadge, updateAllTabsBadges } from '@/badge/badge';
+import { STORAGE_KEY } from '@/storage/views';
 
 export default defineBackground(() => {
   // Initialize configured analytics adapter in the background worker; missing config = no-op
@@ -24,7 +26,11 @@ export default defineBackground(() => {
     setAnalyticsAdapter(null);
   }
 
+  // Initialize badges across open tabs on background worker startup
+  updateAllTabsBadges().catch(() => {});
+
   chrome.runtime.onInstalled.addListener(() => {
+    updateAllTabsBadges().catch(() => {});
     track('extension_installed').catch((err) => {
       console.error('Failed to track install:', err);
     });
@@ -74,7 +80,21 @@ export default defineBackground(() => {
     }
   });
 
+  chrome.tabs.onActivated.addListener(async ({ tabId }) => {
+    updateTabBadge(tabId).catch(() => {});
+  });
+
+  chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName === 'local' && changes[STORAGE_KEY]) {
+      updateAllTabsBadges().catch(() => {});
+    }
+  });
+
   chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+    if (changeInfo.url || changeInfo.status === 'complete') {
+      updateTabBadge(tabId, tab?.url).catch(() => {});
+    }
+
     if (changeInfo.status === 'complete' && tab?.url) {
       let startedAt: number | undefined;
       try {

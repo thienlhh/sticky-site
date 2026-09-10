@@ -26,35 +26,38 @@ export function resolveLabel(element: Element, labelsByFor?: Map<string, string>
   const doc = element.ownerDocument;
 
   // 1. Associated label
-  // 1a. Native HTML element.labels
-  const formControl = element as HTMLInputElement;
-  if (formControl.labels && formControl.labels.length > 0) {
-    const text = cleanText(formControl.labels[0].textContent);
-    if (text) return text;
-  }
-
-  // 1b. label[for="id"] fallback
-  if (element.id) {
-    if (labelsByFor?.has(element.id)) {
+  if (labelsByFor) {
+    if (element.id && labelsByFor.has(element.id)) {
       return labelsByFor.get(element.id)!;
     }
-    try {
-      const escapedId = typeof CSS !== 'undefined' && CSS.escape ? CSS.escape(element.id) : element.id;
-      const forLabel = doc?.querySelector(`label[for="${escapedId}"]`);
-      if (forLabel) {
-        const text = cleanText(forLabel.textContent);
-        if (text) return text;
-      }
-    } catch {
-      // Ignore CSS escape selector errors
+    const enclosingLabel = element.closest('label');
+    if (enclosingLabel) {
+      const text = getTextWithoutControls(enclosingLabel);
+      if (text) return text;
     }
-  }
-
-  // 1c. Enclosing <label> ancestor
-  const enclosingLabel = element.closest('label');
-  if (enclosingLabel) {
-    const text = getTextWithoutControls(enclosingLabel);
-    if (text) return text;
+  } else {
+    const formControl = element as HTMLInputElement;
+    if (formControl.labels && formControl.labels.length > 0) {
+      const text = cleanText(formControl.labels[0].textContent);
+      if (text) return text;
+    }
+    if (element.id) {
+      try {
+        const escapedId = typeof CSS !== 'undefined' && CSS.escape ? CSS.escape(element.id) : element.id;
+        const forLabel = doc?.querySelector(`label[for="${escapedId}"]`);
+        if (forLabel) {
+          const text = cleanText(forLabel.textContent);
+          if (text) return text;
+        }
+      } catch {
+        // Ignore CSS escape selector errors
+      }
+    }
+    const enclosingLabel = element.closest('label');
+    if (enclosingLabel) {
+      const text = getTextWithoutControls(enclosingLabel);
+      if (text) return text;
+    }
   }
 
   // 2. aria-labelledby
@@ -80,6 +83,14 @@ export function resolveLabel(element: Element, labelsByFor?: Map<string, string>
     const text = cleanText(ariaLabel);
     if (text) return text;
   }
+
+  // 4. Native HTML element.labels fallback
+  const formControl = element as HTMLInputElement;
+  if (formControl.labels && formControl.labels.length > 0) {
+    const text = cleanText(formControl.labels[0].textContent);
+    if (text) return text;
+  }
+
 
   // 4. placeholder or name
   const placeholder = element.getAttribute('placeholder');

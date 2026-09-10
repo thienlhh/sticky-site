@@ -6,6 +6,11 @@ if (typeof (globalThis as any).chrome === 'undefined') {
     stickysite_onboarding_completed: true,
   };
     const sessionStore: Record<string, unknown> = {};
+    const storageListeners = new Set<(changes: Record<string, { oldValue?: unknown; newValue?: unknown }>, area: string) => void>();
+    const badgeTextMap = new Map<number | 'global', string>();
+    const badgeBgColorMap = new Map<number | 'global', string>();
+    const badgeTextColorMap = new Map<number | 'global', string>();
+
     (globalThis as any).chrome = {
     storage: {
       local: {
@@ -20,12 +25,24 @@ if (typeof (globalThis as any).chrome === 'undefined') {
           return {};
         },
         set: async (items: Record<string, unknown>) => {
-          Object.assign(store, items);
+          const changes: Record<string, { oldValue?: unknown; newValue?: unknown }> = {};
+          for (const [k, v] of Object.entries(items)) {
+            changes[k] = { oldValue: store[k], newValue: v };
+            store[k] = v;
+          }
+          for (const cb of storageListeners) {
+            try { cb(changes, 'local'); } catch {}
+          }
         },
         remove: async (key: string | string[]) => {
-          if (typeof key === 'string') delete store[key];
-          if (Array.isArray(key)) {
-            for (const k of key) delete store[k];
+          const keys = typeof key === 'string' ? [key] : Array.isArray(key) ? key : [];
+          const changes: Record<string, { oldValue?: unknown; newValue?: unknown }> = {};
+          for (const k of keys) {
+            changes[k] = { oldValue: store[k], newValue: undefined };
+            delete store[k];
+          }
+          for (const cb of storageListeners) {
+            try { cb(changes, 'local'); } catch {}
           }
         },
         clear: async () => {
@@ -56,10 +73,45 @@ if (typeof (globalThis as any).chrome === 'undefined') {
           for (const k of Object.keys(sessionStore)) delete sessionStore[k];
         },
       },
+      onChanged: {
+        addListener: (cb: (changes: Record<string, { oldValue?: unknown; newValue?: unknown }>, area: string) => void) => {
+          storageListeners.add(cb);
+        },
+        removeListener: (cb: (changes: Record<string, { oldValue?: unknown; newValue?: unknown }>, area: string) => void) => {
+          storageListeners.delete(cb);
+        },
+      },
+    },
+    action: {
+      setBadgeText: async ({ text, tabId }: { text: string; tabId?: number }) => {
+        badgeTextMap.set(tabId ?? 'global', text);
+      },
+      getBadgeText: async ({ tabId }: { tabId?: number } = {}) => {
+        return badgeTextMap.get(tabId ?? 'global') ?? '';
+      },
+      setBadgeBackgroundColor: async ({ color, tabId }: { color: string | [number, number, number, number]; tabId?: number }) => {
+        badgeBgColorMap.set(tabId ?? 'global', String(color));
+      },
+      setBadgeTextColor: async ({ color, tabId }: { color: string; tabId?: number }) => {
+        badgeTextColorMap.set(tabId ?? 'global', color);
+      },
     },
     tabs: {
       query: async () => [],
+      get: async (tabId: number) => ({ id: tabId, url: '' }),
       sendMessage: async () => {},
+      onActivated: {
+        addListener: () => {},
+        removeListener: () => {},
+      },
+      onUpdated: {
+        addListener: () => {},
+        removeListener: () => {},
+      },
+      onRemoved: {
+        addListener: () => {},
+        removeListener: () => {},
+      },
     },
     permissions: {
       contains: async () => false,
