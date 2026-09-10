@@ -15,46 +15,77 @@ Save and restore search filters, form inputs, and custom page views on any websi
 *(Length: 120 characters / max 132)*
 
 **Detailed Description** [REQUIRED]
+
 Save and restore your favorite search filters, form selections, and custom page views on any website in a single click.
 
 Tired of resetting the same filters, dropdowns, and search terms every time you open a dashboard, web app, or online store? Traditional browser bookmarks only save URLs—they lose interactive form controls, date range pickers, dropdown selections, and checkbox filters.
 
 StickySite acts as your personal filter preset manager, saving your exact webpage configurations and form states locally so you can return to them instantly.
 
+
 KEY FEATURES
+
 • One-Click Filter & View Restoration — Reapply your saved search parameters, dropdown selections, text inputs, radio buttons, and checkboxes instantly.
+
 • Selective Capture Review — Inspect every detected filter and form control before saving. Easily exclude individual parameters with a single toggle.
+
 • Multi-View Management — Save multiple named view presets per website (e.g., "Q3 Open Bugs", "In-Stock Laptops Under $1000", "Weekly Analytics Report").
+
 • Automatic Cross-Page Navigation — Clicking a saved view takes you directly to the correct URL and automatically restores all form settings upon page load.
+
 • Transparent Status Feedback — Real-time visual feedback confirms which settings were applied, partial matches, or if a webpage updated its layout.
+
 • Quick Updates & Renaming — Update existing views with current page settings in one click, rename them, or delete them when no longer needed.
 
+
 POPULAR USE CASES
+
 • Analytics & Dashboards: Save complex date ranges, metric filters, and breakdown segments on Google Analytics, Mixpanel, Datadog, or Tableau.
+
 • Project Management & Issue Trackers: Remember custom sprint filters, assignee dropdowns, and milestone queries on Jira, GitHub, Linear, or Asana.
+
 • E-Commerce & Shopping: Keep your favorite size, brand, price range, and sorting preferences saved across retail sites.
+
 • CRM & Sales Tools: Reapply lead filters, pipeline stages, and custom account views in Salesforce, HubSpot, or internal back-office admin portals.
+
 • Real Estate & Job Boards: Retain advanced search parameters, location radii, and salary filters without retyping.
 
+
 HOW TO USE
+
 1. Open any webpage and set up your filters, search terms, and dropdowns.
+
 2. Click the StickySite icon in your Chrome toolbar.
+
 3. Name your view and click 'Save View' (or open the review screen to customize captured fields).
+
 4. Return to the site anytime, open StickySite, and click your saved view to restore everything in one click.
 
+
 PRIVACY & SECURITY FIRST
+
 • 100% Local Storage: All saved views and presets reside strictly on your device. Zero cloud sync, no remote database, and no accounts required.
+
 • Proactive Safety Filtering: StickySite automatically detects and ignores sensitive fields. Passwords, credit cards, bank account details, SSNs, phone numbers, and security tokens are NEVER captured or saved.
+
 • No Destructive Actions: StickySite only populates form inputs and filters. It never triggers 'Submit', 'Pay', 'Buy', 'Delete', or confirmation buttons.
+
 • Least-Privilege Permissions: No blanket browsing permissions upon install. Origin access is requested only when you actively choose to use StickySite on a website.
 
+
 PERMISSIONS EXPLAINED
+
 • Storage: Saves your filter presets locally in your browser.
+
 • ActiveTab & Scripting: Scans form controls and restores saved values on the current page when you click a view.
+
 • Tabs: Navigates to the correct webpage URL before applying a saved view.
+
 • Favicon: Displays website icons next to saved views for easy visual identification.
 
+
 SUPPORT & FEEDBACK
+
 Found a bug, have a suggestion, or need help? Contact us at kaoxofu@gmail.com.
 
 Version 1.0.0 — Initial production release.
