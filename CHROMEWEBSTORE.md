@@ -106,12 +106,12 @@ English
 | Asset | Dimensions | Status | Filename / Location | Notes |
 |---|---|---|---|---|
 | **Store Icon** [REQUIRED] | 128×128 PNG | ✅ Ready | `public/icons/icon-128.png` | Verified 128×128 RGBA PNG |
-| **Screenshot 1** [REQUIRED] | 1280×800 or 640×400 | ⬜ To Capture | Recommended: Main view list with saved views | Shows extension popup displaying saved views with site favicons |
-| **Screenshot 2** [RECOMMENDED] | 1280×800 or 640×400 | ⬜ To Capture | Recommended: Capture & Review screen | Shows selective review of detected query parameters and form controls |
-| **Screenshot 3** [RECOMMENDED] | 1280×800 or 640×400 | ⬜ To Capture | Recommended: Save View naming modal | Shows view naming interface and clear action buttons |
-| **Screenshot 4** [RECOMMENDED] | 1280×800 or 640×400 | ⬜ To Capture | Recommended: Applied restoration status | Shows full/partial restoration badge and feedback overlay |
-| **Small Promo Tile** [RECOMMENDED] | 440×280 PNG/JPEG | ⬜ To Create | `store-assets/promo-440x280.png` | Used for Chrome Web Store featured placements |
-| **Marquee Promo Tile** [OPTIONAL] | 1400×560 PNG/JPEG | ⬜ To Create | `store-assets/marquee-1400x560.png` | Banner for store spotlight |
+| **Screenshot 1** [REQUIRED] | 1280×800 PNG | ✅ Ready | `store-assets/screenshot-1-views-list.png` | Shows saved views list with site favicons & 1-click restore |
+| **Screenshot 2** [RECOMMENDED] | 1280×800 PNG | ✅ Ready | `store-assets/screenshot-2-capture-review.png` | Shows selective review of detected query parameters & form controls |
+| **Screenshot 3** [RECOMMENDED] | 1280×800 PNG | ✅ Ready | `store-assets/screenshot-3-save-view.png` | Shows view naming modal with validated input and action buttons |
+| **Screenshot 4** [RECOMMENDED] | 1280×800 PNG | ✅ Ready | `store-assets/screenshot-4-restoration-status.png` | Shows transparent restoration feedback and verification badge |
+| **Small Promo Tile** [RECOMMENDED] | 440×280 PNG | ✅ Ready | `store-assets/promo-440x280.png` | Used for Chrome Web Store search and category placements |
+| **Marquee Promo Tile** [OPTIONAL] | 1400×560 PNG | ✅ Ready | `store-assets/marquee-1400x560.png` | Banner for Chrome Web Store spotlight and homepage features |
 
 ### Screenshot Guidance
 1. Use real webpages (e.g. GitHub issue filters, e-commerce tables, or data dashboards) with dummy/sample filter values.
