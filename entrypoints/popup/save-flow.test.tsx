@@ -177,5 +177,71 @@ describe('Popup Save and List Flow', () => {
       await userEvent.click(menuGoToPage);
       expect(onNavigate).toHaveBeenCalledWith('https://example.com/categories');
     });
+
+    it('positions context menu upward when item is near the bottom of viewport', async () => {
+      render(
+        <ViewList
+          currentOrigin="https://example.com"
+          currentPathname="/search"
+          views={mockViews}
+          onApply={vi.fn()}
+          onRename={vi.fn()}
+        />
+      );
+
+      const optionsButtons = screen.getAllByRole('button', { name: /View options for/i });
+      const bottomButton = optionsButtons[1];
+      const menuContainer = bottomButton.parentElement!;
+
+      vi.spyOn(window, 'innerHeight', 'get').mockReturnValue(500);
+      vi.spyOn(menuContainer, 'getBoundingClientRect').mockReturnValue({
+        top: 428,
+        bottom: 460,
+        left: 300,
+        right: 328,
+        width: 28,
+        height: 32,
+      } as DOMRect);
+
+      await userEvent.click(bottomButton);
+
+      const menu = screen.getByRole('menu');
+      expect(menu).toHaveAttribute('data-side', 'top');
+      expect(menu).toHaveClass('bottom-8');
+      expect(menu).not.toHaveClass('top-8');
+    });
+
+    it('positions context menu downward when item has sufficient space below', async () => {
+      render(
+        <ViewList
+          currentOrigin="https://example.com"
+          currentPathname="/search"
+          views={mockViews}
+          onApply={vi.fn()}
+          onRename={vi.fn()}
+        />
+      );
+
+      const optionsButtons = screen.getAllByRole('button', { name: /View options for/i });
+      const topButton = optionsButtons[0];
+      const menuContainer = topButton.parentElement!;
+
+      vi.spyOn(window, 'innerHeight', 'get').mockReturnValue(500);
+      vi.spyOn(menuContainer, 'getBoundingClientRect').mockReturnValue({
+        top: 88,
+        bottom: 120,
+        left: 300,
+        right: 328,
+        width: 28,
+        height: 32,
+      } as DOMRect);
+
+      await userEvent.click(topButton);
+
+      const menu = screen.getByRole('menu');
+      expect(menu).toHaveAttribute('data-side', 'bottom');
+      expect(menu).toHaveClass('top-8');
+      expect(menu).not.toHaveClass('bottom-8');
+    });
   });
 });

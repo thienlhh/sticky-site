@@ -91,10 +91,37 @@ function ViewCard({
   onDelete,
 }: ViewCardProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [openUpward, setOpenUpward] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  const updatePosition = () => {
+    if (!menuRef.current) return;
+    const rect = menuRef.current.getBoundingClientRect();
+    const scrollContainer = menuRef.current.closest('.overflow-y-auto');
+    let spaceBelow = window.innerHeight - rect.bottom;
+    let spaceAbove = rect.top;
+
+    if (scrollContainer) {
+      const containerRect = scrollContainer.getBoundingClientRect();
+      if (containerRect.height > 0) {
+        spaceBelow = Math.min(spaceBelow, containerRect.bottom - rect.bottom);
+        spaceAbove = Math.min(spaceAbove, rect.top - containerRect.top);
+      }
+    }
+
+    setOpenUpward(spaceBelow < 140 && spaceAbove > spaceBelow);
+  };
+
+  const toggleMenu = () => {
+    if (!menuOpen) {
+      updatePosition();
+    }
+    setMenuOpen((prev) => !prev);
+  };
 
   useEffect(() => {
     if (!menuOpen) return;
+    updatePosition();
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setMenuOpen(false);
@@ -105,11 +132,16 @@ function ViewCard({
         setMenuOpen(false);
       }
     };
+    const handleScroll = () => {
+      setMenuOpen(false);
+    };
     document.addEventListener('keydown', handleKeyDown);
     document.addEventListener('mousedown', handleClickOutside);
+    window.addEventListener('scroll', handleScroll, true);
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('scroll', handleScroll, true);
     };
   }, [menuOpen]);
 
@@ -182,7 +214,7 @@ function ViewCard({
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setMenuOpen((prev) => !prev)}
+            onClick={toggleMenu}
             className={cn(
               'h-7 w-7 min-h-[28px] p-0 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded',
               menuOpen && 'bg-slate-100 text-slate-700'
@@ -199,7 +231,11 @@ function ViewCard({
           <div
             role="menu"
             aria-label={`Options for ${view.name}`}
-            className="absolute right-0 top-8 z-30 w-32 rounded-md bg-white py-1 shadow-lg border border-slate-200"
+            data-side={openUpward ? 'top' : 'bottom'}
+            className={cn(
+              'absolute right-0 z-30 w-32 rounded-md bg-white py-1 shadow-lg border border-slate-200',
+              openUpward ? 'bottom-8' : 'top-8'
+            )}
           >
             {!compatible && onNavigate && (
               <button
