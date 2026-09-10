@@ -114,6 +114,8 @@ describe('Popup App Shell', () => {
 
     const saveButton = screen.getByRole('button', { name: /Save Current View/i });
     expect(saveButton).toBeDisabled();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Unsupported page URL/i)).not.toBeInTheDocument();
   });
 
   it('recovers completed apply result from transient storage on popup reopen', async () => {

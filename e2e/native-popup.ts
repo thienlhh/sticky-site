@@ -40,7 +40,7 @@ export async function openNativePopup(context: BrowserContext, webPage: Page, ex
   }
   await expect.poll(() => evaluate<string>('document.body?.innerText || ""'), {intervals: [5, 10, 20]}).toContain('StickySite');
   await expect.poll(() => evaluate<boolean>(`document.querySelector('main')?.getAttribute('data-ready') === 'true'`), {intervals: [5, 10, 20]}).toBe(true);
-  await expect.poll(() => evaluate<boolean>(`!!document.querySelector('#save-current-view-btn:not(:disabled), #status-message[role="alert"]') || Array.from(document.querySelectorAll('button')).some(b => b.textContent.trim() === 'Get Started')`), {intervals: [5, 10, 20]}).toBe(true);
+  await expect.poll(() => evaluate<boolean>(`!!document.querySelector('#save-current-view-btn:not(:disabled), #status-message[role="alert"], #page-not-supported') || Array.from(document.querySelectorAll('button')).some(b => b.textContent.trim() === 'Get Started')`), {intervals: [5, 10, 20]}).toBe(true);
   return {
     evaluate,
     async press(key: 'Tab' | 'Enter' | ' ' | 'Escape') {

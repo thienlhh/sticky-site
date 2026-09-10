@@ -1,5 +1,5 @@
-import React from 'react';
-import { CheckCircle2, AlertCircle, AlertTriangle, Info, Loader2 } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { CheckCircle2, AlertCircle, AlertTriangle, Info, Loader2, X } from 'lucide-react';
 
 export type StatusSeverity = 'info' | 'success' | 'warning' | 'error' | 'loading';
 
@@ -9,9 +9,14 @@ export interface StatusState {
   actionHint?: string;
 }
 
+export const DEFAULT_STATUS_DISMISS_TIMEOUT_MS = 5000;
+
 export interface StatusMessageProps {
   status: string | StatusState | null;
   className?: string;
+  onDismiss?: () => void;
+  timeoutMs?: number;
+  position?: 'bottom' | 'top';
 }
 
 export function parseStatus(status: string | StatusState | null): StatusState | null {
@@ -83,9 +88,46 @@ export function parseStatus(status: string | StatusState | null): StatusState | 
   return { type: 'info', message: status };
 }
 
-export function StatusMessage({ status, className = '' }: StatusMessageProps) {
+function getStatusKey(status: string | StatusState | null): string {
+  if (!status) return '';
+  if (typeof status === 'string') return status;
+  return `${status.type}:${status.message}:${status.actionHint ?? ''}`;
+}
+
+export function StatusMessage({
+  status,
+  className = '',
+  onDismiss,
+  timeoutMs = DEFAULT_STATUS_DISMISS_TIMEOUT_MS,
+  position = 'bottom',
+}: StatusMessageProps) {
   const parsed = parseStatus(status);
-  if (!parsed) return null;
+  const statusKey = getStatusKey(status);
+
+  const [isDismissed, setIsDismissed] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const prevKeyRef = useRef(statusKey);
+
+  // Reset dismissal state whenever a new status arrives
+  if (statusKey !== prevKeyRef.current) {
+    prevKeyRef.current = statusKey;
+    setIsDismissed(false);
+  }
+
+  useEffect(() => {
+    if (!parsed || isDismissed || parsed.type === 'loading' || timeoutMs <= 0 || isPaused) {
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setIsDismissed(true);
+      onDismiss?.();
+    }, timeoutMs);
+
+    return () => clearTimeout(timer);
+  }, [statusKey, isDismissed, parsed?.type, timeoutMs, onDismiss, isPaused]);
+
+  if (!parsed || isDismissed) return null;
 
   const isAlert = parsed.type === 'error';
   const role = isAlert ? 'alert' : 'status';
@@ -95,36 +137,47 @@ export function StatusMessage({ status, className = '' }: StatusMessageProps) {
     loading: {
       tag: '[Loading]',
       icon: <Loader2 className="h-4 w-4 animate-spin text-blue-600 shrink-0" />,
-      style: 'bg-blue-50 text-blue-900 border-blue-200',
+      style: 'bg-blue-50/95 text-blue-900 border-blue-200 shadow-lg',
     },
     info: {
       tag: '[Info]',
       icon: <Info className="h-4 w-4 text-blue-600 shrink-0" />,
-      style: 'bg-blue-50 text-blue-900 border-blue-200',
+      style: 'bg-blue-50/95 text-blue-900 border-blue-200 shadow-lg',
     },
     success: {
       tag: '[Success]',
       icon: <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />,
-      style: 'bg-emerald-50 text-emerald-900 border-emerald-200',
+      style: 'bg-emerald-50/95 text-emerald-900 border-emerald-200 shadow-lg',
     },
     warning: {
       tag: '[Warning]',
       icon: <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />,
-      style: 'bg-amber-50 text-amber-900 border-amber-200',
+      style: 'bg-amber-50/95 text-amber-900 border-amber-200 shadow-lg',
     },
     error: {
       tag: '[Error]',
       icon: <AlertCircle className="h-4 w-4 text-red-600 shrink-0" />,
-      style: 'bg-red-50 text-red-900 border-red-200',
+      style: 'bg-red-50/95 text-red-900 border-red-200 shadow-lg',
     },
   }[parsed.type];
+
+  const positionClass = position === 'top' ? 'top-3' : 'bottom-16';
+
+  const handleDismiss = () => {
+    setIsDismissed(true);
+    onDismiss?.();
+  };
 
   return (
     <div
       id="status-message"
       role={role}
       aria-live={ariaLive}
-      className={`rounded-md border p-2 my-1.5 flex items-start gap-1.5 text-xs transition-colors ${config.style} ${className}`}
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+      onFocus={() => setIsPaused(true)}
+      onBlur={() => setIsPaused(false)}
+      className={`fixed ${positionClass} left-3 right-3 z-50 rounded-lg border p-2.5 flex items-start gap-2 text-xs backdrop-blur-xs transition-all duration-200 ${config.style} ${className}`}
     >
       <div className="mt-0.5">{config.icon}</div>
       <div className="flex-1 min-w-0">
@@ -138,6 +191,16 @@ export function StatusMessage({ status, className = '' }: StatusMessageProps) {
           </p>
         )}
       </div>
+      {parsed.type !== 'loading' && (
+        <button
+          type="button"
+          onClick={handleDismiss}
+          aria-label="Dismiss status message"
+          className="shrink-0 rounded p-0.5 text-current opacity-60 hover:opacity-100 hover:bg-black/5 focus:outline-none focus:ring-1 focus:ring-current transition-opacity"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      )}
     </div>
   );
 }

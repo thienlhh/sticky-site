@@ -1,8 +1,8 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, act, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, it, expect, vi } from 'vitest';
-import { StatusMessage, parseStatus } from './StatusMessage';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { StatusMessage, parseStatus, DEFAULT_STATUS_DISMISS_TIMEOUT_MS } from './StatusMessage';
 import { App } from './App';
 import { SaveView } from './SaveView';
 import { ViewList } from './ViewList';
@@ -11,6 +11,10 @@ import * as pageAgent from '@/platform/page-agent';
 
 describe('Accessibility & Status System', () => {
   describe('StatusMessage component', () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
     it('renders role="alert" and aria-live="assertive" for errors with action hint', () => {
       render(
         <StatusMessage
@@ -61,6 +65,134 @@ describe('Accessibility & Status System', () => {
     it('renders nothing when status is null or empty', () => {
       const { container } = render(<StatusMessage status={null} />);
       expect(container.firstChild).toBeNull();
+    });
+
+    it('renders as an elevated overlay with fixed positioning', () => {
+      render(<StatusMessage status="Saved view" />);
+      const el = screen.getByRole('status');
+      expect(el).toHaveClass('fixed');
+      expect(el).toHaveClass('z-50');
+      expect(el).toHaveClass('bottom-16');
+      expect(el).toHaveClass('shadow-lg');
+    });
+
+    it('supports top overlay positioning', () => {
+      render(<StatusMessage status="Saved view" position="top" />);
+      const el = screen.getByRole('status');
+      expect(el).toHaveClass('top-3');
+    });
+
+    it('automatically dismisses after the timeout and triggers onDismiss', () => {
+      vi.useFakeTimers();
+      const onDismiss = vi.fn();
+
+      render(<StatusMessage status="Saved view" timeoutMs={3000} onDismiss={onDismiss} />);
+      expect(screen.getByRole('status')).toBeInTheDocument();
+
+      act(() => {
+        vi.advanceTimersByTime(2999);
+      });
+      expect(screen.getByRole('status')).toBeInTheDocument();
+      expect(onDismiss).not.toHaveBeenCalled();
+
+      act(() => {
+        vi.advanceTimersByTime(1);
+      });
+      expect(screen.queryByRole('status')).not.toBeInTheDocument();
+      expect(onDismiss).toHaveBeenCalledTimes(1);
+    });
+
+    it('uses DEFAULT_STATUS_DISMISS_TIMEOUT_MS by default', () => {
+      vi.useFakeTimers();
+      const onDismiss = vi.fn();
+
+      render(<StatusMessage status="Saved view" onDismiss={onDismiss} />);
+      expect(screen.getByRole('status')).toBeInTheDocument();
+
+      act(() => {
+        vi.advanceTimersByTime(DEFAULT_STATUS_DISMISS_TIMEOUT_MS - 1);
+      });
+      expect(screen.getByRole('status')).toBeInTheDocument();
+
+      act(() => {
+        vi.advanceTimersByTime(1);
+      });
+      expect(screen.queryByRole('status')).not.toBeInTheDocument();
+      expect(onDismiss).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not auto-dismiss when type is loading', () => {
+      vi.useFakeTimers();
+      render(<StatusMessage status={{ type: 'loading', message: 'Connecting to page...' }} timeoutMs={3000} />);
+      expect(screen.getByText('Connecting to page...')).toBeInTheDocument();
+
+      act(() => {
+        vi.advanceTimersByTime(10000);
+      });
+      expect(screen.getByText('Connecting to page...')).toBeInTheDocument();
+    });
+
+    it('manually dismisses when clicking the dismiss button', async () => {
+      const onDismiss = vi.fn();
+      render(<StatusMessage status="Saved view" onDismiss={onDismiss} />);
+
+      const dismissBtn = screen.getByRole('button', { name: /dismiss status message/i });
+      fireEvent.click(dismissBtn);
+
+      expect(screen.queryByRole('status')).not.toBeInTheDocument();
+      expect(onDismiss).toHaveBeenCalledTimes(1);
+    });
+
+    it('pauses auto-dismiss timer on hover and resumes on unhover', () => {
+      vi.useFakeTimers();
+      const onDismiss = vi.fn();
+      render(<StatusMessage status="Saved view" timeoutMs={3000} onDismiss={onDismiss} />);
+
+      const el = screen.getByRole('status');
+
+      act(() => {
+        vi.advanceTimersByTime(1000);
+      });
+
+      // Hover over message to pause
+      fireEvent.mouseEnter(el);
+
+      act(() => {
+        vi.advanceTimersByTime(5000);
+      });
+      expect(screen.getByRole('status')).toBeInTheDocument();
+      expect(onDismiss).not.toHaveBeenCalled();
+
+      // Mouse leaves to resume
+      fireEvent.mouseLeave(el);
+
+      act(() => {
+        vi.advanceTimersByTime(3000);
+      });
+      expect(screen.queryByRole('status')).not.toBeInTheDocument();
+      expect(onDismiss).toHaveBeenCalledTimes(1);
+    });
+
+    it('resets dismissed state when a new status is provided', () => {
+      const { rerender } = render(<StatusMessage status="First status" />);
+      const dismissBtn = screen.getByRole('button', { name: /dismiss status message/i });
+      fireEvent.click(dismissBtn);
+      expect(screen.queryByRole('status')).not.toBeInTheDocument();
+
+      rerender(<StatusMessage status="Second status" />);
+      expect(screen.getByRole('status')).toBeInTheDocument();
+      expect(screen.getByText('Second status')).toBeInTheDocument();
+    });
+
+    it('disables auto-dismiss when timeoutMs is 0', () => {
+      vi.useFakeTimers();
+      render(<StatusMessage status="Saved view" timeoutMs={0} />);
+      expect(screen.getByRole('status')).toBeInTheDocument();
+
+      act(() => {
+        vi.advanceTimersByTime(100000);
+      });
+      expect(screen.getByRole('status')).toBeInTheDocument();
     });
   });
 

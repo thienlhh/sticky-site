@@ -157,7 +157,9 @@ export function App() {
         setIsPageUnavailable(true);
         setActivePageInfo(null);
         const msg = err instanceof Error ? err.message : 'Active page is unavailable or unsupported.';
-        setStatus(msg);
+        if (!msg.toLowerCase().includes('unsupported')) {
+          setStatus(msg);
+        }
       });
 
     return () => chrome.storage.onChanged?.removeListener(handleStorageChange);
@@ -451,6 +453,8 @@ export function App() {
             Back
           </Button>
         </footer>
+
+        <StatusMessage status={status} onDismiss={() => setStatus('')} />
       </main>
     );
   }
@@ -577,7 +581,10 @@ export function App() {
             />
           </>
         ) : isPageUnavailable ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-center py-6 px-2">
+          <div
+            id="page-not-supported"
+            className="flex-1 flex flex-col items-center justify-center text-center py-6 px-2"
+          >
             <p className="text-sm font-medium text-slate-700">Page Not Supported</p>
             <p className="text-xs text-slate-500 mt-1">
               StickySite only works on standard web pages (HTTP/HTTPS). Open a web page and try again.
@@ -588,8 +595,6 @@ export function App() {
             <p className="text-sm text-slate-500">No saved views for this page yet.</p>
           </div>
         )}
-
-        <StatusMessage status={status} />
       </section>
 
       {activeAction && activePageInfo && (
@@ -616,6 +621,8 @@ export function App() {
           {isLoading ? 'Connecting...' : 'Save Current View'}
         </Button>
       </footer>
+
+      <StatusMessage status={status} onDismiss={() => setStatus('')} />
     </main>
   );
 }

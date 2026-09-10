@@ -40,7 +40,7 @@ test.describe('Production extension through its native action popup', () => {
     }
     await expect.poll(() => ui.evaluate<boolean>(`(() => {
       const btn = document.querySelector('#save-current-view-btn');
-      return Boolean(btn && !btn.disabled) || !!document.querySelector('#status-message[role="alert"]');
+      return Boolean(btn && !btn.disabled) || !!document.querySelector('#status-message[role="alert"], #page-not-supported');
     })()`)).toBe(true);
     return ui;
   }
@@ -228,8 +228,9 @@ test.describe('Production extension through its native action popup', () => {
     const otherWeb = await context.newPage(); await otherWeb.goto(`${origin}/dynamic-page.html`);
     await web.goto('about:blank');
     ui = await popup(false);
-    await expect.poll(ui.text).toContain('Unsupported page URL');
+    await expect.poll(ui.text).toContain('Page Not Supported');
     expect(await ui.evaluate<boolean>(`document.querySelector('#save-current-view-btn').disabled`)).toBe(true);
+    expect(await ui.evaluate<boolean>(`!document.querySelector('#status-message')`)).toBe(true);
     await ui.close(); await otherWeb.close();
   });
 
