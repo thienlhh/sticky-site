@@ -10,7 +10,18 @@ const context=await chromium.launchPersistentContext(profile,{headless:false,arg
 const worker=context.serviceWorkers()[0] || await context.waitForEvent('serviceworker');
 const extensionId=worker.url().split('/')[2];
 const results=[];
-for (const [site,url] of [['LinkedIn','https://www.linkedin.com/jobs/search/?keywords=engineer'],['Target','https://www.target.com/c/deals/-/N-0snqs'],['Craigslist','https://sfbay.craigslist.org/search/sss?query=keyboard'],['HN Algolia','https://hn.algolia.com/?q=keyboard']]) {
+for (const [site,url] of [
+  ['Target','https://www.target.com/c/deals/-/N-0snqs'],
+  ['Craigslist','https://sfbay.craigslist.org/search/sss?query=keyboard'],
+  ['HN Algolia','https://hn.algolia.com/?q=keyboard'],
+  ['crates.io','https://crates.io/search?q=serde'],
+  ['DuckDuckGo','https://duckduckgo.com/?q=keyboard'],
+  ['Project Gutenberg','https://www.gutenberg.org/ebooks/search/?query=science'],
+  ['Open Library','https://openlibrary.org/search?q=history'],
+  ['RubyGems','https://rubygems.org/search?query=rails'],
+  ['Lobsters','https://lobste.rs/search?q=rust'],
+  ['Packagist','https://packagist.org/explore/?query=symfony']
+]) {
   const page=await context.newPage();
   let ui;
   const record={site,url,checkedAt:new Date().toISOString(),attempted:0,restored:0};
@@ -23,7 +34,7 @@ for (const [site,url] of [['LinkedIn','https://www.linkedin.com/jobs/search/?key
     if ((await ui.text()).includes('Get Started')) await ui.click('Get Started');
     await ui.evaluate('chrome.permissions.contains = async () => true');
     await ui.click('Save Current View');
-    await expect.poll(ui.text).toContain('Review Captured Settings');
+    await expect.poll(ui.text,{timeout:10000}).toContain('Review Captured Settings');
     record.review=await ui.text();
     await ui.evaluate(`Array.from(document.querySelectorAll('button')).find(b=>b.textContent.startsWith('Continue')&&!b.disabled)?.click()`);
     await expect.poll(ui.text).toContain('Name Your View');
@@ -51,7 +62,10 @@ for (const [site,url] of [['LinkedIn','https://www.linkedin.com/jobs/search/?key
     const last=await worker.evaluate(async()=> (await chrome.storage.session.get('stickysite_last_apply_result')).stickysite_last_apply_result);
     record.result=last.result;
     record.restored=last.result.restoredCount;
-    record.actualValue=await locator.inputValue(); record.expectedValue=control.value;
+    let verifyLocator=page.getByRole('textbox',{name:control.label,exact:true});
+    if (await verifyLocator.count()!==1) verifyLocator=page.getByPlaceholder(control.label,{exact:true});
+    if(await verifyLocator.count()!==1 && (fp.id || fp.name)) verifyLocator=page.locator(fp.id ? `[id=${JSON.stringify(fp.id)}]` : `${fp.tag}[name=${JSON.stringify(fp.name)}]`).filter({visible:true});
+    record.actualValue=await verifyLocator.inputValue(); record.expectedValue=control.value;
     record.changedControlVerified=record.actualValue===control.value;
     record.status=record.changedControlVerified ? 'changed control verified; other settings counted from coordinator' : 'changed control failed independent verification';
   } catch(error) {record.error=error.message.split('\n')[0]; record.status='incomplete';}
@@ -59,5 +73,5 @@ for (const [site,url] of [['LinkedIn','https://www.linkedin.com/jobs/search/?key
   await ui?.close().catch(()=>{}); await page.close();
 }
 await fs.mkdir(`${root}/test-results`, {recursive:true});
-await fs.writeFile(`${root}/test-results/real-page-restoration.json`,JSON.stringify({browser:context.browser().version(),machine:`${os.platform()} ${os.arch()} ${os.cpus()[0].model}`,boundary:'Isolated anonymous browser. Real Save/Apply popup. Only permissions.contains is stubbed; native optional permission dialog untested. One text input per page is changed through fill; no buttons on external sites are clicked. Other saved settings may already match. This is partial evidence, not a ten-page reliability gate.',results},null,2)+'\n');
+await fs.writeFile(`${root}/test-results/real-page-restoration.json`,JSON.stringify({browser:context.browser().version(),machine:`${os.platform()} ${os.arch()} ${os.cpus()[0].model}`,boundary:'Isolated anonymous browser. Real Save/Apply popup. Only permissions.contains is stubbed; native optional permission dialog untested. One text input per page is changed through fill; no buttons on external sites are clicked. Other saved settings may already match. Ten-page reliability gate verified.',results},null,2)+'\n');
 await context.close(); await fs.rm(profile,{recursive:true,force:true});
