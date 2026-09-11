@@ -6,7 +6,7 @@ import {
   ensurePageAgent,
   sendPageCommand,
 } from '@/platform/page-agent';
-import { listViews, renameView, deleteView, replaceView } from '@/storage/views';
+import { useSavedViews } from './hooks/useSavedViews';
 import type { PingResponse, CaptureResponse } from '@/shared/page-messages';
 import type { CaptureResult } from '@/capture/controls';
 import type { CapturedSetting, SavedView } from '@/domain/view';
@@ -19,7 +19,12 @@ import { StatusMessage, type StatusState } from './StatusMessage';
 import { ReportIssue } from './ReportIssue';
 import { Onboarding, isOnboardingCompleted } from './Onboarding';
 import { requestApply, type ViewApplyResult } from '@/apply/coordinator';
-import { getLastApplyResult, getActiveOperation } from '@/apply/operation';
+import {
+  getLastApplyResult,
+  getActiveOperation,
+  getTabOperationKey,
+  getTabResultKey,
+} from '@/apply/operation';
 import {
   isAnalyticsEnabled,
   setAnalyticsEnabled,
@@ -60,9 +65,16 @@ export function App() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [analyticsOn, setAnalyticsOn] = useState<boolean>(true);
   const [activePageInfo, setActivePageInfo] = useState<{ origin: string; pathname: string } | null>(null);
-  const [allViews, setAllViews] = useState<SavedView[]>([]);
   const [activeAction, setActiveAction] = useState<ViewAction | null>(null);
-  const [storageError, setStorageError] = useState<string | null>(null);
+
+  const {
+    allViews,
+    storageError,
+    refreshViews,
+    updateViewItem,
+    renameViewItem,
+    deleteViewItem,
+  } = useSavedViews((msg) => setStatus(`Storage error: ${msg}`));
 
   const [captureData, setCaptureData] = useState<CaptureResult | null>(null);
   const [updatingView, setUpdatingView] = useState<SavedView | null>(null);
@@ -71,18 +83,6 @@ export function App() {
     queryParams: Record<string, string[]>;
   } | null>(null);
   const statusRevision = useRef(0);
-
-  const refreshViews = async () => {
-    try {
-      const views = await listViews();
-      setAllViews(views);
-      setStorageError(null);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Failed to load saved views.';
-      setStorageError(msg);
-      setStatus(`Storage error: ${msg}`);
-    }
-  };
 
   const [onboardingChecked, setOnboardingChecked] = useState<boolean>(false);
 
@@ -103,7 +103,6 @@ export function App() {
   const [isPageUnavailable, setIsPageUnavailable] = useState<boolean>(false);
 
   useEffect(() => {
-    refreshViews();
     let activeTabId: number | null = null;
     const handleStorageChange = (
       changes: Record<string, chrome.storage.StorageChange>,
@@ -111,13 +110,18 @@ export function App() {
     ) => {
       if (areaName !== 'session' || activeTabId === null) return;
 
-      const operation = changes.stickysite_apply_op?.newValue as { tabId?: number } | undefined;
+      const tabOpKey = getTabOperationKey(activeTabId);
+      const tabResKey = getTabResultKey(activeTabId);
+
+      const operation = (changes[tabOpKey]?.newValue || changes.stickysite_apply_op?.newValue) as
+        | { tabId?: number }
+        | undefined;
       if (operation?.tabId === activeTabId) {
         statusRevision.current++;
         setStatus(applyingStatus);
       }
 
-      const result = changes.stickysite_last_apply_result?.newValue as
+      const result = (changes[tabResKey]?.newValue || changes.stickysite_last_apply_result?.newValue) as
         | { tabId?: number; result?: ViewApplyResult }
         | undefined;
       if (result?.tabId === activeTabId && result.result) {
@@ -206,8 +210,7 @@ export function App() {
 
   const handleRenameSubmit = async (id: string, newName: string) => {
     try {
-      await renameView(id, newName, new Date().toISOString());
-      await refreshViews();
+      await renameViewItem(id, newName);
       setStatus(`Renamed to "${newName}"`);
       setActiveAction(null);
     } catch (err) {
@@ -217,8 +220,7 @@ export function App() {
 
   const handleDeleteConfirm = async (id: string) => {
     try {
-      await deleteView(id);
-      await refreshViews();
+      await deleteViewItem(id);
       setStatus('View deleted.');
       setActiveAction(null);
     } catch (err) {
@@ -320,8 +322,7 @@ export function App() {
               };
 
               try {
-                await replaceView(updatedView);
-                await refreshViews();
+                await updateViewItem(updatedView);
                 setStatus(`Updated "${updatingView.name}"`);
               } catch (err) {
                 setStatus(err instanceof Error ? err.message : 'Update failed');

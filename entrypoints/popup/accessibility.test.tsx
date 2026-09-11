@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, act, fireEvent } from '@testing-library/react';
+import { render, screen, act, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { StatusMessage, parseStatus, DEFAULT_STATUS_DISMISS_TIMEOUT_MS } from './StatusMessage';
@@ -197,10 +197,15 @@ describe('Accessibility & Status System', () => {
   });
 
   describe('Compact Extension Target Size', () => {
-    it('verifies primary buttons in App shell meet compact min height requirement', () => {
+    it('verifies primary buttons in App shell meet compact min height requirement', async () => {
+      vi.spyOn(pageAgent, 'getActivePage').mockResolvedValue({
+        tabId: 101,
+        url: new URL('https://example.com/'),
+      });
       render(<App />);
-      const saveBtn = screen.getByRole('button', { name: /Save Current View/i });
+      const saveBtn = await screen.findByRole('button', { name: /Save Current View/i });
       expect(saveBtn).toHaveClass('min-h-[36px]');
+      await waitFor(() => expect(screen.getByRole('main')).toHaveAttribute('data-ready', 'true'));
     });
 
     it('verifies Apply button in ViewList meets compact min height requirement', () => {
@@ -229,7 +234,7 @@ describe('Accessibility & Status System', () => {
       expect(applyBtn).toHaveClass('min-h-[32px]');
     });
 
-    it('verifies SaveView primary action buttons have accessible names and compact targets', () => {
+    it('verifies SaveView primary action buttons have accessible names and compact targets', async () => {
       render(
         <SaveView
           origin="https://example.com"
@@ -241,9 +246,9 @@ describe('Accessibility & Status System', () => {
         />
       );
 
-      const saveBtn = screen.getByRole('button', { name: /^Save View$/i });
-      const backBtn = screen.getByRole('button', { name: /Back/i });
-      const input = screen.getByRole('textbox', { name: /View Name/i });
+      const saveBtn = await screen.findByRole('button', { name: /^Save View$/i });
+      const backBtn = await screen.findByRole('button', { name: /Back/i });
+      const input = await screen.findByRole('textbox', { name: /View Name/i });
 
       expect(saveBtn).toHaveClass('min-h-[36px]');
       expect(backBtn).toHaveClass('min-h-[36px]');
@@ -261,8 +266,8 @@ describe('Accessibility & Status System', () => {
       const user = userEvent.setup();
       render(<App />);
 
-      const settingsBtn = screen.getByRole('button', { name: /Settings and Privacy/i });
-      const saveBtn = screen.getByRole('button', { name: /Save Current View/i });
+      const settingsBtn = await screen.findByRole('button', { name: /Settings and Privacy/i });
+      const saveBtn = await screen.findByRole('button', { name: /Save Current View/i });
 
       await user.tab();
       expect(settingsBtn).toHaveFocus();

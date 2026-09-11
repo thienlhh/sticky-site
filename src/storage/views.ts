@@ -90,11 +90,13 @@ export async function renameView(
   now: string
 ): Promise<void> {
   const current = await listViews();
-  const existing = current.find((v) => v.id === id);
+  const index = current.findIndex((v) => v.id === id);
 
-  if (!existing) {
+  if (index === -1) {
     throw new Error(`View with ID ${id} not found`);
   }
+
+  const existing = current[index];
 
   validateUniqueViewName(
     current,
@@ -110,7 +112,15 @@ export async function renameView(
     updatedAt: now,
   };
 
-  await replaceView(updatedView);
+  const updatedViews = [...current];
+  updatedViews[index] = updatedView;
+
+  await chrome.storage.local.set({
+    [STORAGE_KEY]: {
+      version: 1,
+      views: updatedViews,
+    },
+  });
 }
 
 export async function deleteView(id: string): Promise<void> {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { App, statusForApplyResult } from './App';
@@ -15,14 +15,19 @@ describe('Popup App Shell', () => {
     await chrome.storage.local.set({ stickysite_onboarding_completed: true });
   });
 
-  it('renders StickySite heading and enabled Save Current View button', () => {
+  it('renders StickySite heading and enabled Save Current View button', async () => {
+    vi.spyOn(pageAgent, 'getActivePage').mockResolvedValue({
+      tabId: 101,
+      url: new URL('https://example.com/'),
+    });
     render(<App />);
-    const heading = screen.getByRole('heading', { level: 1, name: /StickySite/i });
+    const heading = await screen.findByRole('heading', { level: 1, name: /StickySite/i });
     expect(heading).toBeInTheDocument();
 
-    const saveButton = screen.getByRole('button', { name: /Save Current View/i });
+    const saveButton = await screen.findByRole('button', { name: /Save Current View/i });
     expect(saveButton).toBeInTheDocument();
     expect(saveButton).not.toBeDisabled();
+    await waitFor(() => expect(screen.getByRole('main')).toHaveAttribute('data-ready', 'true'));
   });
 
   it('enforces fixed 360x500 dimensions and scrollable list to prevent height expansion', async () => {
@@ -270,34 +275,38 @@ describe('Popup App Shell', () => {
     await user.click(await screen.findByRole('button', { name: 'Apply Search' }));
     await requestStarted;
 
-    for (const listener of listeners) {
-      listener({
-        stickysite_last_apply_result: {
-          newValue: {
-            tabId: 101,
-            viewId: view.id,
-            result: {
-              status: 'Could not apply',
-              restoredCount: 0,
-              totalAttempted: 0,
-              skippedCount: 0,
-              failedCount: 0,
-              message: 'Page changed while applying this view.',
+    await act(async () => {
+      for (const listener of listeners) {
+        listener({
+          stickysite_last_apply_result: {
+            newValue: {
+              tabId: 101,
+              viewId: view.id,
+              result: {
+                status: 'Could not apply',
+                restoredCount: 0,
+                totalAttempted: 0,
+                skippedCount: 0,
+                failedCount: 0,
+                message: 'Page changed while applying this view.',
+              },
+              completedAt: Date.now(),
             },
-            completedAt: Date.now(),
           },
-        },
-      }, 'session');
-    }
+        }, 'session');
+      }
+    });
     expect(await screen.findByRole('alert')).toHaveTextContent('Page changed while applying this view.');
 
-    resolveRequest({
-      status: 'Applying view',
-      restoredCount: 0,
-      totalAttempted: 0,
-      skippedCount: 0,
-      failedCount: 0,
-      message: 'Navigating to view URL...',
+    await act(async () => {
+      resolveRequest({
+        status: 'Applying view',
+        restoredCount: 0,
+        totalAttempted: 0,
+        skippedCount: 0,
+        failedCount: 0,
+        message: 'Navigating to view URL...',
+      });
     });
 
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Page changed while applying this view.'));
@@ -317,18 +326,20 @@ describe('Popup App Shell', () => {
     render(<App />);
     await screen.findByText(/No saved views for this page yet/i);
 
-    for (const listener of listeners) {
-      listener({
-        stickysite_last_apply_result: {
-          newValue: {
-            tabId: 101,
-            viewId: 'view-1',
-            result: { status: 'Fully applied view', message: 'All 3 settings restored successfully.' },
-            completedAt: Date.now(),
+    await act(async () => {
+      for (const listener of listeners) {
+        listener({
+          stickysite_last_apply_result: {
+            newValue: {
+              tabId: 101,
+              viewId: 'view-1',
+              result: { status: 'Fully applied view', message: 'All 3 settings restored successfully.' },
+              completedAt: Date.now(),
+            },
           },
-        },
-      }, 'session');
-    }
+        }, 'session');
+      }
+    });
 
     expect(await screen.findByRole('status')).toHaveTextContent('All 3 settings restored successfully.');
   });

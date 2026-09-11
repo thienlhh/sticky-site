@@ -5,8 +5,11 @@ import { restoreControls } from '@/restoration/restore';
 export default defineContentScript({
   matches: [],
   registration: 'runtime',
-  main() {
-    chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  main(ctx) {
+    const handleMessage = (message: any, _sender: any, sendResponse: (res?: any) => void) => {
+      if (ctx?.isInvalid) {
+        return false;
+      }
       if (message?.type === 'PING') {
         sendResponse({ status: 'ok', pong: true });
         return true;
@@ -45,6 +48,16 @@ export default defineContentScript({
             });
           });
         return true;
+      }
+    };
+
+    chrome.runtime.onMessage.addListener(handleMessage);
+
+    ctx?.onInvalidated?.(() => {
+      try {
+        chrome.runtime.onMessage.removeListener(handleMessage);
+      } catch {
+        // Ignore if extension runtime is already destroyed
       }
     });
   },
