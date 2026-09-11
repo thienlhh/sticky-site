@@ -51,7 +51,7 @@ Context and operational guidelines for AI coding agents working on **StickySite*
 - `src/apply/`: Navigation-spanning apply coordination and session tracking (`coordinator.ts`, `operation.ts`).
 - `src/storage/`: Typed storage abstraction over `chrome.storage.local` (`views.ts`).
 - `src/analytics.ts`: Privacy-preserving event analytics and payload validator.
-- `docs/`: Reference documentation — [PRD.md](file:///Users/thienlhh/Workspace/sticky-site/docs/PRD.md), [PRIVACY.md](file:///Users/thienlhh/Workspace/sticky-site/docs/PRIVACY.md).
+- Reference documentation: [PRD.md](file:///Users/thienlhh/Workspace/sticky-site/docs/PRD.md), [PRIVACY.md](file:///Users/thienlhh/Workspace/sticky-site/PRIVACY.md).
 
 ---
 

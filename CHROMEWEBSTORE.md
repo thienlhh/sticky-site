@@ -1,6 +1,6 @@
 # Chrome Web Store Listing — StickySite
 
-> Last Updated: 2026-09-10
+> Last Updated: 2026-09-11
 
 ---
 
@@ -40,22 +40,22 @@ KEY FEATURES
 
 POPULAR USE CASES
 
-• Analytics & Dashboards: Save complex date ranges, metric filters, and breakdown segments on Google Analytics, Mixpanel, Datadog, or Tableau.
+• Analytics & Dashboards: Save complex date ranges, metric filters, breakdown segments, and display toggles across reporting dashboards.
 
-• Project Management & Issue Trackers: Remember custom sprint filters, assignee dropdowns, and milestone queries on Jira, GitHub, Linear, or Asana.
+• Project Management & Issue Trackers: Remember custom sprint filters, assignee dropdowns, status criteria, and milestone queries on agile boards.
 
-• E-Commerce & Shopping: Keep your favorite size, brand, price range, and sorting preferences saved across retail sites.
+• E-Commerce & Shopping: Keep your favorite size, price range, in-stock toggles, and sorting preferences saved across retail web stores.
 
-• CRM & Sales Tools: Reapply lead filters, pipeline stages, and custom account views in Salesforce, HubSpot, or internal back-office admin portals.
+• CRM & Sales Tools: Reapply lead filters, pipeline stages, custom account views, and team selections in back-office web portals.
 
-• Real Estate & Job Boards: Retain advanced search parameters, location radii, and salary filters without retyping.
+• Real Estate & Job Boards: Retain advanced search parameters, location radii, experience criteria, and salary filters without retyping.
 
 
 HOW TO USE
 
 1. Open any webpage and set up your filters, search terms, and dropdowns.
 
-2. Click the StickySite icon in your Chrome toolbar.
+2. Click the StickySite icon in your Chrome toolbar > Allow requested permission > Click Save Current View.
 
 3. Name your view and click 'Save View' (or open the review screen to customize captured fields).
 
@@ -159,6 +159,13 @@ Yes (locally for user-saved views; zero off-device transmission by default).
 | **User Activity** | No | No | N/A | No |
 | **Website Content** | Yes | **No** (Stored locally on-device) | Allows the extension to capture and restore user-selected form values and filter parameters. Data stays in the browser; any future cloud sync will require explicit user opt-in. | No |
 
+### Remote Code Declaration
+
+**Are you using remote code?**
+**No, I am not using remote code.**
+- All JavaScript, HTML, and CSS are bundled locally inside the extension package.
+- The extension does not execute remotely hosted code, load external CDN scripts at runtime, or use `eval()`.
+
 ### Data Use Certification
 - [x] Data is **NOT** sold to third parties.
 - [x] Data is **NOT** used for purposes unrelated to the extension's core functionality.
@@ -168,13 +175,13 @@ Yes (locally for user-saved views; zero off-device transmission by default).
 
 ## Privacy Policy
 
-**Privacy Policy Document:** Included in repository at [`docs/PRIVACY.md`](docs/PRIVACY.md).
+**Privacy Policy Document:** Included in repository at [`PRIVACY.md`](PRIVACY.md).
 
 **Hosting the Privacy Policy for Chrome Web Store:**
-Chrome Web Store requires a publicly accessible URL for the privacy policy. You can host `docs/PRIVACY.md` using any of the following:
-1. **GitHub Pages:** Enable GitHub Pages on a public repo or documentation branch.
+Chrome Web Store requires a publicly accessible URL for the privacy policy. You can host `PRIVACY.md` using any of the following:
+1. **GitHub Pages:** Enable GitHub Pages on a public repo or documentation branch (e.g., `sticky-site-feedback`).
 2. **GitHub Gist:** Create a public Gist containing `PRIVACY.md` (e.g. `https://gist.github.com/...`).
-3. **Personal Website / Notion / Telegraph:** Paste the contents of `docs/PRIVACY.md` to a public web page.
+3. **Personal Website / Notion / Telegraph:** Paste the contents of `PRIVACY.md` to a public web page.
 
 ---
 
@@ -224,4 +231,5 @@ This compiles the production extension and packages it cleanly to:
 
 | Version | Date | Changes | Status |
 |---|---|---|---|
-| **1.0.0** | 2026-09-10 | Initial production release: local-first view capture, multi-heuristic control matching, selective review screen, and cross-navigation coordinator. | Ready for Submission |
+| **1.0.0** | 2026-09-11 | Listing revision: removed third-party brand names from description to comply with keyword spam policy (Yellow Argon). | Ready for Resubmission |
+| **1.0.0** | 2026-09-10 | Initial production release: local-first view capture, multi-heuristic control matching, selective review screen, and cross-navigation coordinator. | Rejected (Keyword Spam) |
