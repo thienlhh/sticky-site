@@ -6,9 +6,9 @@ export default defineConfig({
   entrypointsDir: '../entrypoints',
   modules: ['@wxt-dev/module-react'],
   manifest: {
-    name: 'StickySite',
+    name: 'StickySite - save and restore page state',
     description: 'Save and restore search filters, form inputs, and custom page views on any website in one click. Fast, private, and local-first.',
-    version: '1.0.0',
+    version: '1.0.1',
     permissions: ['storage', 'scripting', 'activeTab', 'tabs', 'favicon'],
     optional_host_permissions: ['http://*/*', 'https://*/*'],
     icons: {

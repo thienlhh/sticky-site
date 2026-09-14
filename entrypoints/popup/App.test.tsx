@@ -611,5 +611,34 @@ describe('Popup App Shell', () => {
       expect(updateSpy).toHaveBeenCalledWith(101, { url: 'https://example.com/jobs' });
     });
   });
+
+  describe('Settings screen', () => {
+    it('renders Bug report and Leave feedback links with correct targets and URLs', async () => {
+      const user = userEvent.setup();
+      vi.spyOn(pageAgent, 'getActivePage').mockResolvedValue({
+        tabId: 101,
+        url: new URL('https://example.com/'),
+      });
+
+      render(<App />);
+
+      const settingsBtn = await screen.findByRole('button', { name: /Settings and Privacy/i });
+      await user.click(settingsBtn);
+
+      expect(await screen.findByRole('heading', { level: 2, name: /Privacy & Settings/i })).toBeInTheDocument();
+
+      const bugReportLink = screen.getByRole('link', { name: /Report a bug/i });
+      expect(bugReportLink).toBeInTheDocument();
+      expect(bugReportLink).toHaveAttribute('href', 'https://github.com/thienlhh/sticky-site-feedback/issues');
+      expect(bugReportLink).toHaveAttribute('target', '_blank');
+      expect(bugReportLink).toHaveAttribute('rel', 'noreferrer');
+
+      const feedbackLink = screen.getByRole('link', { name: /Rate the extension/i });
+      expect(feedbackLink).toBeInTheDocument();
+      expect(feedbackLink).toHaveAttribute('href', 'https://chromewebstore.google.com/detail/stickysite/pfmjhojnaboahgnffghlfaafnfokfich');
+      expect(feedbackLink).toHaveAttribute('target', '_blank');
+      expect(feedbackLink).toHaveAttribute('rel', 'noreferrer');
+    });
+  });
 });
 

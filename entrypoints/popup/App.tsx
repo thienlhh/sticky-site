@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import {
   getActivePage,
   requestOriginAccess,
@@ -31,7 +32,7 @@ import {
   clearInstallationId,
   emitAnalyticsEvent,
 } from '@/analytics';
-import { Settings as SettingsIcon } from 'lucide-react';
+import { Settings as SettingsIcon, ExternalLink } from 'lucide-react';
 import { StickySiteLogo } from '@/components/StickySiteLogo';
 
 export type Screen = 'idle' | 'review' | 'save' | 'settings' | 'report' | 'onboarding';
@@ -424,6 +425,32 @@ export function App() {
             >
               Report compatibility issue
             </Button>
+
+            <a
+              href="https://github.com/thienlhh/sticky-site-feedback/issues"
+              target="_blank"
+              rel="noreferrer"
+              className={cn(
+                buttonVariants({ variant: 'link', size: 'sm' }),
+                'h-auto p-0 text-xs font-medium'
+              )}
+            >
+              <span>Report a bug</span>
+              <ExternalLink className="h-3.5 w-3.5" />
+            </a>
+
+            <a
+              href="https://chromewebstore.google.com/detail/stickysite/pfmjhojnaboahgnffghlfaafnfokfich"
+              target="_blank"
+              rel="noreferrer"
+              className={cn(
+                buttonVariants({ variant: 'link', size: 'sm' }),
+                'h-auto p-0 text-xs font-medium'
+              )}
+            >
+              <span>Rate the extension</span>
+              <ExternalLink className="h-3.5 w-3.5" />
+            </a>
           </div>
         </div>
 
