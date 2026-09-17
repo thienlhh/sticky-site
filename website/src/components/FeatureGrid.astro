@@ -1,0 +1,209 @@
+---
+// FeatureGrid.astro
+const features = [
+  {
+    icon: "⚡",
+    title: "One-Click Filter Restoration",
+    description: "Reapply deep search parameters, complex dropdown states, text filters, and active toggles in milliseconds without tedious manual clicking."
+  },
+  {
+    icon: "🔍",
+    title: "Selective Capture Review",
+    description: "Inspect every detected filter control and URL query parameter before saving. Exclude private or irrelevant fields with a single switch."
+  },
+  {
+    icon: "📂",
+    title: "Multi-View Preset Manager",
+    description: "Save unlimited custom views per domain. Give them recognizable names like 'Sprint 42 P0s', 'US Inventory Under $500', or 'Quarterly Revenue'."
+  },
+  {
+    icon: "🧭",
+    title: "Smart Cross-Page Navigation",
+    description: "Clicking a saved view automatically navigates your browser tab to the destination URL, waits for the DOM to settle, and populates the form."
+  },
+  {
+    icon: "📊",
+    title: "Transparent Feedback & Match Status",
+    description: "Clear feedback tells you exactly how many inputs succeeded, flagged partial matches, or alerted you if the webpage updated its layout."
+  },
+  {
+    icon: "🛡️",
+    title: "Proactive Safety Guardrails",
+    description: "Passwords, credit card numbers, auth tokens, and sensitive personal identifiers are strictly ignored. Nothing sensitive is ever stored."
+  }
+];
+---
+
+<section id="features" class="section-padding features-section">
+  <div class="container">
+    <div class="section-header">
+      <div class="badge">Designed for Productivity</div>
+      <h2 class="section-title">
+        Engineered for speed, built for <span class="gradient-text">daily workflows</span>
+      </h2>
+      <p class="section-subtitle">
+        Everything you need to capture, organize, and restore customized webpage views across dashboards, issue trackers, and online stores.
+      </p>
+    </div>
+
+    <!-- Feature Grid -->
+    <div class="features-grid">
+      {features.map((feat) => (
+        <div class="glass-card feature-card">
+          <div class="feature-header">
+            <div class="feature-icon-wrap">{feat.icon}</div>
+            <h3 class="feature-title">{feat.title}</h3>
+          </div>
+          <p class="feature-description">{feat.description}</p>
+        </div>
+      ))}
+    </div>
+
+    <!-- Showcase Callout with Screenshot 2 -->
+    <div class="feature-spotlight glass-card">
+      <div class="spotlight-content">
+        <div class="badge">Full User Control</div>
+        <h3 class="spotlight-title">Selective Capture Review</h3>
+        <p class="spotlight-text">
+          Unlike blind autofill tools, StickySite lets you preview every discovered control before you hit save. Toggle off query parameters you don't want to track, inspect form values, and keep your views clean and focused.
+        </p>
+        <ul class="spotlight-points">
+          <li>✓ View exact control fingerprints (ID, label, name, placeholder)</li>
+          <li>✓ Granular switches to include/exclude individual parameters</li>
+          <li>✓ Zero hidden automation or unverified background actions</li>
+        </ul>
+      </div>
+      <div class="spotlight-media">
+        <img 
+          src="/screenshots/screenshot-2-capture-review.png" 
+          alt="StickySite selective capture review screen" 
+          class="spotlight-img" 
+          width="1280"
+          height="800"
+          loading="lazy"
+          decoding="async"
+        />
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .features-section {
+    position: relative;
+  }
+
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.75rem;
+    margin-bottom: 4rem;
+  }
+
+  .feature-card {
+    padding: 2rem 1.75rem;
+    display: flex;
+    flex-direction: column;
+    background: #ffffff;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .feature-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px -8px rgba(79, 70, 229, 0.12);
+  }
+
+  .feature-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .feature-icon-wrap {
+    font-size: 1.5rem;
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-md);
+    background: rgba(79, 70, 229, 0.08);
+    border: 1px solid rgba(79, 70, 229, 0.2);
+  }
+
+  .feature-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.35;
+    margin: 0;
+  }
+
+  .feature-description {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  /* Spotlight Callout */
+  .feature-spotlight {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    gap: 3rem;
+    align-items: center;
+    padding: 3rem;
+    border-color: rgba(79, 70, 229, 0.25);
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    box-shadow: 0 15px 35px -10px rgba(15, 23, 42, 0.08);
+  }
+
+  .spotlight-title {
+    font-size: 1.85rem;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+  }
+
+  .spotlight-text {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+  }
+
+  .spotlight-points {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+  }
+
+  .spotlight-img {
+    width: 100%;
+    height: auto;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-subtle);
+    box-shadow: 0 15px 35px -10px rgba(15, 23, 42, 0.12);
+  }
+
+  @media (max-width: 990px) {
+    .features-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .feature-spotlight {
+      grid-template-columns: 1fr;
+      padding: 2rem;
+    }
+  }
+
+  @media (max-width: 650px) {
+    .features-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

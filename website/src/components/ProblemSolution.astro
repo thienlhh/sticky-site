@@ -1,0 +1,205 @@
+---
+// ProblemSolution.astro
+---
+
+<section id="problem" class="section-padding problem-section">
+  <div class="container">
+    <div class="section-header">
+      <div class="badge">The Missing Piece in Modern Browsing</div>
+      <h2 class="section-title">
+        Why browser bookmarks <span class="gradient-text">aren't enough anymore</span>
+      </h2>
+      <p class="section-subtitle">
+        Web applications evolved from static pages into complex interactive software. Browser bookmarks remained stuck in 1995.
+      </p>
+    </div>
+
+    <div class="comparison-grid">
+      <!-- Traditional Bookmarks Card -->
+      <div class="glass-card comp-card comp-old">
+        <div class="comp-badge old-badge">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+          <span>Standard Browser Bookmarks</span>
+        </div>
+
+        <h3 class="comp-title">Only remembers where you were, not what you did</h3>
+
+        <ul class="comp-list">
+          <li class="comp-item">
+            <span class="cross-icon">✕</span>
+            <span><strong>Loses dropdown selections</strong> & dynamic select menus</span>
+          </li>
+          <li class="comp-item">
+            <span class="cross-icon">✕</span>
+            <span><strong>Wipes custom date ranges</strong> on reporting analytics</span>
+          </li>
+          <li class="comp-item">
+            <span class="cross-icon">✕</span>
+            <span><strong>Resets table filters</strong>, checkbox facets, and sort toggles</span>
+          </li>
+          <li class="comp-item">
+            <span class="cross-icon">✕</span>
+            <span><strong>Forces 30–60 seconds</strong> of tedious manual clicking on every visit</span>
+          </li>
+          <li class="comp-item">
+            <span class="cross-icon">✕</span>
+            <span><strong>Fails on client-rendered SPA forms</strong> that don't serialize into URL bars</span>
+          </li>
+        </ul>
+      </div>
+
+      <!-- StickySite Card -->
+      <div class="glass-card comp-card comp-new">
+        <div class="comp-badge new-badge">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          <span>StickySite Smart View Presets</span>
+        </div>
+
+        <h3 class="comp-title">Restores your exact interactive configuration</h3>
+
+        <ul class="comp-list">
+          <li class="comp-item">
+            <span class="check-icon">✓</span>
+            <span><strong>Scans interactive form controls</strong>, text inputs, radios & dropdowns</span>
+          </li>
+          <li class="comp-item">
+            <span class="check-icon">✓</span>
+            <span><strong>One-click instant restoration</strong> with real-time feedback</span>
+          </li>
+          <li class="comp-item">
+            <span class="check-icon">✓</span>
+            <span><strong>Smart cross-page navigation</strong>: visits target URL then applies presets</span>
+          </li>
+          <li class="comp-item">
+            <span class="check-icon">✓</span>
+            <span><strong>Multi-view manager</strong>: save multiple presets per site (e.g., "Q3 Open Bugs")</span>
+          </li>
+          <li class="comp-item">
+            <span class="check-icon">✓</span>
+            <span><strong>Selective capture review</strong>: toggle off any field before saving</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .problem-section {
+    position: relative;
+  }
+
+  .comparison-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+  }
+
+  .comp-card {
+    padding: 2.5rem;
+    position: relative;
+    border-radius: var(--radius-lg);
+  }
+
+  .comp-old {
+    border-color: #fecaca;
+    background: #fffafa;
+  }
+
+  .comp-new {
+    border-color: rgba(79, 70, 229, 0.35);
+    background: #ffffff;
+    box-shadow: 0 10px 30px -5px rgba(79, 70, 229, 0.1);
+  }
+
+  .comp-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.85rem;
+    border-radius: var(--radius-full);
+    font-size: 0.8rem;
+    font-weight: 700;
+    margin-bottom: 1.25rem;
+  }
+
+  .old-badge {
+    background: #fee2e2;
+    color: #b91c1c;
+    border: 1px solid #fca5a5;
+  }
+
+  .new-badge {
+    background: rgba(79, 70, 229, 0.1);
+    color: #4338ca;
+    border: 1px solid rgba(79, 70, 229, 0.3);
+  }
+
+  .comp-title {
+    font-size: 1.4rem;
+    margin-bottom: 1.75rem;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  .comp-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+  }
+
+  .comp-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+
+  .comp-item strong {
+    color: var(--text-primary);
+  }
+
+  .cross-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #fee2e2;
+    color: #dc2626;
+    font-size: 0.75rem;
+    font-weight: 800;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .check-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #d1fae5;
+    color: #059669;
+    font-size: 0.8rem;
+    font-weight: 800;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  @media (max-width: 800px) {
+    .comparison-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

@@ -1,0 +1,128 @@
+---
+// CTASection.astro
+const CHROME_STORE_URL = "https://chromewebstore.google.com/detail/stickysite-save-and-resto/pfmjhojnaboahgnffghlfaafnfokfich";
+---
+
+<section class="section-padding cta-section">
+  <div class="container">
+    <div class="cta-card glass-card">
+      <div class="cta-glow"></div>
+      
+      <div class="cta-content">
+        <div class="badge badge-emerald">Instant Install • Zero Setup</div>
+        
+        <h2 class="cta-title">
+          Stop resetting your filters <span class="gradient-text">every single day</span>
+        </h2>
+        
+        <p class="cta-subtitle">
+          Save your first view preset in less than 30 seconds. Works seamlessly across dashboards, issue trackers, e-commerce stores, and internal company tools.
+        </p>
+
+        <div class="cta-actions">
+          <a href={CHROME_STORE_URL} target="_blank" rel="noopener noreferrer" class="btn btn-primary cta-btn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <circle cx="12" cy="12" r="4"></circle>
+              <line x1="21.17" y1="8" x2="12" y2="8"></line>
+              <line x1="3.95" y1="6.06" x2="8.54" y2="14"></line>
+              <line x1="10.88" y1="21.94" x2="15.46" y2="14"></line>
+            </svg>
+            <span>Add to Chrome — It's Free</span>
+          </a>
+        </div>
+
+        <div class="cta-guarantees">
+          <span>✓ Free Extension</span>
+          <span>✓ 100% Local-First Storage</span>
+          <span>✓ No Registration Required</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .cta-card {
+    position: relative;
+    padding: 4.5rem 2rem;
+    text-align: center;
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(79, 70, 229, 0.25);
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    overflow: hidden;
+    box-shadow: 0 20px 50px -10px rgba(15, 23, 42, 0.08), 0 0 35px -5px rgba(79, 70, 229, 0.1);
+  }
+
+  .cta-glow {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60%;
+    height: 120px;
+    background: radial-gradient(circle, rgba(79, 70, 229, 0.15) 0%, transparent 70%);
+    filter: blur(40px);
+    pointer-events: none;
+  }
+
+  .cta-content {
+    position: relative;
+    z-index: 1;
+    max-width: 680px;
+    margin: 0 auto;
+  }
+
+  .cta-title {
+    font-size: 2.6rem;
+    font-weight: 800;
+    margin-top: 1.25rem;
+    margin-bottom: 1rem;
+    line-height: 1.2;
+    color: var(--text-primary);
+  }
+
+  .cta-subtitle {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-bottom: 2.25rem;
+  }
+
+  .cta-actions {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 2rem;
+  }
+
+  .cta-btn {
+    padding: 1rem 2.25rem;
+    font-size: 1.1rem;
+  }
+
+  .cta-guarantees {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.75rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    flex-wrap: wrap;
+  }
+
+  @media (max-width: 768px) {
+    .cta-card {
+      padding: 3rem 1.5rem;
+    }
+    .cta-title {
+      font-size: 2rem;
+    }
+    .cta-subtitle {
+      font-size: 0.95rem;
+    }
+    .cta-guarantees {
+      gap: 1rem;
+    }
+  }
+</style>

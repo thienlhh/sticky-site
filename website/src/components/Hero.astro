@@ -1,0 +1,164 @@
+---
+// Hero.astro
+import ScreenshotCarousel from "./ScreenshotCarousel.astro";
+const CHROME_STORE_URL = "https://chromewebstore.google.com/detail/stickysite-save-and-resto/pfmjhojnaboahgnffghlfaafnfokfich";
+---
+
+<section class="hero-section">
+  <div class="container hero-container">
+    <!-- Trust Pill Badge -->
+    <div class="hero-badge-wrap">
+      <div class="badge badge-emerald">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+        </svg>
+        <span>100% Local-First & Private • Zero Account Needed</span>
+      </div>
+    </div>
+
+    <!-- Main Headline -->
+    <h1 class="hero-title">
+      Save website <span class="gradient-text">filters & form presets</span> with a Chrome extension.
+    </h1>
+
+    <p class="hero-subtitle">
+      Traditional bookmarks only save static URLs. <strong>StickySite</strong> remembers your exact dropdown selections, date pickers, search terms, and form states on any website—restoring them in a single click.
+    </p>
+
+    <!-- CTAs -->
+    <div class="hero-cta-group">
+      <a href={CHROME_STORE_URL} target="_blank" rel="noopener noreferrer" class="btn btn-primary hero-btn-lg">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <circle cx="12" cy="12" r="4"></circle>
+          <line x1="21.17" y1="8" x2="12" y2="8"></line>
+          <line x1="3.95" y1="6.06" x2="8.54" y2="14"></line>
+          <line x1="10.88" y1="21.94" x2="15.46" y2="14"></line>
+        </svg>
+        <span>Add to Chrome — It's Free</span>
+      </a>
+
+      <a href="#demo" class="btn btn-secondary hero-btn-lg">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="5 3 19 12 5 21 5 3"></polygon>
+        </svg>
+        <span>Try Interactive Demo</span>
+      </a>
+    </div>
+
+    <div class="hero-compatibility">
+      <span>Compatible with</span>
+      <span class="compat-item">Chrome</span>
+      <span class="compat-dot">•</span>
+      <span class="compat-item">Edge</span>
+      <span class="compat-dot">•</span>
+      <span class="compat-item">Brave</span>
+      <span class="compat-dot">•</span>
+      <span class="compat-item">Arc</span>
+    </div>
+
+    <!-- Interactive Screenshots Carousel -->
+    <div class="hero-carousel-wrap">
+      <ScreenshotCarousel />
+    </div>
+  </div>
+</section>
+
+<style>
+  .hero-section {
+    padding-top: 4.5rem;
+    padding-bottom: 5rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .hero-badge-wrap {
+    margin-bottom: 1.5rem;
+  }
+
+  .hero-title {
+    font-size: 3.5rem;
+    font-weight: 800;
+    max-width: 900px;
+    line-height: 1.15;
+    margin-bottom: 1.5rem;
+    letter-spacing: -0.03em;
+    color: var(--text-primary);
+  }
+
+  .hero-subtitle {
+    font-size: 1.25rem;
+    color: var(--text-secondary);
+    max-width: 680px;
+    line-height: 1.6;
+    margin-bottom: 2.25rem;
+  }
+
+  .hero-subtitle strong {
+    color: var(--text-primary);
+  }
+
+  .hero-cta-group {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .hero-btn-lg {
+    padding: 0.9rem 1.85rem;
+    font-size: 1.05rem;
+  }
+
+  .hero-compatibility {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 2.5rem;
+  }
+
+  .compat-item {
+    font-weight: 600;
+    color: var(--text-secondary);
+  }
+
+  .compat-dot {
+    opacity: 0.4;
+  }
+
+  .hero-carousel-wrap {
+    width: 100%;
+    max-width: 1060px;
+  }
+
+  @media (max-width: 900px) {
+    .hero-title {
+      font-size: 2.5rem;
+    }
+    .hero-subtitle {
+      font-size: 1.05rem;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .hero-title {
+      font-size: 2.1rem;
+    }
+    .hero-cta-group {
+      flex-direction: column;
+      width: 100%;
+    }
+    .hero-btn-lg {
+      width: 100%;
+    }
+  }
+</style>

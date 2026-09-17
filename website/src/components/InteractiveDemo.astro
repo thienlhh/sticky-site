@@ -1,0 +1,579 @@
+---
+// InteractiveDemo.astro
+---
+
+<section id="demo" class="section-padding demo-section">
+  <div class="container">
+    <div class="section-header">
+      <div class="badge">Live Playground</div>
+      <h2 class="section-title">
+        Experience <span class="gradient-text">one-click restoration</span>
+      </h2>
+      <p class="section-subtitle">
+        Click a preset below or change the controls on the simulated dashboard. Watch how StickySite remembers and re-applies exact form states.
+      </p>
+    </div>
+
+    <!-- Simulator Shell -->
+    <div class="demo-wrapper glass-card">
+      <div class="demo-grid">
+        <!-- Simulated Web App Page -->
+        <div class="demo-page">
+          <div class="demo-page-header">
+            <div class="page-title-wrap">
+              <span class="page-badge">Sample App</span>
+              <h3 class="page-title">Engineering Sprint Board</h3>
+            </div>
+            <button id="btn-reset-demo" class="demo-reset-btn" type="button">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
+                <path d="M21 3v5h-5"></path>
+                <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
+                <path d="M3 21v-5h5"></path>
+              </svg>
+              <span>Clear Page Filters</span>
+            </button>
+          </div>
+
+          <!-- Form Controls on Sample Page -->
+          <div class="demo-controls-grid">
+            <div class="control-group">
+              <label for="demo-search" class="control-label">Search Query</label>
+              <input 
+                id="demo-search" 
+                type="text" 
+                class="demo-input" 
+                placeholder="e.g. authentication webhook" 
+                value="oauth token refresh failure"
+              />
+            </div>
+
+            <div class="control-group">
+              <label for="demo-status" class="control-label">Issue Status</label>
+              <select id="demo-status" class="demo-select">
+                <option value="all">All Statuses</option>
+                <option value="in_progress" selected>In Progress (Sprint 42)</option>
+                <option value="review">Under Code Review</option>
+                <option value="blocked">Blocked / On Hold</option>
+              </select>
+            </div>
+
+            <div class="control-group">
+              <label for="demo-priority" class="control-label">Severity Level</label>
+              <select id="demo-priority" class="demo-select">
+                <option value="p0" selected>P0 — Blocker / Urgent</option>
+                <option value="p1">P1 — High Priority</option>
+                <option value="p2">P2 — Normal</option>
+              </select>
+            </div>
+
+            <div class="control-group">
+              <label class="control-label">Filter Toggles</label>
+              <div class="checkbox-row">
+                <label class="demo-checkbox-label">
+                  <input id="demo-assigned" type="checkbox" checked />
+                  <span>Assigned to Me</span>
+                </label>
+                <label class="demo-checkbox-label">
+                  <input id="demo-unresolved" type="checkbox" checked />
+                  <span>Unresolved Only</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Simulated Result Feed -->
+          <div class="demo-table-preview">
+            <div class="table-meta">
+              <span id="demo-match-count">Matching 2 issues in Sprint 42</span>
+              <span id="demo-status-pill" class="status-pill status-ready">All filters applied</span>
+            </div>
+            <div class="table-item">
+              <div class="item-title">ISSUE-402: OAuth token refresh fails after 24h idle</div>
+              <div class="item-tags">
+                <span class="tag tag-red">P0</span>
+                <span class="tag tag-blue">In Progress</span>
+                <span class="tag tag-gray">Assigned</span>
+              </div>
+            </div>
+            <div class="table-item">
+              <div class="item-title">ISSUE-419: Webhook retry loop blocks async worker queue</div>
+              <div class="item-tags">
+                <span class="tag tag-red">P0</span>
+                <span class="tag tag-blue">In Progress</span>
+                <span class="tag tag-gray">Assigned</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Simulated StickySite Popup Overlay -->
+        <div class="demo-popup">
+          <div class="popup-chrome">
+            <div class="popup-brand">
+              <img src="/icons/icon-32.png" width="20" height="20" alt="" />
+              <span class="popup-title">StickySite Views</span>
+            </div>
+            <span class="popup-site">app.analytics-portal.io</span>
+          </div>
+
+          <div class="popup-list">
+            <div class="popup-section-label">SAVED VIEW PRESETS (CLICK TO RESTORE)</div>
+
+            <button class="preset-card active-preset" data-preset="critical" type="button">
+              <div class="preset-icon">⚡</div>
+              <div class="preset-info">
+                <div class="preset-name">P0 Critical Sprint Bugs</div>
+                <div class="preset-desc">4 filters: OAuth query, P0, In Progress</div>
+              </div>
+              <span class="preset-action">Apply</span>
+            </button>
+
+            <button class="preset-card" data-preset="reviews" type="button">
+              <div class="preset-icon">👀</div>
+              <div class="preset-info">
+                <div class="preset-name">My Code Reviews</div>
+                <div class="preset-desc">3 filters: Under Review, Assigned, All</div>
+              </div>
+              <span class="preset-action">Apply</span>
+            </button>
+
+            <button class="preset-card" data-preset="triage" type="button">
+              <div class="preset-icon">📋</div>
+              <div class="preset-info">
+                <div class="preset-name">Weekly Triage Queue</div>
+                <div class="preset-desc">Search: "retry loop", Blocked, All</div>
+              </div>
+              <span class="preset-action">Apply</span>
+            </button>
+          </div>
+
+          <div id="demo-notification" class="popup-toast">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            <span id="toast-text">Restored 4 filters in 9ms!</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  // Lightweight client interactivity for playground demo
+  const presets = {
+    critical: {
+      search: "oauth token refresh failure",
+      status: "in_progress",
+      priority: "p0",
+      assigned: true,
+      unresolved: true,
+      count: "Matching 2 issues in Sprint 42",
+      name: "P0 Critical Sprint Bugs"
+    },
+    reviews: {
+      search: "pull request",
+      status: "review",
+      priority: "p1",
+      assigned: true,
+      unresolved: false,
+      count: "Matching 5 issues waiting for review",
+      name: "My Code Reviews"
+    },
+    triage: {
+      search: "retry loop webhook",
+      status: "blocked",
+      priority: "p0",
+      assigned: false,
+      unresolved: true,
+      count: "Matching 1 blocked issue",
+      name: "Weekly Triage Queue"
+    }
+  };
+
+  const searchInput = document.getElementById('demo-search') as HTMLInputElement;
+  const statusSelect = document.getElementById('demo-status') as HTMLSelectElement;
+  const prioritySelect = document.getElementById('demo-priority') as HTMLSelectElement;
+  const assignedCheckbox = document.getElementById('demo-assigned') as HTMLInputElement;
+  const unresolvedCheckbox = document.getElementById('demo-unresolved') as HTMLInputElement;
+  const matchCount = document.getElementById('demo-match-count');
+  const toast = document.getElementById('demo-notification');
+  const toastText = document.getElementById('toast-text');
+  const resetBtn = document.getElementById('btn-reset-demo');
+  const presetCards = document.querySelectorAll('.preset-card');
+
+  function applyPreset(presetKey: keyof typeof presets) {
+    const config = presets[presetKey];
+    if (!config) return;
+
+    if (searchInput) searchInput.value = config.search;
+    if (statusSelect) statusSelect.value = config.status;
+    if (prioritySelect) prioritySelect.value = config.priority;
+    if (assignedCheckbox) assignedCheckbox.checked = config.assigned;
+    if (unresolvedCheckbox) unresolvedCheckbox.checked = config.unresolved;
+    if (matchCount) matchCount.textContent = config.count;
+
+    presetCards.forEach(c => c.classList.remove('active-preset'));
+    const currentBtn = document.querySelector(`[data-preset="${presetKey}"]`);
+    if (currentBtn) currentBtn.classList.add('active-preset');
+
+    // Trigger toast flash
+    if (toast && toastText) {
+      toastText.textContent = `Restored "${config.name}" in 11ms!`;
+      toast.classList.add('show-toast');
+      setTimeout(() => {
+        toast.classList.remove('show-toast');
+      }, 2500);
+    }
+  }
+
+  presetCards.forEach(card => {
+    card.addEventListener('click', () => {
+      const presetKey = card.getAttribute('data-preset') as keyof typeof presets;
+      applyPreset(presetKey);
+    });
+  });
+
+  resetBtn?.addEventListener('click', () => {
+    if (searchInput) searchInput.value = "";
+    if (statusSelect) statusSelect.value = "all";
+    if (prioritySelect) prioritySelect.value = "p2";
+    if (assignedCheckbox) assignedCheckbox.checked = false;
+    if (unresolvedCheckbox) unresolvedCheckbox.checked = false;
+    if (matchCount) matchCount.textContent = "All filters cleared — showing 48 total issues";
+    presetCards.forEach(c => c.classList.remove('active-preset'));
+
+    if (toast && toastText) {
+      toastText.textContent = "Page inputs cleared. Click any preset to restore!";
+      toast.classList.add('show-toast');
+      setTimeout(() => toast.classList.remove('show-toast'), 2000);
+    }
+  });
+</script>
+
+<style>
+  .demo-wrapper {
+    padding: 2rem;
+    border-radius: var(--radius-lg);
+    background: #ffffff;
+    border: 1px solid var(--border-subtle);
+    box-shadow: 0 20px 45px -10px rgba(15, 23, 42, 0.08);
+  }
+
+  .demo-grid {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 2rem;
+    align-items: start;
+  }
+
+  /* Simulated Page */
+  .demo-page {
+    background: #f8fafc;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 1.75rem;
+  }
+
+  .demo-page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .page-badge {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--accent-indigo);
+  }
+
+  .page-title {
+    font-size: 1.25rem;
+    margin-top: 0.2rem;
+    color: var(--text-primary);
+  }
+
+  .demo-reset-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.45rem 0.85rem;
+    border-radius: var(--radius-sm);
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .demo-reset-btn:hover {
+    background: #f1f5f9;
+    color: var(--text-primary);
+    border-color: #94a3b8;
+  }
+
+  .demo-controls-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.2rem;
+    margin-bottom: 1.75rem;
+  }
+
+  .control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .control-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+  }
+
+  .demo-input, .demo-select {
+    width: 100%;
+    padding: 0.6rem 0.85rem;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .demo-input:focus, .demo-select:focus {
+    border-color: var(--accent-indigo);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+  }
+
+  .checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    height: 38px;
+  }
+
+  .demo-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.8rem;
+    color: var(--text-primary);
+    cursor: pointer;
+  }
+
+  .demo-table-preview {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: var(--radius-sm);
+    padding: 1rem;
+  }
+
+  .table-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  .status-pill {
+    padding: 0.15rem 0.5rem;
+    border-radius: var(--radius-full);
+    font-size: 0.7rem;
+    font-weight: 600;
+    background: #d1fae5;
+    color: #047857;
+  }
+
+  .table-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid #f8fafc;
+    font-size: 0.85rem;
+  }
+
+  .table-item:last-child {
+    border-bottom: none;
+  }
+
+  .item-title {
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+
+  .item-tags {
+    display: flex;
+    gap: 0.4rem;
+  }
+
+  .tag {
+    font-size: 0.7rem;
+    padding: 0.1rem 0.45rem;
+    border-radius: 4px;
+    font-weight: 600;
+  }
+
+  .tag-red { background: #fee2e2; color: #b91c1c; }
+  .tag-blue { background: #e0e7ff; color: #4338ca; }
+  .tag-gray { background: #f1f5f9; color: var(--text-secondary); }
+
+  /* Simulated Popup */
+  .demo-popup {
+    background: #ffffff;
+    border: 1px solid rgba(79, 70, 229, 0.3);
+    border-radius: var(--radius-md);
+    padding: 1.25rem;
+    box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08);
+  }
+
+  .popup-chrome {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 0.85rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  .popup-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+  }
+
+  .popup-site {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+
+  .popup-section-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+    margin-bottom: 0.75rem;
+  }
+
+  .popup-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+  }
+
+  .preset-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    border-radius: var(--radius-sm);
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    color: inherit;
+    width: 100%;
+  }
+
+  .preset-card:hover {
+    background: #ffffff;
+    border-color: rgba(79, 70, 229, 0.4);
+    transform: translateX(3px);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+  }
+
+  .active-preset {
+    background: rgba(79, 70, 229, 0.06);
+    border-color: var(--accent-indigo);
+  }
+
+  .preset-icon {
+    font-size: 1.2rem;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    flex-shrink: 0;
+  }
+
+  .preset-info {
+    flex: 1;
+  }
+
+  .preset-name {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+  }
+
+  .preset-desc {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-top: 0.1rem;
+  }
+
+  .preset-action {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--accent-indigo);
+    padding: 0.25rem 0.6rem;
+    border-radius: var(--radius-full);
+    background: rgba(79, 70, 229, 0.1);
+  }
+
+  .popup-toast {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding: 0.6rem 0.85rem;
+    background: #d1fae5;
+    border: 1px solid #a7f3d0;
+    color: #065f46;
+    border-radius: var(--radius-sm);
+    font-size: 0.8rem;
+    font-weight: 600;
+    opacity: 0;
+    transform: translateY(6px);
+    transition: all 0.3s ease;
+  }
+
+  .show-toast {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  @media (max-width: 900px) {
+    .demo-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .demo-controls-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

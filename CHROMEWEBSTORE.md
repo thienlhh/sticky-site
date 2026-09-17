@@ -187,13 +187,11 @@ Yes (locally for user-saved views; zero off-device transmission by default).
 
 ## Privacy Policy
 
-**Privacy Policy Document:** Included in repository at [`PRIVACY.md`](PRIVACY.md).
+**Privacy Policy URL for Chrome Developer Dashboard:**
+`https://stickysite.kaostudio.dev/privacy`
 
-**Hosting the Privacy Policy for Chrome Web Store:**
-Chrome Web Store requires a publicly accessible URL for the privacy policy. You can host `PRIVACY.md` using any of the following:
-1. **GitHub Pages:** Enable GitHub Pages on a public repo or documentation branch (e.g., `sticky-site-feedback`).
-2. **GitHub Gist:** Create a public Gist containing `PRIVACY.md` (e.g. `https://gist.github.com/...`).
-3. **Personal Website / Notion / Telegraph:** Paste the contents of `PRIVACY.md` to a public web page.
+- **Hosted Document:** Dedicated standalone privacy policy page built at `website/src/pages/privacy.astro`.
+- **Source Document:** Included in repository at [`PRIVACY.md`](PRIVACY.md).
 
 ---
 
@@ -207,7 +205,8 @@ Chrome Web Store requires a publicly accessible URL for the privacy policy. You 
 
 ## Developer & Support Information
 
-- **Publisher Name:** Thien Le
+- **Publisher Name:** KAO Studio
+- **Official Website:** `https://stickysite.kaostudio.dev`
 - **Developer Contact Email:** `kaoxofu@gmail.com`
 - **Support Email / URL:** `kaoxofu@gmail.com`
 

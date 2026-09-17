@@ -1,0 +1,157 @@
+---
+// UseCases.astro
+const useCases = [
+  {
+    category: "Analytics & Monitoring",
+    icon: "📈",
+    headline: "Never rebuild complex dashboard segments",
+    description: "Save multi-touch date range comparisons, breakdown metrics, environment tags, and query segments across reporting tools.",
+    tags: ["Custom Date Ranges", "Metric Breakdown", "Environment Segments"]
+  },
+  {
+    category: "Project Management",
+    icon: "🎯",
+    headline: "Jump straight to your active sprint tasks",
+    description: "Switch between 'My In-Progress Reviews', 'P0 Production Blockers', and 'Sprint 42 Triage' without adjusting 5 dropdowns every morning.",
+    tags: ["Assignee Filters", "Milestone Criteria", "Status Dropdowns"]
+  },
+  {
+    category: "E-Commerce & Purchasing",
+    icon: "🛍️",
+    headline: "Keep your exact shopping preferences pinned",
+    description: "Tired of web stores resetting your shoe size, price ceiling, and 'In-Stock Only' toggles when you navigate? StickySite locks them in.",
+    tags: ["Size & Color Facets", "Price Limits", "In-Stock Toggles"]
+  },
+  {
+    category: "CRM & Sales Operations",
+    icon: "💼",
+    headline: "Reopen pipeline views with one click",
+    description: "Keep territory filters, lead scoring stages, close date quarters, and opportunity owners saved across internal sales portals.",
+    tags: ["Pipeline Stages", "Account Tiers", "Regional Territories"]
+  },
+  {
+    category: "Recruiting & Job Boards",
+    icon: "💼",
+    headline: "Retain high-specificity search parameters",
+    description: "Preserve advanced candidate criteria, experience levels, remote work toggles, and salary minimums across job platforms.",
+    tags: ["Radius & Location", "Experience Brackets", "Keyword Queries"]
+  },
+  {
+    category: "Internal Admin Portals",
+    icon: "⚙️",
+    headline: "Accelerate back-office operations",
+    description: "Quickly access database tables, billing lookups, audit log date boundaries, and customer status filters on company admin tools.",
+    tags: ["Audit Logs", "Customer Status", "Database Tables"]
+  }
+];
+---
+
+<section id="use-cases" class="section-padding use-cases-section">
+  <div class="container">
+    <div class="section-header">
+      <div class="badge">Versatile Productivity</div>
+      <h2 class="section-title">
+        Built for the tools <span class="gradient-text">you rely on every day</span>
+      </h2>
+      <p class="section-subtitle">
+        Whether you manage engineering sprints, analyze customer retention, or shop online, StickySite eliminates repetitive form setup.
+      </p>
+    </div>
+
+    <div class="use-cases-grid">
+      {useCases.map((uc) => (
+        <div class="glass-card uc-card">
+          <div class="uc-top">
+            <span class="uc-icon">{uc.icon}</span>
+            <span class="uc-category">{uc.category}</span>
+          </div>
+          <h3 class="uc-headline">{uc.headline}</h3>
+          <p class="uc-desc">{uc.description}</p>
+          <div class="uc-tags">
+            {uc.tags.map((tag) => (
+              <span class="uc-tag">{tag}</span>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .use-cases-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.75rem;
+  }
+
+  .uc-card {
+    padding: 2.25rem 1.75rem;
+    display: flex;
+    flex-direction: column;
+    background: #ffffff;
+  }
+
+  .uc-top {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+  }
+
+  .uc-icon {
+    font-size: 1.5rem;
+  }
+
+  .uc-category {
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--accent-indigo);
+  }
+
+  .uc-headline {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+    line-height: 1.35;
+    color: var(--text-primary);
+  }
+
+  .uc-desc {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+    flex: 1;
+  }
+
+  .uc-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .uc-tag {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: var(--radius-full);
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+
+  @media (max-width: 990px) {
+    .use-cases-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 650px) {
+    .use-cases-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

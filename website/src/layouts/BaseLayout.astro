@@ -1,0 +1,118 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+  canonicalUrl?: string;
+  ogImage?: string;
+  ogImageAlt?: string;
+  ogImageWidth?: number;
+  ogImageHeight?: number;
+  schema?: "softwareApplication" | "webPage";
+}
+
+const {
+  title = "StickySite — Chrome Extension for Website Filters & Form Presets",
+  description = "Save and restore website filters, form presets, and custom page views with a private, local-first Chrome extension.",
+  canonicalUrl = "https://stickysite.kaostudio.dev",
+  ogImage = "https://stickysite.kaostudio.dev/screenshots/marquee-1400x560.png",
+  ogImageAlt = "StickySite Chrome extension saving and restoring website filters and form presets",
+  ogImageWidth = 1400,
+  ogImageHeight = 560,
+  schema
+} = Astro.props;
+
+const siteUrl = "https://stickysite.kaostudio.dev";
+const chromeStoreUrl = "https://chromewebstore.google.com/detail/stickysite-save-and-resto/pfmjhojnaboahgnffghlfaafnfokfich";
+const publisher = {
+  "@type": "Organization",
+  "name": "KAO Studio",
+  "url": siteUrl
+};
+
+const jsonLd = schema === "softwareApplication"
+  ? {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "@id": `${siteUrl}/#software`,
+      "name": "StickySite",
+      "operatingSystem": "Google Chrome, Microsoft Edge, Brave, Chromium",
+      "applicationCategory": "BrowserApplication",
+      "applicationSubCategory": "Browser Extension",
+      "image": ogImage,
+      "screenshot": [
+        `${siteUrl}/screenshots/screenshot-1-saved-views.png`,
+        `${siteUrl}/screenshots/screenshot-2-capture-review.png`,
+        `${siteUrl}/screenshots/screenshot-3-name-view.png`,
+        `${siteUrl}/screenshots/screenshot-4-restoration-status.png`
+      ],
+      "downloadUrl": chromeStoreUrl,
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "description": description,
+      "url": canonicalUrl,
+      "publisher": publisher
+    }
+  : schema === "webPage"
+    ? {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "@id": `${canonicalUrl}#webpage`,
+        "name": title,
+        "description": description,
+        "url": canonicalUrl,
+        "isPartOf": {
+          "@type": "WebSite",
+          "@id": `${siteUrl}/#website`,
+          "url": siteUrl,
+          "name": "StickySite"
+        },
+        "publisher": publisher
+      }
+    : null;
+---
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalUrl} />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32.png" />
+    <link rel="apple-touch-icon" sizes="128x128" href="/icons/icon-128.png" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:site_name" content="StickySite" />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content={String(ogImageWidth)} />
+    <meta property="og:image:height" content={String(ogImageHeight)} />
+    <meta property="og:image:alt" content={ogImageAlt} />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content={canonicalUrl} />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+    <meta name="twitter:image:alt" content={ogImageAlt} />
+
+    <!-- Structured Data -->
+    {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>

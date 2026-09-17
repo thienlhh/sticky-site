@@ -95,6 +95,5 @@ We may update this Privacy Policy to reflect improvements or changes to our prac
 
 If you have questions, concerns, or requests regarding this Privacy Policy or your data, please contact:
 
-- **Developer:** Thien Le
+- **Developer:** KAO Studio
 - **Email:** [kaoxofu@gmail.com](mailto:kaoxofu@gmail.com)
-- **Repository / Support:** [StickySite Feedback](https://github.com/thienlhh/sticky-site-feedback)
