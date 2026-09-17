@@ -1,7 +1,7 @@
 {
   "name": "sticky-site",
-  "version": "1.0.1",
-  "description": "Save and restore page state",
+  "version": "1.0.2",
+  "description": "",
   "main": "index.js",
   "directories": {
     "doc": "docs"

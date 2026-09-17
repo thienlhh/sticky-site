@@ -1,22 +1,22 @@
 # Chrome Web Store Listing — StickySite
 
-> Last Updated: 2026-09-11
+> Last Updated: 2026-09-17
 
 ---
 
 ## Store Listing
 
 **Extension Name** [REQUIRED]
-StickySite
+StickySite — Save Filters & Form Presets
 
 **Short Description** [REQUIRED]
-Save and restore search filters, form inputs, and custom page views on any website in one click. Fast, private, and local-first.
+Save and restore search filters, form presets, and custom page views on any site in one click. Fast, private, and local-first.
 
-*(Length: 122 characters / max 132)*
+*(Length: 124 characters / max 132)*
 
 **Detailed Description** [REQUIRED]
 
-Save and restore your favorite search filters, form selections, and custom page views on any website in a single click.
+Save and restore your favorite search filters, form presets, and custom page views on any website in a single click.
 
 Tired of resetting the same filters, dropdowns, and search terms every time you open a dashboard, web app, or online store? Traditional browser bookmarks only save URLs—they lose interactive form controls, date range pickers, dropdown selections, and checkbox filters.
 
@@ -62,6 +62,18 @@ HOW TO USE
 4. Return to the site anytime, open StickySite, and click your saved view to restore everything in one click.
 
 
+FREQUENTLY ASKED QUESTIONS
+
+• How is StickySite different from standard browser bookmarks?
+Standard bookmarks only store the base webpage address. StickySite remembers the active interactive page state—including selected dropdowns, date pickers, search fields, checkboxes, and URL query parameters.
+
+• Does StickySite capture passwords or payment information?
+No. StickySite includes strict safety filters that automatically detect and ignore passwords, credit card numbers, authentication tokens, and sensitive personal identifiers. Nothing sensitive is ever saved.
+
+• Where is my data saved?
+All view presets and filter configurations remain 100% local inside your browser's local storage. StickySite does not send your data to external servers.
+
+
 PRIVACY & SECURITY FIRST
 
 • Local-First by Default: All saved views and presets reside strictly on your device in local storage. No account is required to use StickySite today. If cloud sync is introduced in a future update, it will be strictly opt-in with explicit user consent.
@@ -88,7 +100,7 @@ SUPPORT & FEEDBACK
 
 Found a bug, have a suggestion, or need help? Contact us at kaoxofu@gmail.com.
 
-Version 1.0.0 — Initial production release.
+Version 1.0.2 — Production release.
 
 **Category** [REQUIRED]
 Productivity
@@ -210,7 +222,7 @@ npm run zip
 ```
 
 This compiles the production extension and packages it cleanly to:
-`.output/sticky-site-1.0.0-chrome.zip`
+`.output/sticky-site-1.0.2-chrome.zip`
 
 ### Package Audit
 - **Archive Size:** ~123 KB
@@ -231,5 +243,6 @@ This compiles the production extension and packages it cleanly to:
 
 | Version | Date | Changes | Status |
 |---|---|---|---|
+| **1.0.2** | 2026-09-17 | Keyword optimization: added functional title subtitle, tuned short description for filter/form presets, and added FAQ section for long-tail search discovery. | Ready for Resubmission |
 | **1.0.0** | 2026-09-11 | Listing revision: removed third-party brand names from description to comply with keyword spam policy (Yellow Argon). | Ready for Resubmission |
 | **1.0.0** | 2026-09-10 | Initial production release: local-first view capture, multi-heuristic control matching, selective review screen, and cross-navigation coordinator. | Rejected (Keyword Spam) |

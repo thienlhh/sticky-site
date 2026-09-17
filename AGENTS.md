@@ -1,79 +1,45 @@
-# AGENTS.md
+<!-- code-review-graph MCP tools -->
+## MCP Tools: code-review-graph
 
-Context and operational guidelines for AI coding agents working on **StickySite**.
+**This project has a knowledge graph. Start with the code-review-graph
+MCP tools to narrow scope, then read the source.** The graph is cheaper than scanning files and
+gives you structural context (callers, dependents, test coverage) that file search cannot.
 
----
+### When to use graph tools FIRST
 
-## Project Overview
+- **Exploring code**: `semantic_search_nodes_tool` or `query_graph_tool` instead of Grep
+- **Understanding impact**: `get_impact_radius_tool` instead of manually tracing imports
+- **Code review**: `detect_changes_tool` + `get_review_context_tool` instead of reading entire files
+- **Finding relationships**: `query_graph_tool` with callers_of/callees_of/imports_of/tests_for
+- **Architecture questions**: `get_architecture_overview_tool` + `list_communities_tool`
 
-**StickySite** is a privacy-first, local-first Chrome Extension (Manifest V3) that captures filter and view settings on a webpage and restores them later in one click.
+### Verify in the source
 
-### Core Invariants
-- **User-triggered:** Executes only when the user explicitly saves, updates, or applies a view.
-- **Local-first:** Saved views persist in `chrome.storage.local`. No external account or database.
-- **Least-privilege:** No blanket host permissions on install. Origin access is requested per site on-demand.
-- **Safe-by-default:** Sensitive inputs and destructive action buttons are strictly excluded and never touched.
-- **Compatibility-honest:** Reports accurate full, partial, or failed restoration outcomes without silent fallback.
+- Narrow scope with the graph, then read the source. Do not change code from graph output alone.
+- For any non-trivial change, read the implementation and the relevant tests before concluding.
+- Verify the exact source when touching behavior, database logic, migrations, retries, fallbacks,
+  recovery, or compatibility code.
+- When the graph and the source disagree, the source wins. The graph may be stale or may not
+  model that relationship.
+- An empty graph result can mean "not indexed" or "not statically visible", not "does not exist".
 
-### Technology Stack
-- **Extension Toolchain:** [WXT 0.21](https://wxt.dev/) with Vite 8.2 (Manifest V3)
-- **Runtime & Language:** Node.js (ES modules), TypeScript 7 (strict, `@/*` maps to `./src/*`)
-- **Frontend UI:** React 19, Tailwind CSS v4 (`@tailwindcss/vite`), `@base-ui/react`, `lucide-react`
-- **Testing:** Vitest 5 (`jsdom`), `@testing-library/react`, Playwright 1.63 (E2E)
-- **Package Manager:** `npm` with exact dependencies (`save-exact=true` in `.npmrc`, `package-lock.json`)
+### Key Tools
 
----
+| Tool | Use when |
+| ------ | ---------- |
+| `detect_changes_tool` | Reviewing code changes — gives risk-scored analysis |
+| `get_review_context_tool` | Need source snippets for review — token-efficient |
+| `get_impact_radius_tool` | Understanding blast radius of a change |
+| `get_affected_flows_tool` | Finding which execution paths are impacted |
+| `query_graph_tool` | Tracing callers, callees, imports, tests, dependencies |
+| `semantic_search_nodes_tool` | Finding functions/classes by name or keyword |
+| `get_architecture_overview_tool` | Understanding high-level codebase structure |
+| `refactor_tool` | Planning renames, finding dead code |
 
-## Key Commands
+### Workflow
 
-| Task | Command | Notes |
-|---|---|---|
-| **Consolidated Check** | `npm run check` | Runs `typecheck`, `test`, and `build`. Run before every commit. |
-| **Typecheck** | `npm run typecheck` | `tsc --noEmit` |
-| **All Unit Tests** | `npm test` | Runs Vitest across all unit and component suites. |
-| **Single Test File** | `npx vitest run <path>` | e.g. `npx vitest run src/domain/view.test.ts` |
-| **Test by Pattern** | `npx vitest run -t "<name>"` | Filters tests by description. |
-| **Build Extension** | `npm run build` | Builds production artifacts to `.output/chrome-mv3/`. |
-| **Development** | `npm run dev` | WXT development runner with hot reloading. |
-| **E2E Tests** | `npm run test:e2e` | Playwright browser suite (requires prior `npm run build`). |
-
----
-
-## Architecture & Codebase Map
-
-- `entrypoints/background.ts`: Service worker handling apply coordinator across navigations, tab events, and analytics transport.
-- `entrypoints/page-agent.content.ts`: Runtime content script for DOM capture and value restoration.
-- `entrypoints/popup/`: Extension action popup application (React 19).
-- `src/domain/`: Pure models and utilities (`view.ts`, `url.ts`).
-- `src/capture/`: Control scanning, label heuristics, and safety filtering (`eligibility.ts`, `controls.ts`).
-- `src/matching/`: Element fingerprinting and matching engine across DOM re-renders (`match.ts`, `fingerprint.ts`).
-- `src/restoration/`: Value restoration, event dispatching, and verification (`restore.ts`, `apply-control.ts`).
-- `src/apply/`: Navigation-spanning apply coordination and session tracking (`coordinator.ts`, `operation.ts`).
-- `src/storage/`: Typed storage abstraction over `chrome.storage.local` (`views.ts`).
-- `src/analytics.ts`: Privacy-preserving event analytics and payload validator.
-- Reference documentation: [PRD.md](file:///Users/thienlhh/Workspace/sticky-site/docs/PRD.md), [PRIVACY.md](file:///Users/thienlhh/Workspace/sticky-site/PRIVACY.md).
-
----
-
-## Critical Rules & Guardrails
-
-### 1. Permissions & Least Privilege
-- Manifest permissions in [wxt.config.ts](file:///Users/thienlhh/Workspace/sticky-site/wxt.config.ts) are restricted to `['storage', 'scripting', 'activeTab', 'tabs', 'favicon']`.
-- `http://*/*` and `https://*/*` must remain `optional_host_permissions`.
-- **NEVER** introduce blanket host permissions. Request host access only for the specific origin (`${origin}/*`) on-demand when the user initiates an action.
-
-### 2. Control Eligibility & Safety
-- **Excluded Inputs:** NEVER capture or touch passwords, hidden/file inputs, credit cards, bank details, SSNs, phone numbers, contact/credential inputs, OTP tokens, or query parameters with sensitive names (`token`, `auth`, `jwt`, `secret`, `sig`). See [src/capture/eligibility.ts](file:///Users/thienlhh/Workspace/sticky-site/src/capture/eligibility.ts).
-- **Forbidden Actions:** NEVER click submit, buy, pay, delete, search, or confirm buttons.
-- **Value Restoration:** Set control values and dispatch both `input` and `change` events (`bubbles: true`). Verify final DOM values post-dispatch; report rejected or overwritten values as `skipped` or `failed`.
-
-### 3. WXT Imports
-- Import entrypoint helpers explicitly from `wxt/utils/...` (e.g. `import { defineBackground } from 'wxt/utils/define-background'`) to maintain typecheckability without prior build generation.
-
-### 4. Testing Conventions
-- Vitest Chrome APIs are mocked in [vitest.setup.ts](file:///Users/thienlhh/Workspace/sticky-site/vitest.setup.ts). Update setup if new Chrome APIs are called.
-- In React component tests, wrap async state updates in `act(...)` or use `@testing-library/react` async helpers (`waitFor`, `findBy*`).
-
-### 5. Analytics Guardrails
-- Payloads are strictly validated via `validatePayload()`.
-- **NEVER** send URLs, hostnames, search queries, form values, DOM selectors, or freeform text. Only send allowlisted event names and coarse counters/buckets. See [src/analytics.ts](file:///Users/thienlhh/Workspace/sticky-site/src/analytics.ts).
+1. The graph auto-updates on file changes (via hooks).
+2. Use `detect_changes_tool` for code review.
+3. Use `get_affected_flows_tool` to understand impact.
+4. Use `query_graph_tool` pattern="tests_for" to check coverage.
+<!-- /code-review-graph MCP tools -->
