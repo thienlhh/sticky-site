@@ -629,7 +629,7 @@ describe('Popup App Shell', () => {
 
       const bugReportLink = screen.getByRole('link', { name: /Report a bug/i });
       expect(bugReportLink).toBeInTheDocument();
-      expect(bugReportLink).toHaveAttribute('href', 'https://github.com/thienlhh/sticky-site-feedback/issues');
+      expect(bugReportLink).toHaveAttribute('href', 'https://github.com/thienlhh/sticky-site/issues');
       expect(bugReportLink).toHaveAttribute('target', '_blank');
       expect(bugReportLink).toHaveAttribute('rel', 'noreferrer');
 
@@ -641,4 +641,3 @@ describe('Popup App Shell', () => {
     });
   });
 });
-

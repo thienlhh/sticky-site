@@ -427,7 +427,7 @@ export function App() {
             </Button>
 
             <a
-              href="https://github.com/thienlhh/sticky-site-feedback/issues"
+              href="https://github.com/thienlhh/sticky-site/issues"
               target="_blank"
               rel="noreferrer"
               className={cn(
